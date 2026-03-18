@@ -35,7 +35,8 @@ const UniversidadSchema: Schema<IUniversidadModel> = new Schema(
     },
     {
         timestamps: true,
-        versionKey: false
+        versionKey: false,
+        collection: 'universidades'
     }
 );
 
