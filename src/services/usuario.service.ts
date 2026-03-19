@@ -35,8 +35,18 @@ const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promis
     return null;
 };
 
-const deleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+// Soft Delete: marca como inactivo sin eliminar de la BD
+const softDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+    return await Usuario.findByIdAndUpdate(
+        usuarioId,
+        { activo: false },
+        { new: true }
+    );
+};
+
+// Hard Delete: elimina el documento definitivamente de la BD
+const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
     return await Usuario.findByIdAndDelete(usuarioId);
 };
 
-export default { createUsuario, getUsuario, getAllUsuarios, updateUsuario, deleteUsuario };
+export default { createUsuario, getUsuario, getAllUsuarios, updateUsuario, softDeleteUsuario, hardDeleteUsuario };

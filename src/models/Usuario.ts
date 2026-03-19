@@ -9,6 +9,7 @@ export interface IUsuario {
     password: string;
     rol: 'admin' | 'user';
     universidad?: Types.ObjectId;
+    activo: boolean;
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -55,6 +56,10 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Universidad',
             default: null
+        },
+        activo: {
+            type: Boolean,
+            default: true
         }
     },
     {

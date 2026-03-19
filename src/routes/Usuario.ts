@@ -31,6 +31,10 @@ const router = express.Router();
  *         rol:
  *           type: string
  *           example: "user"
+ *         activo:
+ *           type: boolean
+ *           example: true
+ *           description: Indica si la cuenta está activa (false = soft deleted)
  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
@@ -144,9 +148,32 @@ router.patch('/:usuarioId', ValidateJoi(Schemas.usuario.update), controller.upda
 
 /**
  * @openapi
+ * /usuarios/{usuarioId}/soft-delete:
+ *   patch:
+ *     summary: Desactiva un usuario (soft delete)
+ *     description: Marca la cuenta como inactiva (activo=false) sin eliminar el documento de la BD.
+ *     tags: [Usuarios]
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ObjectId del usuario
+ *     responses:
+ *       200:
+ *         description: Cuenta desactivada correctamente
+ *       404:
+ *         description: No encontrado
+ */
+router.patch('/:usuarioId/soft-delete', controller.softDeleteUsuario);
+
+/**
+ * @openapi
  * /usuarios/{usuarioId}:
  *   delete:
- *     summary: Elimina un usuario por ID
+ *     summary: Elimina un usuario permanentemente (hard delete)
+ *     description: Elimina el documento del usuario definitivamente de la base de datos.
  *     tags: [Usuarios]
  *     parameters:
  *       - in: path
@@ -161,6 +188,6 @@ router.patch('/:usuarioId', ValidateJoi(Schemas.usuario.update), controller.upda
  *       404:
  *         description: No encontrado
  */
-router.delete('/:usuarioId', controller.deleteUsuario);
+router.delete('/:usuarioId', controller.hardDeleteUsuario);
 
 export default router;

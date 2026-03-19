@@ -42,15 +42,30 @@ const updateUsuario = async (req: Request, res: Response, next: NextFunction) =>
 };
 
 
-const deleteUsuario = async (req: Request, res: Response, next: NextFunction) => {
+const softDeleteUsuario = async (req: Request, res: Response, next: NextFunction) => {
     const usuarioId = req.params.usuarioId;
 
     try {
-        const usuario = await UsuarioService.deleteUsuario(usuarioId);
-        return usuario ? res.status(201).json(usuario) : res.status(404).json({ message: 'not found' });
+        const usuario = await UsuarioService.softDeleteUsuario(usuarioId);
+        return usuario
+            ? res.status(200).json({ message: 'Cuenta desactivada correctamente', usuario })
+            : res.status(404).json({ message: 'not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-export default { createUsuario, readUsuario, readAll, updateUsuario, deleteUsuario };
+const hardDeleteUsuario = async (req: Request, res: Response, next: NextFunction) => {
+    const usuarioId = req.params.usuarioId;
+
+    try {
+        const usuario = await UsuarioService.hardDeleteUsuario(usuarioId);
+        return usuario
+            ? res.status(200).json({ message: 'Usuario eliminado permanentemente', usuario })
+            : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default { createUsuario, readUsuario, readAll, updateUsuario, softDeleteUsuario, hardDeleteUsuario };
