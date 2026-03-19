@@ -44,9 +44,18 @@ const softDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     );
 };
 
+// Recovery: vuelve a activar la cuenta
+const recoveryUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+    return await Usuario.findByIdAndUpdate(
+        usuarioId,
+        { activo: true },
+        { new: true }
+    );
+};
+
 // Hard Delete: elimina el documento definitivamente de la BD
 const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
     return await Usuario.findByIdAndDelete(usuarioId);
 };
 
-export default { createUsuario, getUsuario, getAllUsuarios, updateUsuario, softDeleteUsuario, hardDeleteUsuario };
+export default { createUsuario, getUsuario, getAllUsuarios, updateUsuario, softDeleteUsuario, hardDeleteUsuario, recoveryUsuario };

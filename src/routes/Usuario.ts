@@ -170,6 +170,28 @@ router.patch('/:usuarioId/soft-delete', controller.softDeleteUsuario);
 
 /**
  * @openapi
+ * /usuarios/{usuarioId}/recovery:
+ *   patch:
+ *     summary: Reactiva un usuario (recovery)
+ *     description: Vuelve a activar la cuenta (activo=true).
+ *     tags: [Usuarios]
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ObjectId del usuario
+ *     responses:
+ *       200:
+ *         description: Cuenta recuperada correctamente
+ *       404:
+ *         description: No encontrado
+ */
+router.patch('/:usuarioId/recovery', controller.recoveryUsuario);
+
+/**
+ * @openapi
  * /usuarios/{usuarioId}:
  *   delete:
  *     summary: Elimina un usuario permanentemente (hard delete)

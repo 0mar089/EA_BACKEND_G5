@@ -55,6 +55,19 @@ const softDeleteUsuario = async (req: Request, res: Response, next: NextFunction
     }
 };
 
+const recoveryUsuario = async (req: Request, res: Response, next: NextFunction) => {
+    const usuarioId = req.params.usuarioId;
+
+    try {
+        const usuario = await UsuarioService.recoveryUsuario(usuarioId);
+        return usuario
+            ? res.status(200).json({ message: 'Cuenta recuperada correctamente', usuario })
+            : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
 const hardDeleteUsuario = async (req: Request, res: Response, next: NextFunction) => {
     const usuarioId = req.params.usuarioId;
 
@@ -68,4 +81,4 @@ const hardDeleteUsuario = async (req: Request, res: Response, next: NextFunction
     }
 };
 
-export default { createUsuario, readUsuario, readAll, updateUsuario, softDeleteUsuario, hardDeleteUsuario };
+export default { createUsuario, readUsuario, readAll, updateUsuario, softDeleteUsuario, hardDeleteUsuario, recoveryUsuario };
