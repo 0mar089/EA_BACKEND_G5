@@ -8,5 +8,7 @@
         "strict": true,
         "skipLibCheck": true
     },
-    "include": ["src/**/*", "src/models/.ts"]
+    "include": [
+        "src/**/*"
+    ]
 }
