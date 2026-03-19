@@ -12,6 +12,7 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
+        "bcryptjs": "^3.0.3",
         "chalk": "^4.1.2",
         "cors": "^2.8.6",
         "dotenv": "^16.0.0",
@@ -22,6 +23,7 @@
         "swagger-ui-express": "^5.0.1"
     },
     "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
         "@types/cors": "^2.8.19",
         "@types/express": "^4.17.13",
         "@types/swagger-jsdoc": "^6.0.4",

@@ -6,6 +6,8 @@ import { config } from './config/config';
 import Logging from './library/Logging';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger';
+import usuarioRoutes from './routes/Usuario';
+import universidadRoutes from './routes/Universidad';
 
 const router = express();
 
@@ -45,6 +47,8 @@ const StartServer = () => {
     router.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     /** Routes */
+    router.use('/usuarios', usuarioRoutes);
+    router.use('/universidades', universidadRoutes);
 
 
     /** Healthcheck */
