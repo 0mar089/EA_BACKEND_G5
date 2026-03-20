@@ -3,6 +3,9 @@ import Usuario, { IUsuarioModel, IUsuario } from '../models/Usuario';
 import Universidad from '../models/Universidad';
 
 const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> => {
+    // Normalizamos "" a null para evitar errores de validación de ObjectId
+    if ((data as any).universidad === '') (data as any).universidad = null;
+
     const usuario = new Usuario({
         _id: new mongoose.Types.ObjectId(),
         ...data
@@ -12,7 +15,7 @@ const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> =>
     if (usuario.universidad) {
         await Universidad.findByIdAndUpdate(
             usuario.universidad,
-            { $push: { usuarios: usuario._id } } // Add user ID to the organization's vector
+            { $addToSet: { usuarios: usuario._id } } // Vincular usuario a la universidad
         );
     }
     return usuario;
@@ -28,11 +31,30 @@ const getAllUsuarios = async (): Promise<IUsuarioModel[]> => {
 
 const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promise<IUsuarioModel | null> => {
     const usuario = await Usuario.findById(usuarioId);
-    if (usuario) {
-        usuario.set(data);
-        return await usuario.save();
+    if (!usuario) return null;
+
+    // Si viene el campo universidad en la data, manejamos la sincronización de la lista
+    if ('universidad' in data) {
+        const oldUniId = usuario.universidad;
+        // Normalizamos "" a null para evitar errores de validación
+        if ((data as any).universidad === '') (data as any).universidad = null;
+        const newUniId = data.universidad;
+
+        // Si cambió la universidad asociada
+        if (String(oldUniId) !== String(newUniId)) {
+            // 1. Desvincular de la antigua si existía
+            if (oldUniId) {
+                await Universidad.findByIdAndUpdate(oldUniId, { $pull: { usuarios: usuario._id } });
+            }
+            // 2. Vincular a la nueva si se ha proporcionado una
+            if (newUniId) {
+                await Universidad.findByIdAndUpdate(newUniId, { $addToSet: { usuarios: usuario._id } });
+            }
+        }
     }
-    return null;
+
+    usuario.set(data);
+    return await usuario.save();
 };
 
 // Soft Delete: marca como inactivo sin eliminar de la BD
@@ -55,6 +77,10 @@ const recoveryUsuario = async (usuarioId: string): Promise<IUsuarioModel | null>
 
 // Hard Delete: elimina el documento definitivamente de la BD
 const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+    const usuario = await Usuario.findById(usuarioId);
+    if (usuario && usuario.universidad) {
+        await Universidad.findByIdAndUpdate(usuario.universidad, { $pull: { usuarios: usuario._id } });
+    }
     return await Usuario.findByIdAndDelete(usuarioId);
 };
 

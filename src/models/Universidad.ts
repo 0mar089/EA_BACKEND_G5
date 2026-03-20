@@ -9,7 +9,7 @@ export interface IUniversidad {
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
-export interface IUniversidadModel extends IUniversidad, Document {}
+export interface IUniversidadModel extends IUniversidad, Document { }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
