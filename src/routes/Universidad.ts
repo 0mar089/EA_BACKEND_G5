@@ -49,10 +49,8 @@ const router = express.Router();
  * @openapi
  * /universidades:
  *   post:
- *     summary: Crea una universidad (Solo Admin)
+ *     summary: Crea una universidad
  *     tags: [Universidades]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -62,14 +60,10 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Creado
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Prohibido (No es admin)
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.universidad.create), controller.createUniversidad);
+router.post('/', ValidateJoi(Schemas.universidad.create), controller.createUniversidad);
 
 /**
  * @openapi
@@ -100,17 +94,13 @@ router.get('/:universidadId', authenticateToken, controller.readUniversidad);
  * @openapi
  * /universidades:
  *   get:
- *     summary: Lista todas las universidades (Cualquier Usuario)
+ *     summary: Lista todas las universidades (Público)
  *     tags: [Universidades]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: OK
- *       401:
- *         description: No autorizado
  */
-router.get('/', authenticateToken, controller.readAll);
+router.get('/', controller.readAll);
 
 /**
  * @openapi
