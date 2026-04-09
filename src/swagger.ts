@@ -15,6 +15,15 @@ const options: Options = {
         url: `http://localhost:${config.server.port}`,
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
   },
 
   // IMPORTANTE: leer los .js compilados en build/routes

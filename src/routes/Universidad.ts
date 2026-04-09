@@ -1,6 +1,7 @@
 import express from 'express';
-import controller from '../controllers/universidad.controller';
+import controller from '../controllers/universidad';
 import { Schemas, ValidateJoi } from '../middleware/Joi';
+import { authenticateToken, checkRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -48,8 +49,10 @@ const router = express.Router();
  * @openapi
  * /universidades:
  *   post:
- *     summary: Crea una universidad
+ *     summary: Crea una universidad (Solo Admin)
  *     tags: [Universidades]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -59,17 +62,23 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Creado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.post('/', ValidateJoi(Schemas.universidad.create), controller.createUniversidad);
+router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.universidad.create), controller.createUniversidad);
 
 /**
  * @openapi
  * /universidades/{universidadId}:
  *   get:
- *     summary: Obtiene una universidad por ID
+ *     summary: Obtiene una universidad por ID (Cualquier Usuario)
  *     tags: [Universidades]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: universidadId
@@ -80,29 +89,37 @@ router.post('/', ValidateJoi(Schemas.universidad.create), controller.createUnive
  *     responses:
  *       200:
  *         description: OK
+ *       401:
+ *         description: No autorizado
  *       404:
  *         description: No encontrado
  */
-router.get('/:universidadId', controller.readUniversidad);
+router.get('/:universidadId', authenticateToken, controller.readUniversidad);
 
 /**
  * @openapi
  * /universidades:
  *   get:
- *     summary: Lista todas las universidades
+ *     summary: Lista todas las universidades (Cualquier Usuario)
  *     tags: [Universidades]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: OK
+ *       401:
+ *         description: No autorizado
  */
-router.get('/', controller.readAll);
+router.get('/', authenticateToken, controller.readAll);
 
 /**
  * @openapi
  * /universidades/{universidadId}:
  *   patch:
- *     summary: Actualiza una universidad por ID
+ *     summary: Actualiza una universidad por ID (Solo Admin)
  *     tags: [Universidades]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: universidadId
@@ -119,19 +136,25 @@ router.get('/', controller.readAll);
  *     responses:
  *       201:
  *         description: Actualizado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       404:
  *         description: No encontrado
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.patch('/:universidadId', ValidateJoi(Schemas.universidad.update), controller.updateUniversidad);
+router.patch('/:universidadId', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.universidad.update), controller.updateUniversidad);
 
 /**
  * @openapi
  * /universidades/{universidadId}:
  *   delete:
- *     summary: Elimina una universidad por ID
+ *     summary: Elimina una universidad por ID (Solo Admin)
  *     tags: [Universidades]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: universidadId
@@ -142,9 +165,13 @@ router.patch('/:universidadId', ValidateJoi(Schemas.universidad.update), control
  *     responses:
  *       200:
  *         description: OK
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       404:
  *         description: No encontrado
  */
-router.delete('/:universidadId', controller.deleteUniversidad);
+router.delete('/:universidadId', authenticateToken, checkRole(['admin']), controller.deleteUniversidad);
 
 export default router;

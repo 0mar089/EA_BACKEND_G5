@@ -1,11 +1,9 @@
 import express from 'express';
-import controller from '../controllers/usuario.controller';
+import controller from '../controllers/usuario';
 import { Schemas, ValidateJoi } from '../middleware/Joi';
+import { authenticateToken, checkRole } from '../middleware/auth';
 
 const router = express.Router();
-
-// Nota: He comentado authenticateToken porque aún no existe el middleware / middleware/auth.ts
-// import { authenticateToken } from '../middleware/auth';
 
 /**
  * @openapi
@@ -68,8 +66,10 @@ const router = express.Router();
  * @openapi
  * /usuarios:
  *   post:
- *     summary: Crea un usuario
+ *     summary: Crea un usuario (Solo Admin)
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -79,17 +79,23 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Creado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.post('/', ValidateJoi(Schemas.usuario.create), controller.createUsuario);
+router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.usuario.create), controller.createUsuario);
 
 /**
  * @openapi
  * /usuarios/{usuarioId}:
  *   get:
- *     summary: Obtiene un usuario por ID
+ *     summary: Obtiene un usuario por ID (Cualquier Usuario)
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: usuarioId
@@ -100,29 +106,37 @@ router.post('/', ValidateJoi(Schemas.usuario.create), controller.createUsuario);
  *     responses:
  *       200:
  *         description: OK
+ *       401:
+ *         description: No autorizado
  *       404:
  *         description: No encontrado
  */
-router.get('/:usuarioId', controller.readUsuario);
+router.get('/:usuarioId', authenticateToken, controller.readUsuario);
 
 /**
  * @openapi
  * /usuarios:
  *   get:
- *     summary: Lista todos los usuarios
+ *     summary: Lista todos los usuarios (Cualquier Usuario)
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: OK
+ *       401:
+ *         description: No autorizado
  */
-router.get('/', controller.readAll);
+router.get('/', authenticateToken, controller.readAll);
 
 /**
  * @openapi
  * /usuarios/{usuarioId}:
  *   patch:
- *     summary: Actualiza un usuario por ID
+ *     summary: Actualiza un usuario por ID (Solo Admin)
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: usuarioId
@@ -139,20 +153,26 @@ router.get('/', controller.readAll);
  *     responses:
  *       201:
  *         description: Actualizado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       404:
  *         description: No encontrado
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.patch('/:usuarioId', ValidateJoi(Schemas.usuario.update), controller.updateUsuario);
+router.patch('/:usuarioId', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.usuario.update), controller.updateUsuario);
 
 /**
  * @openapi
  * /usuarios/{usuarioId}/soft-delete:
  *   patch:
- *     summary: Desactiva un usuario (soft delete)
+ *     summary: Desactiva un usuario (soft delete) (Solo Admin)
  *     description: Marca la cuenta como inactiva (activo=false) sin eliminar el documento de la BD.
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: usuarioId
@@ -163,18 +183,24 @@ router.patch('/:usuarioId', ValidateJoi(Schemas.usuario.update), controller.upda
  *     responses:
  *       200:
  *         description: Cuenta desactivada correctamente
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       404:
  *         description: No encontrado
  */
-router.patch('/:usuarioId/soft-delete', controller.softDeleteUsuario);
+router.patch('/:usuarioId/soft-delete', authenticateToken, checkRole(['admin']), controller.softDeleteUsuario);
 
 /**
  * @openapi
  * /usuarios/{usuarioId}/recovery:
  *   patch:
- *     summary: Reactiva un usuario (recovery)
+ *     summary: Reactiva un usuario (recovery) (Solo Admin)
  *     description: Vuelve a activar la cuenta (activo=true).
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: usuarioId
@@ -185,18 +211,24 @@ router.patch('/:usuarioId/soft-delete', controller.softDeleteUsuario);
  *     responses:
  *       200:
  *         description: Cuenta recuperada correctamente
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       404:
  *         description: No encontrado
  */
-router.patch('/:usuarioId/recovery', controller.recoveryUsuario);
+router.patch('/:usuarioId/recovery', authenticateToken, checkRole(['admin']), controller.recoveryUsuario);
 
 /**
  * @openapi
  * /usuarios/{usuarioId}:
  *   delete:
- *     summary: Elimina un usuario permanentemente (hard delete)
+ *     summary: Elimina un usuario permanentemente (hard delete) (Solo Admin)
  *     description: Elimina el documento del usuario definitivamente de la base de datos.
  *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: usuarioId
@@ -207,9 +239,13 @@ router.patch('/:usuarioId/recovery', controller.recoveryUsuario);
  *     responses:
  *       200:
  *         description: OK
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Prohibido (No es admin)
  *       404:
  *         description: No encontrado
  */
-router.delete('/:usuarioId', controller.hardDeleteUsuario);
+router.delete('/:usuarioId', authenticateToken, checkRole(['admin']), controller.hardDeleteUsuario);
 
 export default router;

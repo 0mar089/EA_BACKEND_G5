@@ -2,12 +2,14 @@ import express from 'express';
 import http from 'http';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { config } from './config/config';
 import Logging from './library/Logging';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger';
 import usuarioRoutes from './routes/Usuario';
 import universidadRoutes from './routes/Universidad';
+import authRoutes from './routes/auth';
 
 const router = express();
 
@@ -41,6 +43,7 @@ const StartServer = () => {
     router.use(express.json());
 
     /** Rules of our API */
+    router.use(cookieParser());
     router.use(cors());
 
     /** Swagger */
@@ -49,6 +52,7 @@ const StartServer = () => {
     /** Routes */
     router.use('/usuarios', usuarioRoutes);
     router.use('/universidades', universidadRoutes);
+    router.use('/auth', authRoutes);
 
 
     /** Healthcheck */

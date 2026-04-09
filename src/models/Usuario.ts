@@ -64,7 +64,19 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
     },
     {
         timestamps: true,
-        versionKey: false
+        versionKey: false,
+        toJSON: {
+            transform: (doc, ret) => {
+                delete ret.password;
+                return ret;
+            }
+        },
+        toObject: {
+            transform: (doc, ret) => {
+                delete ret.password;
+                return ret;
+            }
+        }
     }
 );
 

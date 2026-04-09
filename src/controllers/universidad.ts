@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import UniversidadService from '../services/universidad.service';
+import UniversidadService from '../services/universidad';
 
 const createUniversidad = async (req: Request, res: Response, next: NextFunction) => {
     try {
