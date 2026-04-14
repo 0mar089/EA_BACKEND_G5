@@ -1,30 +1,47 @@
 import { NextFunction, Request, Response } from 'express';
+import { AuthRequest } from '../middleware/auth';
 import UsuarioService from '../services/usuario';
 
 const createUsuario = async (req: Request, res: Response, next: NextFunction) => {
-   
+
     try {
-       const savedUsuario = await UsuarioService.createUsuario(req.body);
+        const savedUsuario = await UsuarioService.createUsuario(req.body);
         return res.status(201).json(savedUsuario);
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-const readUsuario = async (req: Request, res: Response, next: NextFunction) => {
+const readUsuario = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const usuarioId = req.params.usuarioId;
 
     try {
-        const usuario = await UsuarioService.getUsuario(usuarioId);
+        const rol = req.user?.rol;
+        let usuario;
+
+        if (rol === 'admin') {
+            usuario = await UsuarioService.getUsuario(usuarioId);
+        } else {
+            usuario = await UsuarioService.getUsuarioBasic(usuarioId);
+        }
+
         return usuario ? res.status(200).json(usuario) : res.status(404).json({ message: 'not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-const readAll = async (req: Request, res: Response, next: NextFunction) => {
+const readAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const usuarios = await UsuarioService.getAllUsuarios();
+        const rol = req.user?.rol;
+        let usuarios;
+
+        if (rol === 'admin') {
+            usuarios = await UsuarioService.getAllUsuariosAdmin();
+        } else {
+            usuarios = await UsuarioService.getAllUsuarios();
+        }
+
         return res.status(200).json(usuarios);
     } catch (error) {
         return res.status(500).json({ error });

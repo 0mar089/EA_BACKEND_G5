@@ -92,7 +92,10 @@ router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.us
  * @openapi
  * /usuarios/{usuarioId}:
  *   get:
- *     summary: Obtiene un usuario por ID (Cualquier Usuario)
+ *     summary: Obtiene un usuario por ID (Respuesta varía según el rol)
+ *     description: |
+ *       - **Admin**: Obtiene todos los detalles del usuario.
+ *       - **User**: Obtiene solo nombre y universidad.
  *     tags: [Usuarios]
  *     security:
  *       - bearerAuth: []
@@ -117,7 +120,10 @@ router.get('/:usuarioId', authenticateToken, controller.readUsuario);
  * @openapi
  * /usuarios:
  *   get:
- *     summary: Lista todos los usuarios (Cualquier Usuario)
+ *     summary: Lista de usuarios (Respuesta varía según el rol)
+ *     description: |
+ *       - **Admin**: Obtiene todos los usuarios (activos e inactivos) con detalles completos.
+ *       - **User**: Obtiene solo nombres y universidad de usuarios activos.
  *     tags: [Usuarios]
  *     security:
  *       - bearerAuth: []

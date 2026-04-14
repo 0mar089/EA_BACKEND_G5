@@ -14,12 +14,17 @@ const getUniversidad = async (universidadId: string): Promise<IUniversidadModel 
     return await Universidad.findById(universidadId).populate('usuarios');
 };
 
-const getAllUniversidades = async (): Promise<IUniversidadModel[]> => {
-    return await Universidad.find().populate('usuarios');
+const getAllUniversidades = async () => {
+    const universidades = await Universidad.find().select('nombre usuarios').lean();
+    return universidades.map((uni) => ({
+        _id: uni._id,
+        nombre: uni.nombre,
+        numIntegrantes: uni.usuarios ? uni.usuarios.length : 0
+    }));
 };
 
 const updateUniversidad = async (universidadId: string, data: Partial<IUniversidad>): Promise<IUniversidadModel | null> => {
-    return await Universidad.findByIdAndUpdate(universidadId, data, { new: true }).populate('usuarios');
+    return await Universidad.findByIdAndUpdate(universidadId, data, { new: true });
 };
 
 const deleteUniversidad = async (universidadId: string): Promise<IUniversidadModel | null> => {

@@ -118,4 +118,38 @@ export const getMe = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export default { login, register, refreshToken, logout, getMe };
+/**
+ * PATCH /auth/me
+ */
+export const updateMe = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: 'No autenticado' });
+
+        const updatedUsuario = await usuarioService.updateUsuario(userId, req.body);
+        return res.status(200).json(updatedUsuario);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+/**
+ * PATCH /auth/me/soft-delete
+ */
+export const softDeleteMe = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: 'No autenticado' });
+
+        const usuario = await usuarioService.softDeleteUsuario(userId);
+        res.clearCookie(config.cookies.refreshName, { ...config.cookies.options }); // Cerrar sesión al desactivar
+        return res.status(200).json({ message: 'Cuenta desactivada correctamente', usuario });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+/**
+ * DELETE /auth/me
+ */
+export default { login, register, refreshToken, logout, getMe, updateMe, softDeleteMe };

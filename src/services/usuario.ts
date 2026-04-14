@@ -25,7 +25,15 @@ const getUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
     return await Usuario.findById(usuarioId).populate('universidad');
 };
 
+const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+    return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre');
+};
+
 const getAllUsuarios = async (): Promise<IUsuarioModel[]> => {
+    return await Usuario.find({ activo: true }).select('nombre universidad').populate('universidad', 'nombre');
+};
+
+const getAllUsuariosAdmin = async (): Promise<IUsuarioModel[]> => {
     return await Usuario.find().populate('universidad');
 };
 
@@ -84,4 +92,4 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     return await Usuario.findByIdAndDelete(usuarioId);
 };
 
-export default { createUsuario, getUsuario, getAllUsuarios, updateUsuario, softDeleteUsuario, hardDeleteUsuario, recoveryUsuario };
+export default { createUsuario, getUsuario, getUsuarioBasic, getAllUsuarios, getAllUsuariosAdmin, updateUsuario, softDeleteUsuario, hardDeleteUsuario, recoveryUsuario };
