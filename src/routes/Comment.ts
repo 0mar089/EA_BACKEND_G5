@@ -25,7 +25,7 @@ const router = express.Router();
  *         post:
  *           type: string
  *           example: "65f1c2a1b2c3d4e5f6789014"
- *         contenido:
+ *         texto:
  *           type: string
  *           example: "Buen post!"
  *
@@ -34,13 +34,13 @@ const router = express.Router();
  *       required:
  *         - usuario
  *         - post
- *         - contenido
+ *         - texto
  *       properties:
  *         usuario:
  *           type: string
  *         post:
  *           type: string
- *         contenido:
+ *         texto:
  *           type: string
  */
 

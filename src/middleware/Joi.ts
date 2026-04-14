@@ -74,6 +74,13 @@ export const Schemas = {
         })
     },
 
+    auth: {
+        login: Joi.object({
+            email: Joi.string().email().required(),
+            password: Joi.string().required()
+        })
+    },
+
     post: {
         create: Joi.object<IPost>({
             usuario: Joi.string()

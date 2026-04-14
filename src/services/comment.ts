@@ -43,26 +43,36 @@ const updateComment = async (commentId: string, data: Partial<IComment>): Promis
 };
 
 const deleteComment = async (commentId: string): Promise<ICommentModel | null> => {
-    // 1. Desvincular a todos los usuarios de este comment
-    await Usuario.updateMany({ comment: commentId }, { comment: null });
-    
-    // 2. Eliminar el comment
+    const comment = await Comment.findById(commentId);
+    if (!comment) return null;
+
+    // 1. Desvincular del Usuario
+    if (comment.usuario) {
+        await Usuario.findByIdAndUpdate(comment.usuario, { $pull: { comments: commentId } });
+    }
+
+    // 2. Desvincular del Post
+    if (comment.post) {
+        await Post.findByIdAndUpdate(comment.post, { $pull: { comments: commentId } });
+    }
+
+    // 3. Eliminar el comentario
     return await Comment.findByIdAndDelete(commentId);
 };
 
 const getAllCommentsFromPost = async (postId: string): Promise<ICommentModel[]> => {
     return await Comment.find({ post: postId }).populate('usuario', 'nombre avatarUrl');
-}
+};
 
 const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
-    // 1. Encontrar todos los comments del usuario
-    const comments = await Comment.find({ usuario: postId });
+    // 1. Encontrar todos los comments del post
+    const comments = await Comment.find({ post: postId });
     
-    // 2. Eliminar cada comment y desvincular a los usuarios
+    // 2. Eliminar cada comment y desvincular
     for (const comment of comments) {
         await deleteComment(comment._id.toString());
     }
-}
+};
 
 
 export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost };

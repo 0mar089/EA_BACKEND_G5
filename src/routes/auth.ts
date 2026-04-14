@@ -6,11 +6,7 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-// Schema de validación para login
-const loginSchema = Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().required()
-});
+// Schema de validación para login (ahora en Schemas.auth.login)
 
 /**
  * @openapi
@@ -65,7 +61,7 @@ router.post('/register', ValidateJoi(Schemas.usuario.register), register);
  *       401:
  *         description: Credenciales incorrectas
  */
-router.post('/login', ValidateJoi(loginSchema), login);
+router.post('/login', ValidateJoi(Schemas.auth.login), login);
 
 /**
  * @openapi

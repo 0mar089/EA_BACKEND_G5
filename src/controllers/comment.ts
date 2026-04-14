@@ -66,7 +66,7 @@ const deleteAllCommentsFromPost = async (req: Request, res: Response, next: Next
 
     try {
         await CommentService.deleteAllCommentsFromPost(postId);
-        return res.status(200).json({ message: 'All comments from user deleted successfully' });
+        return res.status(200).json({ message: 'All comments from post deleted successfully' });
     } catch (error) {
         return res.status(500).json({ error });
     }
