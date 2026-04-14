@@ -10,6 +10,8 @@ import { swaggerSpec } from './swagger';
 import usuarioRoutes from './routes/Usuario';
 import universidadRoutes from './routes/Universidad';
 import authRoutes from './routes/auth';
+import postRoutes from './routes/Post';
+import commentRoutes from './routes/Comment';
 
 const router = express();
 
@@ -53,6 +55,8 @@ const StartServer = () => {
     router.use('/usuarios', usuarioRoutes);
     router.use('/universidades', universidadRoutes);
     router.use('/auth', authRoutes);
+    router.use('/posts', postRoutes);
+    router.use('/comments', commentRoutes);
 
 
     /** Healthcheck */
@@ -69,7 +73,9 @@ const StartServer = () => {
         });
     });
 
-    http.createServer(router).listen(config.server.port, () =>
-        Logging.info(`Server is running on port ${config.server.port}`)
-    );
+    http.createServer(router).listen(config.server.port, () => {
+        Logging.info(`Server is running on port ${config.server.port}`);
+        Logging.info(`Swagger is running on http://localhost:${config.server.port}/api`);
+    });
+    
 };
