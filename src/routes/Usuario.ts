@@ -60,7 +60,39 @@ const router = express.Router();
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
- */
+ *     UsuarioRegister:
+ *       type: object
+ *       required:
+ *         - nombre
+ *         - email
+ *         - password
+ *       properties:
+ *         nombre:
+ *           type: string
+ *           example: "Judit"
+ *         email:
+ *           type: string
+ *           example: "judit@gmail.com"
+ *         password:
+ *           type: string
+ *           example: "password123"
+  *     UsuarioUpdateSelf:
+ *       type: object
+ *       properties:
+ *         nombre:
+ *           type: string
+ *           example: "Judit"
+ *         email:
+ *           type: string
+ *           example: "judit@gmail.com"
+ *         password:
+ *           type: string
+ *           example: "password123"
+ *         universidad:
+ *           type: string
+ *           description: ObjectId de la universidad
+ *           example: "65f1c2a1b2c3d4e5f6789013"
+  */
 
 /**
  * @openapi

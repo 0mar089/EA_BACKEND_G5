@@ -30,14 +30,14 @@ const loginSchema = Joi.object({
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UsuarioCreateUpdate'
+ *             $ref: '#/components/schemas/UsuarioRegister'
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
  *       422:
  *         description: Error de validación (Joi)
  */
-router.post('/register', ValidateJoi(Schemas.usuario.create), register);
+router.post('/register', ValidateJoi(Schemas.usuario.register), register);
 
 /**
  * @openapi
@@ -122,14 +122,14 @@ router.get('/me', authenticateToken, getMe);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UsuarioCreateUpdate'
+ *             $ref: '#/components/schemas/UsuarioUpdateSelf'
  *     responses:
  *       200:
  *         description: Perfil actualizado correctamente
  *       401:
  *         description: No autorizado
  */
-router.patch('/me', authenticateToken, updateMe);
+router.patch('/me', authenticateToken, ValidateJoi(Schemas.usuario.updateSelf), updateMe);
 
 /**
  * @openapi

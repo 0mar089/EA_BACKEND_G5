@@ -4,7 +4,7 @@ import Universidad from '../models/Universidad';
 
 const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> => {
     // Normalizamos "" a null para evitar errores de validación de ObjectId
-    if ((data as any).universidad === '') (data as any).universidad = null;
+    if (!data.universidad || data.universidad === ('' as any)) data.universidad = undefined;
 
     const usuario = new Usuario({
         _id: new mongoose.Types.ObjectId(),

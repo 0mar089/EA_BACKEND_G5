@@ -55,7 +55,7 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
         universidad: {
             type: Schema.Types.ObjectId,
             ref: 'Universidad',
-            default: "none"
+            default: null
         },
         activo: {
             type: Boolean,

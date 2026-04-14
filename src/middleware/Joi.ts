@@ -34,6 +34,14 @@ export const Schemas = {
         })
     },
     usuario: {
+        register: Joi.object<IUsuario>({
+            nombre: Joi.string().required(),
+            email: Joi.string().email().required(),
+            password: Joi.string().min(6).required(),
+            universidad: Joi.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
+                .allow('', null)
+        }),
         create: Joi.object<IUsuario>({
             nombre: Joi.string().required(),
             email: Joi.string().email().required(),
@@ -48,6 +56,14 @@ export const Schemas = {
             email: Joi.string().email(),
             password: Joi.string().min(6),
             rol: Joi.string().valid('admin', 'user'),
+            universidad: Joi.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
+                .allow('', null)
+        }),
+        updateSelf: Joi.object<IUsuario>({
+            nombre: Joi.string(),
+            email: Joi.string().email(),
+            password: Joi.string().min(6),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
