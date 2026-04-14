@@ -8,14 +8,12 @@ export const generateAccessToken = (
     userId: string,
     nombre: string,
     email: string,
-    universidad: mongoose.Types.ObjectId | string,
     rol: 'user' | 'admin'
 ) => {
     const payload: IJwtPayload = {
         id: userId,
         nombre,
         email,
-        universidad: String(universidad),
         rol
     };
     return jwt.sign(payload, config.jwt.accessSecret, {
@@ -28,14 +26,12 @@ export const generateRefreshToken = (
     userId: string,
     nombre: string,
     email: string,
-    universidad: mongoose.Types.ObjectId | string,
     rol: 'user' | 'admin'
 ) => {
     const payload: IJwtPayload = {
         id: userId,
         nombre,
         email,
-        universidad: String(universidad),
         rol
     };
     return jwt.sign(payload, config.jwt.refreshSecret, {

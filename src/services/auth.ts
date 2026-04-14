@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import Usuario, { IUsuarioModel } from '../models/Usuario';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 
@@ -19,14 +18,12 @@ export const getTokens = (usuario: IUsuarioModel) => {
         String(usuario._id),
         usuario.nombre,
         usuario.email,
-        (usuario.universidad as mongoose.Types.ObjectId) || '',
         usuario.rol
     );
     const refreshToken = generateRefreshToken(
         String(usuario._id),
         usuario.nombre,
         usuario.email,
-        (usuario.universidad as mongoose.Types.ObjectId) || '',
         usuario.rol
     );
 
