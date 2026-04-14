@@ -26,11 +26,11 @@ const getUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
 };
 
 const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre');
+    return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre ubicacion');
 };
 
 const getAllUsuarios = async (): Promise<IUsuarioModel[]> => {
-    return await Usuario.find({ activo: true }).select('nombre universidad').populate('universidad', 'nombre');
+    return await Usuario.find({ activo: true }).select('nombre universidad').populate('universidad', 'nombre ubicacion');
 };
 
 const getAllUsuariosAdmin = async (): Promise<IUsuarioModel[]> => {

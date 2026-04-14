@@ -15,10 +15,11 @@ const getUniversidad = async (universidadId: string): Promise<IUniversidadModel 
 };
 
 const getAllUniversidades = async () => {
-    const universidades = await Universidad.find().select('nombre usuarios').lean();
+    const universidades = await Universidad.find().select('nombre ubicacion usuarios').lean();
     return universidades.map((uni) => ({
         _id: uni._id,
         nombre: uni.nombre,
+        ubicacion: uni.ubicacion,
         numIntegrantes: uni.usuarios ? uni.usuarios.length : 0
     }));
 };
