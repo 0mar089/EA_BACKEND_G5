@@ -18,7 +18,7 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
         );
     }
     
-    return savedPost;
+    return savedPost.populate('usuario', 'nombre avatarUrl');
 };
 
 const getPost = async (postId: string): Promise<IPostModel | null> => {

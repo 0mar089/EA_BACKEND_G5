@@ -56,6 +56,9 @@ const router = express.Router();
  *         rol:
  *           type: string
  *           example: "user"
+ *         avatarUrl:
+ *           type: string
+ *           example: "https://ejemplo.com/foto.jpg"
  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
@@ -76,7 +79,10 @@ const router = express.Router();
  *         password:
  *           type: string
  *           example: "password123"
-  *     UsuarioUpdateSelf:
+ *         avatarUrl:
+ *           type: string
+ *           example: "https://ejemplo.com/foto.jpg"
+ *     UsuarioUpdateSelf:
  *       type: object
  *       properties:
  *         nombre:
@@ -88,6 +94,9 @@ const router = express.Router();
  *         password:
  *           type: string
  *           example: "password123"
+ *         avatarUrl:
+ *           type: string
+ *           example: "https://ejemplo.com/foto.jpg"
  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad

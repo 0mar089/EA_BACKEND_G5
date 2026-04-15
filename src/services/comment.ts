@@ -27,7 +27,7 @@ const createComment = async (data: Partial<IComment>): Promise<ICommentModel> =>
         );
     }
 
-    return savedComment;
+    return (await savedComment.populate('usuario', 'nombre avatarUrl'));
 };
 
 const getComment = async (commentId: string): Promise<ICommentModel | null> => {

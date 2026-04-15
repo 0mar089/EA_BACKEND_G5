@@ -22,6 +22,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 _id: savedUsuario._id,
                 nombre: savedUsuario.nombre,
                 email: savedUsuario.email,
+                avatarUrl: savedUsuario.avatarUrl,
                 universidad: savedUsuario.universidad,
                 rol: savedUsuario.rol
             }
@@ -55,6 +56,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                 _id: usuario._id,
                 nombre: usuario.nombre,
                 email: usuario.email,
+                avatarUrl: usuario.avatarUrl,
                 universidad: usuario.universidad,
                 rol: usuario.rol
             }

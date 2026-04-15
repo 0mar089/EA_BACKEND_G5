@@ -41,6 +41,7 @@ export const Schemas = {
             nombre: Joi.string().required(),
             email: Joi.string().email().required(),
             password: Joi.string().min(6).required(),
+            avatarUrl: Joi.string().uri().allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
@@ -50,6 +51,7 @@ export const Schemas = {
             email: Joi.string().email().required(),
             password: Joi.string().min(6).required(),
             rol: Joi.string().valid('admin', 'user').default('user'),
+            avatarUrl: Joi.string().uri().allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
@@ -60,6 +62,7 @@ export const Schemas = {
             email: Joi.string().email(),
             password: Joi.string().min(6),
             rol: Joi.string().valid('admin', 'user'),
+            avatarUrl: Joi.string().uri().allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
@@ -68,6 +71,7 @@ export const Schemas = {
             nombre: Joi.string(),
             email: Joi.string().email(),
             password: Joi.string().min(6),
+            avatarUrl: Joi.string().uri().allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
