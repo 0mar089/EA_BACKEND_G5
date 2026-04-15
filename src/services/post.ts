@@ -17,13 +17,8 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
             { $addToSet: { posts: savedPost._id } }
         );
     }
-<<<<<<< HEAD
-
-    return savedPost;
-=======
     
     return savedPost.populate('usuario', 'nombre avatarUrl');
->>>>>>> 99471d1e56fecf00fab1a31725505288f01a9ae5
 };
 
 const getPost = async (postId: string): Promise<IPostModel | null> => {
@@ -46,8 +41,16 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
 
     if (!post) return null;
 
+    // LOG DE SEGURIDAD (Míralo en tu terminal)
+    console.log(`[ACL] Intentando borrar post ${postId}`);
+    console.log(`[ACL] Autor del post: ${post.usuario}`);
+    console.log(`[ACL] Usuario solicita: ${userId} (Rol: ${userRole})`);
+
     // Validar que el usuario sea el dueño del post o un admin
-    if (post.usuario.toString() !== userId && userRole !== 'admin') {
+    const isAdmin = userRole === 'admin';
+    const isOwner = post.usuario.toString() === userId;
+
+    if (!isAdmin && !isOwner) {
         throw new Error('Forbidden');
     }
 
