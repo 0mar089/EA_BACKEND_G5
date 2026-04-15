@@ -35,10 +35,10 @@ const router = express.Router();
  *         - post
  *         - texto
  *       properties:
-         usuario:
-           type: string
-           example: "65f1c2a1b2c3d4e5f6789012"
-           description: Opcional. Solo procesado si el que llama es Admin.
+ *         usuario:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789012"
+ *           description: Opcional. Solo procesado si el que llama es Admin.
  *         post:
  *           type: string
  *           example: "65f1c2a1b2c3d4e5f6789013"

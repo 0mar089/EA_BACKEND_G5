@@ -101,7 +101,7 @@ const router = express.Router();
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
-  */
+ */
 
 /**
  * @openapi
