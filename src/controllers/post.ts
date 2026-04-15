@@ -5,10 +5,13 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
     try {
         if (!req.user) return res.status(401).json({ message: 'No autenticado' });
 
-        // Forzar que el autor del post sea el usuario autenticado (evita suplantación)
+        // Si es admin, puede elegir el autor. Si no, forzamos su propio ID.
+        const isAdmin = req.user.rol === 'admin';
+        const authorId = (isAdmin && req.body.usuario) ? req.body.usuario : req.user.id;
+
         const postData = {
             ...req.body,
-            usuario: req.user.id
+            usuario: authorId
         };
 
         const savedPost = await PostService.createPost(postData);

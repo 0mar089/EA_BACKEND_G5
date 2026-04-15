@@ -45,6 +45,10 @@ const router = express.Router();
  *     PostCreateUpdate:
  *       type: object
  *       properties:
+ *         usuario:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789012"
+ *           description: Opcional. Solo procesado si el que llama es Admin.
  *         imageUrl:
  *           type: string
  *           example: "https://images.pexels.com/photos/14424025/pexels-photo-14424025.jpeg"

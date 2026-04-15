@@ -87,6 +87,7 @@ export const Schemas = {
 
     post: {
         create: Joi.object<IPost>({
+            usuario: Joi.string().regex(/^[0-9a-fA-F]{24}$/), // Opcional, solo para admin
             imageUrl: Joi.string().uri().allow('', null),
             caption: Joi.string().max(500).allow('', null),
             comments: Joi.array()
@@ -111,6 +112,7 @@ export const Schemas = {
 
     comment: {
         create: Joi.object<IComment>({
+            usuario: Joi.string().regex(/^[0-9a-fA-F]{24}$/), // Opcional, solo para admin
             post: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .required(),
