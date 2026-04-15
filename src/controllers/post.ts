@@ -1,9 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
 import PostService from '../services/post';
 
-const createPost = async (req: Request, res: Response, next: NextFunction) => {
+const createPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const savedPost = await PostService.createPost(req.body);
+        if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+
+        // Forzar que el autor del post sea el usuario autenticado (evita suplantación)
+        const postData = {
+            ...req.body,
+            usuario: req.user.id
+        };
+
+        const savedPost = await PostService.createPost(postData);
         return res.status(201).json(savedPost);
     } catch (error) {
         return res.status(500).json({ error });
@@ -28,13 +36,19 @@ const getAllPosts = async (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-const updatePost = async (req: Request, res: Response, next: NextFunction) => {
+const updatePost = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const postId = req.params.postId;
+    const user = req.user;
+
+    if (!user) return res.status(401).json({ message: 'No autenticado' });
 
     try {
-        const post = await PostService.updatePost(postId, req.body);
+        const post = await PostService.updatePost(postId, req.body, user.id, user.rol);
         return post ? res.status(200).json(post) : res.status(404).json({ message: 'not found' });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'Forbidden') {
+            return res.status(403).json({ message: 'No tienes permiso para editar este post' });
+        }
         return res.status(500).json({ error });
     }
 };
@@ -107,3 +121,4 @@ const darleLike = async (req: Request, res: Response) => {
 };
 
 export default { createPost, getPost, getAllPosts, updatePost, deletePost, getAllPostsFromUser, deleteAllPostsFromUser, darleLike };
+import { AuthRequest } from '../middleware/auth';

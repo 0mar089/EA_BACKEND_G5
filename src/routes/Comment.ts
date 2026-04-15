@@ -32,13 +32,9 @@ const router = express.Router();
  *     CommentCreateUpdate:
  *       type: object
  *       required:
- *         - usuario
  *         - post
  *         - texto
  *       properties:
- *         usuario:
- *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789012"
  *         post:
  *           type: string
  *           example: "65f1c2a1b2c3d4e5f6789013"

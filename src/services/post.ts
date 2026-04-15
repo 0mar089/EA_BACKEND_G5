@@ -31,7 +31,15 @@ const getAllPosts = async (): Promise<IPostModel[]> => {
         .populate('usuario', 'nombre avatarUrl')
 };
 
-const updatePost = async (postId: string, data: Partial<IPost>): Promise<IPostModel | null> => {
+const updatePost = async (postId: string, data: Partial<IPost>, userId: string, userRole: string): Promise<IPostModel | null> => {
+    const post = await Post.findById(postId);
+    if (!post) return null;
+
+    // Validar que el usuario sea el dueño del post o un admin
+    if (post.usuario.toString() !== userId && userRole !== 'admin') {
+        throw new Error('Forbidden');
+    }
+
     return await Post.findByIdAndUpdate(postId, data, { new: true }).populate('usuario', 'nombre avatarUrl').populate('comments');
 };
 

@@ -1,9 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
 import CommentService from '../services/comment';
 
-const createComment = async (req: Request, res: Response, next: NextFunction) => {
+const createComment = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const savedComment = await CommentService.createComment(req.body);
+        if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+
+        // Forzar que el autor del comentario sea el usuario autenticado (evita suplantación)
+        const commentData = {
+            ...req.body,
+            usuario: req.user.id
+        };
+
+        const savedComment = await CommentService.createComment(commentData);
         return res.status(201).json(savedComment);
     } catch (error) {
         return res.status(500).json({ error });
@@ -28,24 +36,36 @@ const getAllComments = async (req: Request, res: Response, next: NextFunction) =
     }
 };
 
-const updateComment = async (req: Request, res: Response, next: NextFunction) => {
+const updateComment = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const commentId = req.params.commentId;
+    const user = req.user;
+
+    if (!user) return res.status(401).json({ message: 'No autenticado' });
 
     try {
-        const comment = await CommentService.updateComment(commentId, req.body);
+        const comment = await CommentService.updateComment(commentId, req.body, user.id, user.rol);
         return comment ? res.status(200).json(comment) : res.status(404).json({ message: 'not found' });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'Forbidden') {
+            return res.status(403).json({ message: 'No tienes permiso para editar este comentario' });
+        }
         return res.status(500).json({ error });
     }
 };
 
-const deleteComment = async (req: Request, res: Response, next: NextFunction) => {
+const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const commentId = req.params.commentId;
+    const user = req.user;
+
+    if (!user) return res.status(401).json({ message: 'No autenticado' });
 
     try {
-        const comment = await CommentService.deleteComment(commentId);
+        const comment = await CommentService.deleteComment(commentId, user.id, user.rol);
         return comment ? res.status(201).json(comment) : res.status(404).json({ message: 'not found' });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'Forbidden') {
+            return res.status(403).json({ message: 'No tienes permiso para eliminar este comentario' });
+        }
         return res.status(500).json({ error });
     }
 };
@@ -73,3 +93,4 @@ const deleteAllCommentsFromPost = async (req: Request, res: Response, next: Next
 }
 
 export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost };
+import { AuthRequest } from '../middleware/auth';

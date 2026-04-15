@@ -38,13 +38,28 @@ const getAllComments = async (): Promise<ICommentModel[]> => {
     return await Comment.find().populate('usuario', 'nombre avatarUrl');
 };
 
-const updateComment = async (commentId: string, data: Partial<IComment>): Promise<ICommentModel | null> => {
+const updateComment = async (commentId: string, data: Partial<IComment>, userId: string, userRole: string): Promise<ICommentModel | null> => {
+    const comment = await Comment.findById(commentId);
+    if (!comment) return null;
+
+    // Validar que el usuario sea el dueño del comentario o un admin
+    if (comment.usuario.toString() !== userId && userRole !== 'admin') {
+        throw new Error('Forbidden');
+    }
+
     return await Comment.findByIdAndUpdate(commentId, data, { new: true }).populate('usuario', 'nombre avatarUrl');
 };
 
-const deleteComment = async (commentId: string): Promise<ICommentModel | null> => {
+const deleteComment = async (commentId: string, userId?: string, userRole?: string): Promise<ICommentModel | null> => {
     const comment = await Comment.findById(commentId);
     if (!comment) return null;
+
+    // Validar permisos si se proporcionan userId y userRole (petición desde controlador)
+    if (userId && userRole) {
+        if (comment.usuario.toString() !== userId && userRole !== 'admin') {
+            throw new Error('Forbidden');
+        }
+    }
 
     // 1. Desvincular del Usuario
     if (comment.usuario) {
@@ -68,7 +83,7 @@ const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
     // 1. Encontrar todos los comments del post
     const comments = await Comment.find({ post: postId });
 
-    // 2. Eliminar cada comment y desvincular
+    // 2. Eliminar cada comment y desvincular (sin pasar userId para saltar el check de permisos)
     for (const comment of comments) {
         await deleteComment(comment._id.toString());
     }
