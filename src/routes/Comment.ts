@@ -24,7 +24,7 @@ const router = express.Router();
  *           example: "65f1c2a1b2c3d4e5f6789012"
  *         post:
  *           type: string
- *           example: "https://www.nutrisslovers.com/gatos/blog-cat-lovers/etapas-del-desarrollo-de-un-gatito"
+ *           example: "65f1c2a1b2c3d4e5f6789013"
  *         texto:
  *           type: string
  *           example: "Buen post!"
@@ -41,7 +41,7 @@ const router = express.Router();
  *           example: "65f1c2a1b2c3d4e5f6789012"
  *         post:
  *           type: string
- *           example: "https://www.nutrisslovers.com/gatos/blog-cat-lovers/etapas-del-desarrollo-de-un-gatito"
+ *           example: "65f1c2a1b2c3d4e5f6789013"
  *         texto:
  *           type: string
  *           example: "Buen post!"

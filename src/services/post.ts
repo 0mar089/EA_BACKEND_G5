@@ -17,8 +17,13 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
             { $addToSet: { posts: savedPost._id } }
         );
     }
+<<<<<<< HEAD
 
     return savedPost;
+=======
+    
+    return savedPost.populate('usuario', 'nombre avatarUrl');
+>>>>>>> 99471d1e56fecf00fab1a31725505288f01a9ae5
 };
 
 const getPost = async (postId: string): Promise<IPostModel | null> => {
