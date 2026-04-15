@@ -114,7 +114,7 @@ export const Schemas = {
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .required(),
             post: Joi.string()
-                .uri()
+                .regex(/^[0-9a-fA-F]{24}$/)
                 .required(),
             texto: Joi.string().max(300).required()
         }),
@@ -122,6 +122,6 @@ export const Schemas = {
         update: Joi.object<IComment>({
             texto: Joi.string().max(300)
         })
-        
+
     }
 };
