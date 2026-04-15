@@ -61,7 +61,7 @@ const deletePost = async (req: Request, res: Response) => {
         const post = await PostService.deletePost(
             postId,
             user.id,
-            user.role
+            user.rol
         );
 
         return post
