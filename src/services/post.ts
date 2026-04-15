@@ -17,7 +17,7 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
             { $addToSet: { posts: savedPost._id } }
         );
     }
-    
+
     return savedPost;
 };
 
