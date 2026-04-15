@@ -24,11 +24,27 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
 const getPost = async (postId: string): Promise<IPostModel | null> => {
     return await Post.findById(postId)
         .populate('usuario', 'nombre avatarUrl')
+        .populate({
+          path: 'comments',
+          select: 'texto usuario',
+          populate: {
+            path: 'usuario',
+            select: 'nombre avatarUrl'
+          }
+        });
 };
 
 const getAllPosts = async (): Promise<IPostModel[]> => {
     return await Post.find()
         .populate('usuario', 'nombre avatarUrl')
+        .populate({
+          path: 'comments',
+          select: 'texto usuario',
+          populate: {
+            path: 'usuario',
+            select: 'nombre avatarUrl'
+          }
+        });
 };
 
 const updatePost = async (postId: string, data: Partial<IPost>, userId: string, userRole: string): Promise<IPostModel | null> => {
