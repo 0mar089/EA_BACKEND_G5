@@ -114,7 +114,7 @@ export const Schemas = {
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .required(),
             post: Joi.string()
-                .regex(/^[0-9a-fA-F]{24}$/)
+                .uri()
                 .required(),
             texto: Joi.string().max(300).required()
         }),

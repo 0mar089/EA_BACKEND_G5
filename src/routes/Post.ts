@@ -18,10 +18,10 @@ const router = express.Router();
  *       properties:
  *         _id:
  *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789012"
+ *           example: "65f1c2a1b2c3d4e5f6789013"
  *         usuario:
  *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789013"
+ *           example: "65f1c2a1b2c3d4e5f6789012"
  *         imageUrl:
  *           type: string
  *           example: "https://images.pexels.com/photos/14424025/pexels-photo-14424025.jpeg"
@@ -39,6 +39,8 @@ const router = express.Router();
  *           type: array
  *           items:
  *             type: string
+ *           example:
+ *             - "65f1c2a1b2c3d4e5f6789015"
  *
  *     PostCreateUpdate:
  *       type: object
@@ -47,10 +49,13 @@ const router = express.Router();
  *       properties:
  *         usuario:
  *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789012"
  *         imageUrl:
  *           type: string
+ *           example: "https://images.pexels.com/photos/14424025/pexels-photo-14424025.jpeg"
  *         caption:
  *           type: string
+ *           example: "Mi primer post"
  */
 
 /**

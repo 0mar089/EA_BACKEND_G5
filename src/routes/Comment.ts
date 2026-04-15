@@ -18,13 +18,13 @@ const router = express.Router();
  *       properties:
  *         _id:
  *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789012"
+ *           example: "65f1c2a1b2c3d4e5f6789015"
  *         usuario:
  *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789013"
+ *           example: "65f1c2a1b2c3d4e5f6789012"
  *         post:
  *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789014"
+ *           example: "https://www.nutrisslovers.com/gatos/blog-cat-lovers/etapas-del-desarrollo-de-un-gatito"
  *         texto:
  *           type: string
  *           example: "Buen post!"
@@ -38,10 +38,13 @@ const router = express.Router();
  *       properties:
  *         usuario:
  *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789012"
  *         post:
  *           type: string
+ *           example: "https://www.nutrisslovers.com/gatos/blog-cat-lovers/etapas-del-desarrollo-de-un-gatito"
  *         texto:
  *           type: string
+ *           example: "Buen post!"
  */
 
 /**

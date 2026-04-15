@@ -19,8 +19,8 @@ const createComment = async (data: Partial<IComment>): Promise<ICommentModel> =>
         );
     }
 
-    // Vincular comentario al post
-    if (savedComment.post) {
+    // Vincular comentario al post (solo si es un ObjectId válido)
+    if (savedComment.post && mongoose.Types.ObjectId.isValid(savedComment.post)) {
         await Post.findByIdAndUpdate(
             savedComment.post,
             { $addToSet: { comments: savedComment._id } }
@@ -51,8 +51,8 @@ const deleteComment = async (commentId: string): Promise<ICommentModel | null> =
         await Usuario.findByIdAndUpdate(comment.usuario, { $pull: { comments: commentId } });
     }
 
-    // 2. Desvincular del Post
-    if (comment.post) {
+    // 2. Desvincular del Post (solo si es un ObjectId válido)
+    if (comment.post && mongoose.Types.ObjectId.isValid(comment.post)) {
         await Post.findByIdAndUpdate(comment.post, { $pull: { comments: commentId } });
     }
 
