@@ -4,6 +4,7 @@ import { IUniversidad } from '../models/Universidad';
 import { IUsuario } from '../models/Usuario';
 import { IPost } from '../models/Post';
 import { IComment } from '../models/Comment';
+import { IGrado } from '../models/Grado';
 import Logging from '../library/Logging';
 
 export const ValidateJoi = (schema: ObjectSchema) => {
@@ -133,5 +134,17 @@ export const Schemas = {
             texto: Joi.string().max(300)
         })
 
+    },
+    grado: {
+        create: Joi.object<IGrado>({
+            nombre: Joi.string().required(),
+            asignaturas: Joi.array().items(Joi.string()).default([]),
+            universidad: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()
+        }),
+        update: Joi.object<IGrado>({
+            nombre: Joi.string(),
+            asignaturas: Joi.array().items(Joi.string()),
+            universidad: Joi.string().regex(/^[0-9a-fA-F]{24}$/)
+        })
     }
 };
