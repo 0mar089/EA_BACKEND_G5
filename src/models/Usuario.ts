@@ -8,11 +8,14 @@ export interface IUsuario {
     email: string;
     password: string;
     avatarUrl?: string;
+    descripcion?: string;
     rol: 'admin' | 'user';
     universidad?: Types.ObjectId;
     activo: boolean;
     posts?: Types.ObjectId[];
     comments?: Types.ObjectId[];
+    seguidores?: Types.ObjectId[];
+    seguidos?: Types.ObjectId[];
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -52,6 +55,11 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
             default: 'https://api.dicebear.com/7.x/avataaars/svg?seed=default-avatar',
             trim: true
         },
+        descripcion: {
+            type: String,
+            default: '',
+            trim: true
+        },
         rol: {
             type: String,
             enum: {
@@ -77,6 +85,16 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
         comments: {
             type: [Schema.Types.ObjectId],
             ref: 'Comment',
+            default: []
+        },
+        seguidores: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Usuario',
+            default: []
+        },
+        seguidos: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Usuario',
             default: []
         }
     },

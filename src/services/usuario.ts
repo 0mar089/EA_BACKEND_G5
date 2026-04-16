@@ -131,17 +131,102 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     );
     console.log(`[CLEANUP] Limpiados likes en ${likesCleanup.modifiedCount} posts.`);
 
-    // 4. Desvincular de la universidad (si existe)
+    // 5. Limpiar referencias de seguidores/seguidos
+    // Quitar al usuario de la lista de 'seguidos' de otros (el usuario era su seguidor)
+    await Usuario.updateMany(
+        { seguidos: usuarioId },
+        { $pull: { seguidos: usuarioId } }
+    );
+    // Quitar al usuario de la lista de 'seguidores' de otros (el usuario les seguía)
+    await Usuario.updateMany(
+        { seguidores: usuarioId },
+        { $pull: { seguidores: usuarioId } }
+    );
+    console.log(`[CLEANUP] Limpiadas referencias de seguidores y seguidos.`);
+
+    // 6. Desvincular de la universidad (si existe)
     if (usuario.universidad) {
         await Universidad.findByIdAndUpdate(usuario.universidad, { $pull: { usuarios: usuario._id } });
         console.log(`[CLEANUP] Usuario desvinculado de la universidad.`);
     }
 
-    // 5. Eliminar el usuario definitivamente
+    // 7. Eliminar el usuario definitivamente
     const deletedUser = await Usuario.findByIdAndDelete(usuarioId);
     console.log(`[CLEANUP] Usuario ${usuarioId} eliminado permanentemente.`);
     
     return deletedUser;
 };
 
-export default { createUsuario, getUsuario, getUsuarioBasic, getAllUsuarios, getAllUsuariosAdmin, updateUsuario, softDeleteUsuario, hardDeleteUsuario, recoveryUsuario };
+const toggleFollow = async (userId: string, targetId: string): Promise<IUsuarioModel | null> => {
+    if (userId === targetId) throw new Error('No puedes seguirte a ti mismo');
+
+    const user = await Usuario.findById(userId);
+    const target = await Usuario.findById(targetId);
+
+    if (!user || !target) throw new Error('Usuario no encontrado');
+
+    const alreadyFollowing = user.seguidos?.some(id => id.toString() === targetId);
+
+    if (alreadyFollowing) {
+        // Unfollow
+        await Usuario.findByIdAndUpdate(userId, { $pull: { seguidos: targetId } });
+        await Usuario.findByIdAndUpdate(targetId, { $pull: { seguidores: userId } });
+    } else {
+        // Follow
+        await Usuario.findByIdAndUpdate(userId, { $addToSet: { seguidos: targetId } });
+        await Usuario.findByIdAndUpdate(targetId, { $addToSet: { seguidores: userId } });
+    }
+
+    return await Usuario.findById(userId).populate('seguidos seguidores', 'nombre avatarUrl');
+};
+
+const getFollowers = async (userId: string): Promise<IUsuarioModel | null> => {
+    return await Usuario.findById(userId).select('seguidores').populate('seguidores', 'nombre email avatarUrl');
+};
+
+const getFollowing = async (userId: string): Promise<IUsuarioModel | null> => {
+    return await Usuario.findById(userId).select('seguidos').populate('seguidos', 'nombre email avatarUrl');
+};
+
+const removeFollower = async (userId: string, followerId: string, requesterId: string, requesterRole: string): Promise<IUsuarioModel | null> => {
+    if (userId !== requesterId && requesterRole !== 'admin') {
+        throw new Error('Forbidden');
+    }
+
+    // El usuario (userId) elimina a alguien (followerId) de su lista de seguidores
+    await Usuario.findByIdAndUpdate(userId, { $pull: { seguidores: followerId } });
+    // Al seguidor se le quita de su lista de seguidos al usuario
+    await Usuario.findByIdAndUpdate(followerId, { $pull: { seguidos: userId } });
+
+    return await Usuario.findById(userId).populate('seguidores', 'nombre avatarUrl');
+};
+
+const unfollowUser = async (userId: string, targetId: string, requesterId: string, requesterRole: string): Promise<IUsuarioModel | null> => {
+    if (userId !== requesterId && requesterRole !== 'admin') {
+        throw new Error('Forbidden');
+    }
+
+    // El usuario (userId) deja de seguir a alguien (targetId)
+    await Usuario.findByIdAndUpdate(userId, { $pull: { seguidos: targetId } });
+    // Al objetivo se le quita de su lista de seguidores al usuario
+    await Usuario.findByIdAndUpdate(targetId, { $pull: { seguidores: userId } });
+
+    return await Usuario.findById(userId).populate('seguidos', 'nombre avatarUrl');
+};
+
+export default { 
+    createUsuario, 
+    getUsuario, 
+    getUsuarioBasic, 
+    getAllUsuarios, 
+    getAllUsuariosAdmin, 
+    updateUsuario, 
+    softDeleteUsuario, 
+    hardDeleteUsuario, 
+    recoveryUsuario,
+    toggleFollow,
+    getFollowers,
+    getFollowing,
+    removeFollower,
+    unfollowUser
+};
