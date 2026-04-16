@@ -31,12 +31,35 @@ const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null>
     return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre ubicacion');
 };
 
-const getAllUsuarios = async (): Promise<IUsuarioModel[]> => {
-    return await Usuario.find({ activo: true }).select('nombre universidad').populate('universidad', 'nombre ubicacion');
+const getAllUsuarios = async (search?: string, universidadId?: string): Promise<IUsuarioModel[]> => {
+    const query: any = { activo: true };
+
+    if (search) {
+        query.nombre = { $regex: search, $options: "i" };
+    }
+
+    if (universidadId) {
+        query.universidad = universidadId;
+    }
+
+    return await Usuario.find(query)
+        .select("nombre email avatarUrl descripcion universidad")
+        .populate("universidad", "nombre ubicacion");
 };
 
-const getAllUsuariosAdmin = async (): Promise<IUsuarioModel[]> => {
-    return await Usuario.find().populate('universidad');
+const getAllUsuariosAdmin = async (search?: string, universidadId?: string): Promise<IUsuarioModel[]> => {
+    const query: any = {};
+
+    if (search) {
+        query.nombre = { $regex: search, $options: "i" };
+    }
+
+    if (universidadId) {
+        query.universidad = universidadId;
+    }
+    
+    return await Usuario.find(query)
+        .populate('universidad');
 };
 
 const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promise<IUsuarioModel | null> => {

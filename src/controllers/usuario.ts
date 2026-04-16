@@ -31,15 +31,18 @@ const readUsuario = async (req: AuthRequest, res: Response, next: NextFunction) 
     }
 };
 
-const readAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+const readAll = async (req: AuthRequest, res: Response) => {
     try {
         const rol = req.user?.rol;
+        const search = req.query.search as string | undefined;
+        const universidad = req.query.universidad as string | undefined;
+
         let usuarios;
 
         if (rol === 'admin') {
-            usuarios = await UsuarioService.getAllUsuariosAdmin();
+            usuarios = await UsuarioService.getAllUsuariosAdmin(search, universidad);
         } else {
-            usuarios = await UsuarioService.getAllUsuarios();
+            usuarios = await UsuarioService.getAllUsuarios(search, universidad);
         }
 
         return res.status(200).json(usuarios);
