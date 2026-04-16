@@ -33,10 +33,13 @@ const router = express.Router();
  *           type: boolean
  *           example: true
  *           description: Indica si la cuenta está activa (false = soft deleted)
- *         universidad:
+  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
+ *         descripcion:
+ *           type: string
+ *           example: "Estudiante de Ingeniería y amante del café ☕"
  *     UsuarioCreateUpdate:
  *       type: object
  *       required:
@@ -59,6 +62,9 @@ const router = express.Router();
  *         avatarUrl:
  *           type: string
  *           example: "https://ejemplo.com/foto.jpg"
+ *         descripcion:
+ *           type: string
+ *           example: "Estudiante de Ingeniería y amante del café ☕"
  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
@@ -97,6 +103,9 @@ const router = express.Router();
  *         avatarUrl:
  *           type: string
  *           example: "https://ejemplo.com/foto.jpg"
+ *         descripcion:
+ *           type: string
+ *           example: "Estudiante de Ingeniería y amante del café ☕"
  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
@@ -294,5 +303,107 @@ router.patch('/:usuarioId/recovery', authenticateToken, checkRole(['admin']), co
  *         description: No encontrado
  */
 router.delete('/:usuarioId', authenticateToken, checkRole(['admin']), controller.hardDeleteUsuario);
+
+/**
+ * @openapi
+ * /usuarios/follow/{targetId}:
+ *   post:
+ *     summary: Sigue o deja de seguir a un usuario (Toggle)
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: targetId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.post('/follow/:targetId', authenticateToken, controller.toggleFollow);
+
+/**
+ * @openapi
+ * /usuarios/followers/{usuarioId}:
+ *   get:
+ *     summary: Obtiene la lista de seguidores de un usuario
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.get('/followers/:usuarioId', authenticateToken, controller.getFollowers);
+
+/**
+ * @openapi
+ * /usuarios/following/{usuarioId}:
+ *   get:
+ *     summary: Obtiene la lista de usuarios seguidos por un usuario
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.get('/following/:usuarioId', authenticateToken, controller.getFollowing);
+
+/**
+ * @openapi
+ * /usuarios/{usuarioId}/followers/{followerId}:
+ *   delete:
+ *     summary: Elimina a un seguidor (Solo Admin o el usuario dueño del perfil)
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *       - in: path
+ *         name: followerId
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.delete('/:usuarioId/followers/:followerId', authenticateToken, controller.removeFollower);
+
+/**
+ * @openapi
+ * /usuarios/{usuarioId}/following/{targetId}:
+ *   delete:
+ *     summary: Deja de seguir a un usuario (Solo Admin o el usuario dueño)
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *       - in: path
+ *         name: targetId
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.delete('/:usuarioId/following/:targetId', authenticateToken, controller.unfollowUser);
 
 export default router;

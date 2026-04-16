@@ -52,9 +52,12 @@ export const Schemas = {
             password: Joi.string().min(6).required(),
             rol: Joi.string().valid('admin', 'user').default('user'),
             avatarUrl: Joi.string().uri().allow('', null),
+            descripcion: Joi.string().max(500).allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
-                .allow('', null)
+                .allow('', null),
+            seguidores: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([]),
+            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([])
         }),
 
         update: Joi.object<IUsuario>({
@@ -63,18 +66,25 @@ export const Schemas = {
             password: Joi.string().min(6),
             rol: Joi.string().valid('admin', 'user'),
             avatarUrl: Joi.string().uri().allow('', null),
+            descripcion: Joi.string().max(50).allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
-                .allow('', null)
+                .allow('', null),
+            seguidores: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
         }),
         updateSelf: Joi.object<IUsuario>({
             nombre: Joi.string(),
             email: Joi.string().email(),
             password: Joi.string().min(6),
             avatarUrl: Joi.string().uri().allow('', null),
+            descripcion: Joi.string().max(500).allow('', null),
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
+        }),
+        follow: Joi.object({
+            targetId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()
         })
     },
 
