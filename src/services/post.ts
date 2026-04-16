@@ -78,8 +78,20 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
         throw new Error('Forbidden');
     }
 
-    //  borrar comentarios del post
-    await Comment.deleteMany({ post: postId });
+    // 1. Encontrar todos los comentarios del post para limpiar referencias en usuarios
+    const postComments = await Comment.find({ post: postId });
+    const commentIds = postComments.map(c => c._id);
+
+    if (commentIds.length > 0) {
+        // 2. Quitar las referencias de estos comentarios de los perfiles de los usuarios
+        await Usuario.updateMany(
+            { comments: { $in: commentIds } },
+            { $pull: { comments: { $in: commentIds } } }
+        );
+        // 3. Borrar comentarios del post físicamente
+        await Comment.deleteMany({ post: postId });
+        console.log(`[CLEANUP] Eliminados ${commentIds.length} comentarios del post ${postId} y sus referencias de usuarios.`);
+    }
 
     //  quitar post del usuario
     await Usuario.updateMany(
@@ -100,14 +112,26 @@ const getAllPostsFromUser = async (userId: string): Promise<IPostModel[]> => {
 
 const deleteAllPostsFromUser = async (userId: string): Promise<void> => {
     const posts = await Post.find({ usuario: userId });
-
     const postIds = posts.map(p => p._id);
 
-    // borrar comentarios en batch
-    await Comment.deleteMany({ post: { $in: postIds } });
+    if (postIds.length > 0) {
+        // 1. Encontrar todos los comentarios vinculados a esos posts
+        const comments = await Comment.find({ post: { $in: postIds } });
+        const commentIds = comments.map(c => c._id);
 
-    // borrar posts en batch
-    await Post.deleteMany({ usuario: userId });
+        if (commentIds.length > 0) {
+            // 2. Limpiar referencias de esos comentarios en todos los usuarios
+            await Usuario.updateMany(
+                { comments: { $in: commentIds } },
+                { $pull: { comments: { $in: commentIds } } }
+            );
+            // 3. Borrar comentarios físicos
+            await Comment.deleteMany({ post: { $in: postIds } });
+        }
+
+        // 4. Borrar posts físicos
+        await Post.deleteMany({ usuario: userId });
+    }
 
     // limpiar usuario
     await Usuario.updateOne(

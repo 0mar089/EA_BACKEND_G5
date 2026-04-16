@@ -97,6 +97,17 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     const userPostIds = userPosts.map(p => p._id);
     
     if (userPostIds.length > 0) {
+        // Encontramos todos los comentarios de esos posts para limpiar referencias en otros usuarios
+        const commentsInPosts = await Comment.find({ post: { $in: userPostIds } });
+        const commentIdsInPosts = commentsInPosts.map(c => c._id);
+        
+        if (commentIdsInPosts.length > 0) {
+            await Usuario.updateMany(
+                { comments: { $in: commentIdsInPosts } },
+                { $pull: { comments: { $in: commentIdsInPosts } } }
+            );
+        }
+
         const deletedCommentsCount = await Comment.deleteMany({ post: { $in: userPostIds } });
         const deletedPostsCount = await Post.deleteMany({ usuario: usuarioId });
         console.log(`[CLEANUP] Eliminados ${deletedPostsCount.deletedCount} posts y ${deletedCommentsCount.deletedCount} comentarios de esos posts.`);
