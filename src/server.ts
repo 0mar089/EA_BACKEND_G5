@@ -12,6 +12,7 @@ import universidadRoutes from './routes/Universidad';
 import authRoutes from './routes/auth';
 import postRoutes from './routes/Post';
 import commentRoutes from './routes/Comment';
+import statsRoutes from './routes/Stats';
 
 const router = express();
 
@@ -57,6 +58,7 @@ const StartServer = () => {
     router.use('/auth', authRoutes);
     router.use('/posts', postRoutes);
     router.use('/comments', commentRoutes);
+    router.use('/stats', statsRoutes);
 
 
     /** Healthcheck */
