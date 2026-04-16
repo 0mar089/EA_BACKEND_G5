@@ -14,6 +14,7 @@ import postRoutes from './routes/Post';
 import commentRoutes from './routes/Comment';
 import statsRoutes from './routes/Stats';
 import reportRoutes from './routes/Report';
+import gradoRoutes from './routes/Grado';
 
 const router = express();
 
@@ -61,6 +62,7 @@ const StartServer = () => {
     router.use('/comments', commentRoutes);
     router.use('/stats', statsRoutes);
     router.use('/reports', reportRoutes);
+    router.use('/grados', gradoRoutes);
 
 
     /** Healthcheck */
