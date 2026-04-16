@@ -55,13 +55,15 @@ router.get('/universities', controller.readUniversityCount);
  */
 router.get('/posts', controller.readPostCount);
 
+router.get('/comments', controller.readCommentCount);
+
 /**
  * @openapi
- * /stats/comments:
+ * /stats/reports:
  *   get:
- *     summary: Conteo de comentarios (Solo Admin)
+ *     summary: Conteo de reportes (Solo Admin)
  *     tags: [Stats]
  */
-router.get('/comments', controller.readCommentCount);
+router.get('/reports', controller.readReportStats);
 
 export default router;

@@ -13,6 +13,7 @@ import authRoutes from './routes/auth';
 import postRoutes from './routes/Post';
 import commentRoutes from './routes/Comment';
 import statsRoutes from './routes/Stats';
+import reportRoutes from './routes/Report';
 
 const router = express();
 
@@ -59,6 +60,7 @@ const StartServer = () => {
     router.use('/posts', postRoutes);
     router.use('/comments', commentRoutes);
     router.use('/stats', statsRoutes);
+    router.use('/reports', reportRoutes);
 
 
     /** Healthcheck */

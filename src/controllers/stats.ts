@@ -14,6 +14,7 @@ const readGlobalStats = async (req: Request, res: Response, next: NextFunction) 
                 universities: 0, 
                 posts: 0, 
                 comments: 0,
+                reports: 0,
                 dbStatus: 'offline' 
             });
         }
@@ -61,10 +62,20 @@ const readCommentCount = async (req: Request, res: Response, next: NextFunction)
     }
 };
 
+const readReportStats = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const stats = await StatsService.getReportStats();
+        return res.status(200).json(stats);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
 export default {
     readGlobalStats,
     readUserCount,
     readUniversityCount,
     readPostCount,
-    readCommentCount
+    readCommentCount,
+    readReportStats
 };
