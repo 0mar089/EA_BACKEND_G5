@@ -35,14 +35,14 @@ const readAll = async (req: AuthRequest, res: Response) => {
     try {
         const rol = req.user?.rol;
         const search = req.query.search as string | undefined;
-        const universidad = req.query.universidad as string | undefined;
+        const universidades = req.query.universidades as string | undefined;
 
         let usuarios;
 
         if (rol === 'admin') {
-            usuarios = await UsuarioService.getAllUsuariosAdmin(search, universidad);
+            usuarios = await UsuarioService.getAllUsuariosAdmin(search, universidades);
         } else {
-            usuarios = await UsuarioService.getAllUsuarios(search, universidad);
+            usuarios = await UsuarioService.getAllUsuarios(search, universidades);
         }
 
         return res.status(200).json(usuarios);

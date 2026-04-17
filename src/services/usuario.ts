@@ -31,34 +31,56 @@ const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null>
     return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre ubicacion');
 };
 
-const getAllUsuarios = async (search?: string, universidadId?: string): Promise<IUsuarioModel[]> => {
-    const query: any = { activo: true };
+const getAllUsuarios = async (search?: string, universidades?: string): Promise<IUsuarioModel[]> => {
+    const filter: any = { activo: true };
+
 
     if (search) {
-        query.nombre = { $regex: search, $options: "i" };
+        filter.nombre = { $regex: search, $options: "i" };
     }
 
-    if (universidadId) {
-        query.universidad = universidadId;
+    if (universidades) {
+        let uniArray: string[] = [];
+
+        if (typeof universidades === "string") {
+            uniArray = universidades.split(",");
+        } else if (Array.isArray(universidades)) {
+            uniArray = universidades;
+        }
+
+        filter.universidad = {
+            $in: uniArray.map(id => new mongoose.Types.ObjectId(id))
+        };
     }
 
-    return await Usuario.find(query)
+    return await Usuario.find(filter)
         .select("nombre email avatarUrl descripcion universidad")
         .populate("universidad", "nombre ubicacion");
 };
 
-const getAllUsuariosAdmin = async (search?: string, universidadId?: string): Promise<IUsuarioModel[]> => {
-    const query: any = {};
+const getAllUsuariosAdmin = async (search?: string, universidades?: string): Promise<IUsuarioModel[]> => {
+    const filter: any = {};
+
 
     if (search) {
-        query.nombre = { $regex: search, $options: "i" };
+        filter.nombre = { $regex: search, $options: "i" };
     }
 
-    if (universidadId) {
-        query.universidad = universidadId;
+    if (universidades) {
+        let uniArray: string[] = [];
+
+        if (typeof universidades === "string") {
+            uniArray = universidades.split(",");
+        } else if (Array.isArray(universidades)) {
+            uniArray = universidades;
+        }
+
+        filter.universidad = {
+            $in: uniArray.map(id => new mongoose.Types.ObjectId(id))
+        };
     }
     
-    return await Usuario.find(query)
+    return await Usuario.find(filter)
         .populate('universidad');
 };
 
