@@ -8,6 +8,7 @@
         "prestart": "npm run build",
         "build": "tsc",
         "dev": "tsc && node build/server.js",
+        "seed": "ts-node src/scripts/seed.ts",
         "postinstall": "tsc"
     },
     "author": "",
@@ -33,6 +34,7 @@
         "@types/jsonwebtoken": "^9.0.10",
         "@types/swagger-jsdoc": "^6.0.4",
         "@types/swagger-ui-express": "^4.1.8",
+        "ts-node": "^10.9.2",
         "typescript": "^4.5.5"
     }
 }
