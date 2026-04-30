@@ -18,6 +18,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
         return res.status(201).json({
             message: 'Usuario registrado exitosamente',
             accessToken,
+            refreshToken,
             usuario: {
                 _id: savedUsuario._id,
                 nombre: savedUsuario.nombre,
@@ -52,6 +53,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         return res.status(200).json({
             message: 'Login exitoso',
             accessToken,
+            refreshToken,
             usuario: {
                 _id: usuario._id,
                 nombre: usuario.nombre,
@@ -83,7 +85,8 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
         return res.status(200).json({
             message: 'Token refrescado',
-            accessToken
+            accessToken,
+            refreshToken: newRefreshToken
         });
     } catch (error) {
         return res.status(401).json({ message: 'Refresh token expirado o inválido' });
