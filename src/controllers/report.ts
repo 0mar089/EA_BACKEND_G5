@@ -35,7 +35,13 @@ const readAll = async (req: Request, res: Response) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-        const reports = await ReportService.getAllReports(page, limit);
+        const search = req.query.search ? req.query.search as string : '';
+        const tipo = req.query.tipo ? req.query.tipo as string : 'all';
+        const activeOnly = req.query.activeOnly ? req.query.activeOnly as string : 'false';
+        const startDate = req.query.startDate ? req.query.startDate as string : '';
+        const endDate = req.query.endDate ? req.query.endDate as string : '';
+        
+        const reports = await ReportService.getAllReports(page, limit, search, tipo, activeOnly, startDate, endDate);
         return res.status(200).json(reports);
     } catch (error) {
         return res.status(500).json({ error });

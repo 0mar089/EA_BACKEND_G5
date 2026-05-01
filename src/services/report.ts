@@ -13,14 +13,51 @@ const getReport = async (reportId: string): Promise<IReportModel | null> => {
     return await Report.findById(reportId).populate('usuarioReporta', 'nombre email');
 };
 
-const getAllReports = async (page: number = 1, limit: number = 10): Promise<any> => {
+const getAllReports = async (
+    page: number = 1, 
+    limit: number = 10,
+    search: string = '',
+    tipo: string = 'all',
+    activeOnly: string = 'false',
+    startDate: string = '',
+    endDate: string = ''
+): Promise<any> => {
+    const query: any = {};
+
+    if (search) {
+        query.$or = [
+            { descripcion: { $regex: search, $options: 'i' } },
+            { objetivoId: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    if (tipo !== 'all') {
+        query.tipo = tipo;
+    }
+
+    if (activeOnly === 'true') {
+        query.estado = { $ne: 'resuelto' };
+    }
+
+    if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) {
+            query.createdAt.$gte = new Date(startDate);
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.createdAt.$lte = end;
+        }
+    }
+
     const options = {
         page,
         limit,
         sort: { createdAt: -1 },
         populate: { path: 'usuarioReporta', select: 'nombre email' }
     };
-    return await Report.paginate({}, options);
+    return await Report.paginate(query, options);
 };
 
 const updateReportStatus = async (reportId: string, estado: string): Promise<IReportModel | null> => {
