@@ -23,7 +23,8 @@ const readAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-        const universidades = await UniversidadService.getAllUniversidades(page, limit);
+        const search = req.query.search ? req.query.search as string : '';
+        const universidades = await UniversidadService.getAllUniversidades(page, limit, search);
         return res.status(200).json(universidades);
     } catch (error) {
         return res.status(500).json({ error });
