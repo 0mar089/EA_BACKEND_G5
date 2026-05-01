@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 export interface IComment {
     usuario: Types.ObjectId; // Referencia al usuario que hizo el comentario
@@ -33,7 +34,8 @@ export interface IComment {
     }
 )
 
-  
-const Comment = mongoose.model<ICommentModel>('Comment', CommentSchema);
+CommentSchema.plugin(mongoosePaginate);
+
+const Comment = mongoose.model<ICommentModel, mongoose.PaginateModel<ICommentModel>>('Comment', CommentSchema);
 
 export default Comment;

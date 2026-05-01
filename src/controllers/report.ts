@@ -33,7 +33,9 @@ const readReport = async (req: Request, res: Response) => {
 
 const readAll = async (req: Request, res: Response) => {
     try {
-        const reports = await ReportService.getAllReports();
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+        const reports = await ReportService.getAllReports(page, limit);
         return res.status(200).json(reports);
     } catch (error) {
         return res.status(500).json({ error });

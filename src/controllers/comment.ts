@@ -32,7 +32,9 @@ const getComment = async (req: Request, res: Response, next: NextFunction) => {
 
 const getAllComments = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const commentes = await CommentService.getAllComments();
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+        const commentes = await CommentService.getAllComments(page, limit);
         return res.status(200).json(commentes);
     } catch (error) {
         return res.status(500).json({ error });

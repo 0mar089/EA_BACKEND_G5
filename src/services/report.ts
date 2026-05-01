@@ -13,8 +13,14 @@ const getReport = async (reportId: string): Promise<IReportModel | null> => {
     return await Report.findById(reportId).populate('usuarioReporta', 'nombre email');
 };
 
-const getAllReports = async (): Promise<IReportModel[]> => {
-    return await Report.find().sort({ createdAt: -1 }).populate('usuarioReporta', 'nombre email');
+const getAllReports = async (page: number = 1, limit: number = 10): Promise<any> => {
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: { path: 'usuarioReporta', select: 'nombre email' }
+    };
+    return await Report.paginate({}, options);
 };
 
 const updateReportStatus = async (reportId: string, estado: string): Promise<IReportModel | null> => {

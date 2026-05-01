@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 export type ReportType = 'user' | 'post' | 'comment';
 
@@ -47,6 +48,8 @@ const ReportSchema: Schema<IReportModel> = new Schema(
     }
 );
 
-const Report = mongoose.model<IReportModel>('Report', ReportSchema);
+ReportSchema.plugin(mongoosePaginate);
+
+const Report = mongoose.model<IReportModel, mongoose.PaginateModel<IReportModel>>('Report', ReportSchema);
 
 export default Report;

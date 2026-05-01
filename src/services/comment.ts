@@ -34,8 +34,13 @@ const getComment = async (commentId: string): Promise<ICommentModel | null> => {
     return await Comment.findById(commentId).populate('usuario', 'nombre avatarUrl');
 };
 
-const getAllComments = async (): Promise<ICommentModel[]> => {
-    return await Comment.find().populate('usuario', 'nombre avatarUrl');
+const getAllComments = async (page: number = 1, limit: number = 10): Promise<any> => {
+    const options = {
+        page,
+        limit,
+        populate: { path: 'usuario', select: 'nombre avatarUrl' }
+    };
+    return await Comment.paginate({}, options);
 };
 
 const updateComment = async (commentId: string, data: Partial<IComment>, userId: string, userRole: string): Promise<ICommentModel | null> => {

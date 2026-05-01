@@ -21,7 +21,9 @@ const readUniversidad = async (req: Request, res: Response, next: NextFunction) 
 
 const readAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const universidades = await UniversidadService.getAllUniversidades();
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+        const universidades = await UniversidadService.getAllUniversidades(page, limit);
         return res.status(200).json(universidades);
     } catch (error) {
         return res.status(500).json({ error });

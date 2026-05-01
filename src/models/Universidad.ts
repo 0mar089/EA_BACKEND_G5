@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -40,8 +41,10 @@ const UniversidadSchema: Schema<IUniversidadModel> = new Schema(
     }
 );
 
+UniversidadSchema.plugin(mongoosePaginate);
+
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-const Universidad = mongoose.model<IUniversidadModel>('Universidad', UniversidadSchema);
+const Universidad = mongoose.model<IUniversidadModel, mongoose.PaginateModel<IUniversidadModel>>('Universidad', UniversidadSchema);
 
 export default Universidad;
