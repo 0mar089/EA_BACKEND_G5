@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -138,8 +139,11 @@ UsuarioSchema.methods.comparePassword = async function (password: string): Promi
     return await bcrypt.compare(password, this.password);
 };
 
+// Plugins
+UsuarioSchema.plugin(mongoosePaginate);
+
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-const Usuario = mongoose.model<IUsuarioModel>('Usuario', UsuarioSchema);
+const Usuario = mongoose.model<IUsuarioModel, mongoose.PaginateModel<IUsuarioModel>>('Usuario', UsuarioSchema);
 
 export default Usuario;

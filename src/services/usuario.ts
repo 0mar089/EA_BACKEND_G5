@@ -31,7 +31,7 @@ const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null>
     return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre ubicacion');
 };
 
-const getAllUsuarios = async (search?: string, universidades?: string): Promise<IUsuarioModel[]> => {
+const getAllUsuarios = async (search?: string, universidades?: string, page: number = 1, limit: number = 10): Promise<any> => {
     const filter: any = { activo: true };
 
 
@@ -53,12 +53,17 @@ const getAllUsuarios = async (search?: string, universidades?: string): Promise<
         };
     }
 
-    return await Usuario.find(filter)
-        .select("nombre email avatarUrl descripcion universidad")
-        .populate("universidad", "nombre ubicacion");
+    const options = {
+        page,
+        limit,
+        select: "nombre email avatarUrl descripcion universidad",
+        populate: { path: "universidad", select: "nombre ubicacion" }
+    };
+
+    return await Usuario.paginate(filter, options);
 };
 
-const getAllUsuariosAdmin = async (search?: string, universidades?: string): Promise<IUsuarioModel[]> => {
+const getAllUsuariosAdmin = async (search?: string, universidades?: string, page: number = 1, limit: number = 10): Promise<any> => {
     const filter: any = {};
 
 
@@ -80,8 +85,13 @@ const getAllUsuariosAdmin = async (search?: string, universidades?: string): Pro
         };
     }
     
-    return await Usuario.find(filter)
-        .populate('universidad');
+    const options = {
+        page,
+        limit,
+        populate: 'universidad'
+    };
+
+    return await Usuario.paginate(filter, options);
 };
 
 const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promise<IUsuarioModel | null> => {

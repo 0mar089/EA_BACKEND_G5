@@ -36,16 +36,18 @@ const readAll = async (req: AuthRequest, res: Response) => {
         const rol = req.user?.rol;
         const search = req.query.search as string | undefined;
         const universidades = req.query.universidades as string | undefined;
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
 
-        let usuarios;
+        let result;
 
         if (rol === 'admin') {
-            usuarios = await UsuarioService.getAllUsuariosAdmin(search, universidades);
+            result = await UsuarioService.getAllUsuariosAdmin(search, universidades, page, limit);
         } else {
-            usuarios = await UsuarioService.getAllUsuarios(search, universidades);
+            result = await UsuarioService.getAllUsuarios(search, universidades, page, limit);
         }
 
-        return res.status(200).json(usuarios);
+        return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ error });
     }
