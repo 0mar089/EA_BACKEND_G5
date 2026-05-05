@@ -17,7 +17,7 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
             { $addToSet: { posts: savedPost._id } }
         );
     }
-    
+
     return savedPost.populate('usuario', 'nombre avatarUrl');
 };
 
@@ -25,29 +25,37 @@ const getPost = async (postId: string): Promise<IPostModel | null> => {
     return await Post.findById(postId)
         .populate('usuario', 'nombre avatarUrl')
         .populate({
-          path: 'comments',
-          select: 'texto usuario',
-          populate: {
-            path: 'usuario',
-            select: 'nombre avatarUrl'
-          }
-        });
+            path: 'comments',
+            select: 'texto usuario',
+            populate: {
+                path: 'usuario',
+                select: 'nombre avatarUrl'
+            }
+        })
+        .populate('likes', 'nombre avatarUrl');
 };
 
-const getAllPosts = async (page: number = 1, limit: number = 10): Promise<any> => {
+const getAllPosts = async (page: number = 1, limit: number = 10, search?: string): Promise<any> => {
+    const filter: any = {};
+    if (search) {
+        filter.caption = { $regex: search, $options: 'i' };
+    }
+
     const options = {
         page,
         limit,
+        sort: { createdAt: -1 },
         populate: [
             { path: 'usuario', select: 'nombre avatarUrl' },
             { 
                 path: 'comments',
                 select: 'texto usuario',
                 populate: { path: 'usuario', select: 'nombre avatarUrl' }
-            }
+            },
+            { path: 'likes', select: 'nombre avatarUrl' }
         ]
     };
-    return await Post.paginate({}, options);
+    return await Post.paginate(filter, options);
 };
 
 const updatePost = async (postId: string, data: Partial<IPost>, userId: string, userRole: string): Promise<IPostModel | null> => {
@@ -113,11 +121,12 @@ const getAllPostsFromUser = async (userId: string, page: number = 1, limit: numb
         sort: { createdAt: -1 },
         populate: [
             { path: 'usuario', select: 'nombre avatarUrl' },
-            { 
+            {
                 path: 'comments',
                 select: 'texto usuario',
                 populate: { path: 'usuario', select: 'nombre avatarUrl' }
-            }
+            },
+            { path: 'likes', select: 'nombre avatarUrl' }
         ]
     };
     return await Post.paginate({ usuario: userId }, options);

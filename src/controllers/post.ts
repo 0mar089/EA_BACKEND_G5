@@ -34,7 +34,8 @@ const getAllPosts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-        const postes = await PostService.getAllPosts(page, limit);
+        const search = req.query.search as string;
+        const postes = await PostService.getAllPosts(page, limit, search);
         return res.status(200).json(postes);
     } catch (error) {
         return res.status(500).json({ error });
