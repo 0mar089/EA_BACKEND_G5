@@ -69,10 +69,23 @@ const deleteReport = async (req: Request, res: Response) => {
     }
 };
 
+const readByUser = async (req: Request, res: Response) => {
+    const userId = req.params.userId;
+    const page = req.query.page ? parseInt(req.query.page as string) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    try {
+        const reports = await ReportService.getReportsByUser(userId, page, limit);
+        return res.status(200).json(reports);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
 export default {
     createReport,
     readReport,
     readAll,
+    readByUser,
     updateStatus,
     deleteReport
 };

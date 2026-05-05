@@ -150,6 +150,33 @@ router.get('/:commentId', authenticateToken, controller.getComment);
 
 /**
  * @openapi
+ * /comments/user/{userId}:
+ *   get:
+ *     summary: Obtener todos los comentarios de un usuario
+ *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ObjectId del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de comentarios del usuario
+ *       401:
+ *         description: No autorizado
+ */
+router.get(
+    '/user/:userId',
+    authenticateToken,
+    controller.getAllCommentsFromUser
+);
+
+/**
+ * @openapi
  * /comments/{commentId}:
  *   patch:
  *     summary: Actualizar un comentario

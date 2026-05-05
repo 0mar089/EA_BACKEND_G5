@@ -16,6 +16,7 @@ router.post('/', authenticateToken, controller.createReport);
 
 // Solo administradores pueden gestionar reportes
 router.get('/', authenticateToken, checkRole(['admin']), controller.readAll);
+router.get('/user/:userId', authenticateToken, checkRole(['admin']), controller.readByUser);
 router.get('/:reportId', authenticateToken, checkRole(['admin']), controller.readReport);
 router.patch('/:reportId/status', authenticateToken, checkRole(['admin']), controller.updateStatus);
 router.delete('/:reportId', authenticateToken, checkRole(['admin']), controller.deleteReport);

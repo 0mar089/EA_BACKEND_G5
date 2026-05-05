@@ -95,4 +95,14 @@ const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
 };
 
 
-export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost };
+const getAllCommentsFromUser = async (userId: string, page: number = 1, limit: number = 10): Promise<any> => {
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: { path: 'usuario', select: 'nombre avatarUrl' }
+    };
+    return await Comment.paginate({ usuario: userId }, options);
+};
+
+export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser };

@@ -97,5 +97,18 @@ const deleteAllCommentsFromPost = async (req: Request, res: Response, next: Next
     }
 }
 
-export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost };
+const getAllCommentsFromUser = async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.params.userId;
+    const page = req.query.page ? parseInt(req.query.page as string) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+
+    try {
+        const comments = await CommentService.getAllCommentsFromUser(userId, page, limit);
+        return res.status(200).json(comments);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+}
+
+export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser };
 import { AuthRequest } from '../middleware/auth';

@@ -106,10 +106,22 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
     return await Post.findByIdAndDelete(postId);
 };
 
-const getAllPostsFromUser = async (userId: string): Promise<IPostModel[]> => {
-    return await Post.find({ usuario: userId })
-        .select('-usuario') // Excluir el campo 'usuario' para evitar redundancia
-}
+const getAllPostsFromUser = async (userId: string, page: number = 1, limit: number = 10): Promise<any> => {
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: [
+            { path: 'usuario', select: 'nombre avatarUrl' },
+            { 
+                path: 'comments',
+                select: 'texto usuario',
+                populate: { path: 'usuario', select: 'nombre avatarUrl' }
+            }
+        ]
+    };
+    return await Post.paginate({ usuario: userId }, options);
+};
 
 //--- PUEDE QUE LO MUEVA AL USUARIO ---//
 
