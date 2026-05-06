@@ -1,7 +1,7 @@
 # Backend EA - Grupo 5 EA
 ## Integrantes
 
-Laura Manso Antúnez
+Laura Manso 
 
 Jan Nogueria
 
