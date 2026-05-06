@@ -15,6 +15,8 @@ import commentRoutes from './routes/Comment';
 import statsRoutes from './routes/Stats';
 import reportRoutes from './routes/Report';
 import gradoRoutes from './routes/Grado';
+import chatRoutes from './routes/Chat';
+import { initSocket } from './socket';
 
 const router = express();
 
@@ -63,6 +65,7 @@ const StartServer = () => {
     router.use('/stats', statsRoutes);
     router.use('/reports', reportRoutes);
     router.use('/grados', gradoRoutes);
+    router.use('/chat', chatRoutes);
 
 
     /** Healthcheck */
@@ -79,9 +82,13 @@ const StartServer = () => {
         });
     });
 
-    http.createServer(router).listen(config.server.port, () => {
+    const httpServer = http.createServer(router);
+
+    // Inicializar Socket.io sobre el mismo servidor HTTP
+    initSocket(httpServer);
+
+    httpServer.listen(config.server.port, () => {
         Logging.info(`Server is running on port ${config.server.port}`);
         Logging.info(`Swagger is running on http://localhost:${config.server.port}/api`);
     });
-    
 };

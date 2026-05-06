@@ -111,6 +111,25 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
 
     try {
         const result = await UsuarioService.toggleFollow(userId, targetId);
+        
+        // Notificar por socket si el resultado indica un nuevo follow
+        // El servicio devuelve el usuario con los 'seguidos' poblados. 
+        // Si el targetId está en la lista de seguidos, es que acaba de seguirlo.
+        const isFollowing = result?.seguidos?.some((u: any) => u._id.toString() === targetId);
+        
+        if (isFollowing) {
+            const { getIO } = require('../socket');
+            const io = getIO();
+            // Enviamos al destinatario la info de quién le ha seguido
+            io.to(`user_${targetId}`).emit('new_follow', {
+                follower: {
+                    _id: userId,
+                    nombre: req.user?.nombre,
+                    avatarUrl: (result as any).avatarUrl // Opcional: podrías obtener más info
+                }
+            });
+        }
+
         return res.status(200).json(result);
     } catch (error: any) {
         return res.status(400).json({ message: error.message });
