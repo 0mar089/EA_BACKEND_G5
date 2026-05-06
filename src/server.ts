@@ -83,5 +83,5 @@ const StartServer = () => {
         Logging.info(`Server is running on port ${config.server.port}`);
         Logging.info(`Swagger is running on http://localhost:${config.server.port}/api`);
     });
-    
+
 };

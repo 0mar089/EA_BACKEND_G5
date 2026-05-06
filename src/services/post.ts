@@ -219,4 +219,59 @@ const darleLike = async (postId: string, userId: string) => {
 };
 
 
-export default { createPost, getPost, getAllPosts, updatePost, deletePost, getAllPostsFromUser, deleteAllPostsFromUser, darleLike };
+const getFollowingPosts = async (userId: string, page: number = 1, limit: number = 10): Promise<any> => {
+    const usuario = await Usuario.findById(userId);
+    if (!usuario) throw new Error('Usuario no encontrado');
+
+    const seguidos = usuario.seguidos || [];
+    // Incluir al propio usuario en su feed
+    const authors = [...seguidos, userId];
+
+    const filter = { 
+        usuario: { $in: authors },
+        activo: true 
+    };
+
+    console.log(`[FEED] Fetching for user: ${userId}`);
+    console.log(`[FEED] Following authors: ${authors}`);
+
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: [
+            { path: 'usuario', select: 'nombre avatarUrl' }
+        ]
+    };
+
+    const result = await Post.paginate(filter, options);
+    console.log(`[FEED] Found ${result.docs.length} posts`);
+    return result;
+};
+
+const getDiscoveryPosts = async (userId: string, page: number = 1, limit: number = 10): Promise<any> => {
+    const usuario = await Usuario.findById(userId);
+    if (!usuario) throw new Error('Usuario no encontrado');
+
+    const seguidos = usuario.seguidos || [];
+    // Excluir a los que ya sigo y a mí mismo
+    const authorsToExclude = [...seguidos, userId];
+
+    const filter = { 
+        usuario: { $nin: authorsToExclude },
+        activo: true 
+    };
+
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: [
+            { path: 'usuario', select: 'nombre avatarUrl' }
+        ]
+    };
+
+    return await Post.paginate(filter, options);
+};
+
+export default { createPost, getPost, getAllPosts, updatePost, deletePost, getAllPostsFromUser, deleteAllPostsFromUser, darleLike, getFollowingPosts, getDiscoveryPosts };

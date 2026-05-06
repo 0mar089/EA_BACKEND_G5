@@ -131,5 +131,19 @@ const darleLike = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export default { createPost, getPost, getAllPosts, updatePost, deletePost, getAllPostsFromUser, deleteAllPostsFromUser, darleLike };
+const getDiscoveryPosts = async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+        
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+        
+        const posts = await PostService.getDiscoveryPosts(req.user.id, page, limit);
+        return res.status(200).json(posts);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default { createPost, getPost, getAllPosts, updatePost, deletePost, getAllPostsFromUser, deleteAllPostsFromUser, darleLike, getFollowingPosts, getDiscoveryPosts };
 import { AuthRequest } from '../middleware/auth';

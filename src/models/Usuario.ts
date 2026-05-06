@@ -53,7 +53,7 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
         },
         avatarUrl: {
             type: String,
-            default: 'https://api.dicebear.com/7.x/avataaars/svg?seed=default-avatar',
+            default: 'https://api.dicebear.com/7.x/avataaars/png?seed=default-avatar',
             trim: true
         },
         descripcion: {
