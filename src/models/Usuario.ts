@@ -17,6 +17,8 @@ export interface IUsuario {
     comments?: Types.ObjectId[];
     seguidores?: Types.ObjectId[];
     seguidos?: Types.ObjectId[];
+    grado?: Types.ObjectId;
+    asignaturas?: Types.ObjectId[];
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -96,6 +98,16 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
         seguidos: {
             type: [Schema.Types.ObjectId],
             ref: 'Usuario',
+            default: []
+        },
+        grado: {
+            type: Schema.Types.ObjectId,
+            ref: 'Grado',
+            default: null
+        },
+        asignaturas: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Asignatura',
             default: []
         }
     },
