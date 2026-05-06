@@ -20,7 +20,11 @@ const getGlobalStats = async () => {
     };
 };
 
-const getUserCount = async () => await Usuario.countDocuments();
+const getUserCount = async () => {
+    return {
+        count: await Usuario.countDocuments()
+    };
+};
 const getUniversityCount = async () => await Universidad.countDocuments();
 const getPostCount = async () => await Post.countDocuments();
 const getCommentCount = async () => await Comment.countDocuments();

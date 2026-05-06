@@ -28,8 +28,8 @@ const readGlobalStats = async (req: Request, res: Response, next: NextFunction) 
 
 const readUserCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const count = await StatsService.getUserCount();
-        return res.status(200).json({ count });
+        const counts = await StatsService.getUserCount();
+        return res.status(200).json(counts);
     } catch (error) {
         return res.status(500).json({ error });
     }
