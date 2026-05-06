@@ -1,20 +1,22 @@
-#Imagen base oficial de Node.js
-FROM node:18
+# 1. Usamos una versión ligera de Node.js
+FROM node:20-alpine
 
-#Directorio de trabajo dentro del contenedor
+# 2. Creamos la carpeta donde vivirá el código en el contenedor
 WORKDIR /app
 
-#Copia todo el código fuente y archivos de dependencias
+# 3. Copiamos los archivos de dependencias y el código fuente a la vez
+COPY package*.json ./
+COPY tsconfig.json ./
 COPY . .
 
-#Instala dependencias
+# 4. Instalamos todas las dependencias (ahora TypeScript sí encontrará la carpeta src/)
 RUN npm install
 
-#Compila TypeScript a JavaScript
+# 5. Compilamos el código de TypeScript a JavaScript (ejecuta "tsc")
 RUN npm run build
 
-#Expone el puerto (ajusta si usas otro)
+# 6. Exponemos el puerto que configuraste en tu .env
 EXPOSE 1337
 
-#Comando para iniciar la app
-CMD ["node", "build/server.js"]
+# 7. Arrancamos el servidor usando el código ya compilado
+CMD ["npm", "start"]
