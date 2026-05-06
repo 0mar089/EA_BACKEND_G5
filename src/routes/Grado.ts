@@ -7,10 +7,6 @@ const router = express.Router();
 
 /**
  * @openapi
- * tags:
- *   - name: Grados
- *     description: Endpoints CRUD de grados universitarios
- *
  * components:
  *   schemas:
  *     Grado:
@@ -23,7 +19,11 @@ const router = express.Router();
  *           type: array
  *           items:
  *             type: string
- *           example: ["Cálculo", "Física", "Programación"]
+ *             example: "65f1c2a1b2c3d4e5f6789011"
+ *           example:
+ *             - "65f1c2a1b2c3d4e5f6789011"
+ *             - "65f1c2a1b2c3d4e5f6789012"
+ *             - "65f1c2a1b2c3d4e5f6789013"
  *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
@@ -131,5 +131,23 @@ router.patch('/:gradoId', authenticateToken, checkRole(['admin']), ValidateJoi(S
  *         description: Eliminado
  */
 router.delete('/:gradoId', authenticateToken, checkRole(['admin']), controller.deleteGrado);
+
+/**
+ * @openapi
+ * /grados/{gradoId}/asignaturas:
+ *   get:
+ *     summary: Obtiene las asignaturas de un grado (Público)
+ *     tags: [Grados]
+ *     parameters:
+ *       - in: path
+ *         name: gradoId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de asignaturas
+ */
+router.get('/:gradoId/asignaturas', controller.readAsignaturasByGrado);
 
 export default router;

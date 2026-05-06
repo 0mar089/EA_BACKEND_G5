@@ -46,4 +46,13 @@ const deleteGrado = async (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-export default { createGrado, readGrado, readGradosByUniversidad, updateGrado, deleteGrado };
+const readAsignaturasByGrado = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const asignaturas = await GradoService.getAsignaturasByGrado(req.params.gradoId);
+        return res.status(200).json(asignaturas);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default { createGrado, readGrado, readGradosByUniversidad, updateGrado, deleteGrado, readAsignaturasByGrado };
