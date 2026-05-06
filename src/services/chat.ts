@@ -1,0 +1,79 @@
+import Message from '../models/Message';
+import Usuario from '../models/Usuario';
+import mongoose from 'mongoose';
+
+/**
+ * Devuelve los usuarios con los que el usuario dado tiene seguimiento mutuo
+ * (es decir, posibles contactos de chat).
+ */
+export const getMutualFollows = async (userId: string) => {
+    const user = await Usuario.findById(userId).select('seguidores seguidos');
+    if (!user) return [];
+
+    const seguidoresSet = new Set(user.seguidores?.map((id: any) => id.toString()) ?? []);
+    const seguidosSet = new Set(user.seguidos?.map((id: any) => id.toString()) ?? []);
+
+    // Mutuo = aparece en ambos sets
+    const mutualIds = [...seguidoresSet].filter(id => seguidosSet.has(id));
+
+    const contacts = await Usuario.find({ _id: { $in: mutualIds } })
+        .select('_id nombre avatarUrl');
+
+    return contacts;
+};
+
+/**
+ * Devuelve el historial de mensajes entre dos usuarios, ordenados por fecha.
+ */
+export const getConversation = async (userAId: string, userBId: string, page = 1, limit = 40) => {
+    const a = new mongoose.Types.ObjectId(userAId);
+    const b = new mongoose.Types.ObjectId(userBId);
+
+    const messages = await Message.find({
+        $or: [
+            { remitente: a, destinatario: b },
+            { remitente: b, destinatario: a }
+        ]
+    })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('remitente', '_id nombre avatarUrl')
+        .populate('destinatario', '_id nombre avatarUrl');
+
+    // Devolvemos en orden cronológico (los más nuevos al final)
+    return messages.reverse();
+};
+
+/**
+ * Guarda un mensaje en la base de datos.
+ */
+export const saveMessage = async (remitenteId: string, destinatarioId: string, contenido: string) => {
+    const msg = await Message.create({
+        remitente: remitenteId,
+        destinatario: destinatarioId,
+        contenido
+    });
+
+    return msg.populate([
+        { path: 'remitente', select: '_id nombre avatarUrl' },
+        { path: 'destinatario', select: '_id nombre avatarUrl' }
+    ]);
+};
+
+/**
+ * Marca como leídos todos los mensajes de `remitenteId` para `destinatarioId`.
+ */
+export const markAsRead = async (remitenteId: string, destinatarioId: string) => {
+    await Message.updateMany(
+        { remitente: remitenteId, destinatario: destinatarioId, leido: false },
+        { $set: { leido: true } }
+    );
+};
+
+/**
+ * Número de mensajes sin leer que tiene `userId`.
+ */
+export const getUnreadCount = async (userId: string) => {
+    return Message.countDocuments({ destinatario: userId, leido: false });
+};
