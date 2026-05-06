@@ -28,7 +28,7 @@ const getUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
 };
 
 const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findById(usuarioId).select('nombre universidad').populate('universidad', 'nombre ubicacion');
+    return await Usuario.findOne({ _id: usuarioId, activo: true }).select('nombre universidad').populate('universidad', 'nombre ubicacion');
 };
 
 const getAllUsuarios = async (search?: string, universidades?: string, page: number = 1, limit: number = 10): Promise<any> => {
@@ -235,12 +235,26 @@ const toggleFollow = async (userId: string, targetId: string): Promise<IUsuarioM
     return await Usuario.findById(userId).populate('seguidos seguidores', 'nombre avatarUrl');
 };
 
-const getFollowers = async (userId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findById(userId).select('seguidores').populate('seguidores', 'nombre email avatarUrl');
+const getFollowers = async (userId: string, isAdmin: boolean = false): Promise<IUsuarioModel | null> => {
+    const filter = isAdmin ? { _id: userId } : { _id: userId, activo: true };
+    const populateOptions: any = { path: 'seguidores', select: 'nombre email avatarUrl' };
+    
+    if (!isAdmin) {
+        populateOptions.match = { activo: true };
+    }
+
+    return await Usuario.findOne(filter).select('seguidores').populate(populateOptions);
 };
 
-const getFollowing = async (userId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findById(userId).select('seguidos').populate('seguidos', 'nombre email avatarUrl');
+const getFollowing = async (userId: string, isAdmin: boolean = false): Promise<IUsuarioModel | null> => {
+    const filter = isAdmin ? { _id: userId } : { _id: userId, activo: true };
+    const populateOptions: any = { path: 'seguidos', select: 'nombre email avatarUrl' };
+    
+    if (!isAdmin) {
+        populateOptions.match = { activo: true };
+    }
+
+    return await Usuario.findOne(filter).select('seguidos').populate(populateOptions);
 };
 
 const removeFollower = async (userId: string, followerId: string, requesterId: string, requesterRole: string): Promise<IUsuarioModel | null> => {

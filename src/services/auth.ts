@@ -3,7 +3,7 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
 
 // Valida las credenciales de un usuario.
 export const validateUserCredentials = async (email: string, password: string): Promise<IUsuarioModel | null> => {
-    const usuario = await Usuario.findOne({ email }).select('+password');
+    const usuario = await Usuario.findOne({ email, activo: true }).select('+password');
     if (!usuario) return null;
 
     const isMatch = await usuario.comparePassword(password);
@@ -39,10 +39,10 @@ export const refreshUserSession = async (incomingRefreshToken: string) => {
             throw new Error('Refresh token incompleto');
         }
 
-        const usuario = await Usuario.findById(payload.id);
+        const usuario = await Usuario.findOne({ _id: payload.id, activo: true });
 
         if (!usuario) {
-            throw new Error('Usuario no encontrado');
+            throw new Error('Usuario no encontrado o inactivo');
         }
 
         return getTokens(usuario);

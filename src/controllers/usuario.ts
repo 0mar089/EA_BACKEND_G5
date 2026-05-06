@@ -117,20 +117,22 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
     }
 };
 
-const getFollowers = async (req: Request, res: Response) => {
+const getFollowers = async (req: AuthRequest, res: Response) => {
     const usuarioId = req.params.usuarioId;
+    const isAdmin = req.user?.rol === 'admin';
     try {
-        const result = await UsuarioService.getFollowers(usuarioId);
+        const result = await UsuarioService.getFollowers(usuarioId, isAdmin);
         return result ? res.status(200).json(result) : res.status(404).json({ message: 'User not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-const getFollowing = async (req: Request, res: Response) => {
+const getFollowing = async (req: AuthRequest, res: Response) => {
     const usuarioId = req.params.usuarioId;
+    const isAdmin = req.user?.rol === 'admin';
     try {
-        const result = await UsuarioService.getFollowing(usuarioId);
+        const result = await UsuarioService.getFollowing(usuarioId, isAdmin);
         return result ? res.status(200).json(result) : res.status(404).json({ message: 'User not found' });
     } catch (error) {
         return res.status(500).json({ error });
