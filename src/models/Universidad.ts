@@ -7,6 +7,7 @@ export interface IUniversidad {
     nombre: string;
     ubicacion: string;
     usuarios: Types.ObjectId[];
+    grados?: Types.ObjectId[];
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -31,6 +32,12 @@ const UniversidadSchema: Schema<IUniversidadModel> = new Schema(
             {
                 type: Schema.Types.ObjectId,
                 ref: 'Usuario'
+            }
+        ],
+        grados: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Grado'
             }
         ]
     },

@@ -2,7 +2,7 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IGrado {
     nombre: string;
-    asignaturas: string[];
+    asignaturas: Types.ObjectId[];
     universidad: Types.ObjectId;
 }
 
@@ -15,11 +15,11 @@ const GradoSchema: Schema<IGradoModel> = new Schema(
             required: [true, 'El nombre del grado es obligatorio'],
             trim: true
         },
-        asignaturas: [
-            {
-                type: String
-            }
-        ],
+        asignaturas: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Asignatura',
+            default: []
+        },
         universidad: {
             type: Schema.Types.ObjectId,
             ref: 'Universidad',

@@ -24,11 +24,16 @@ const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> =>
 };
 
 const getUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findById(usuarioId).populate('universidad');
+    return await Usuario.findById(usuarioId).populate('universidad')
+    .populate('grado')
+    .populate('asignaturas');
 };
 
 const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findOne({ _id: usuarioId, activo: true }).select('nombre universidad').populate('universidad', 'nombre ubicacion');
+    return await Usuario.findOne({ _id: usuarioId, activo: true }).select('nombre universidad')
+    .populate('universidad', 'nombre ubicacion')
+    .populate('grado', 'nombre')
+    .populate('asignaturas', 'nombre');
 };
 
 const getAllUsuarios = async (search?: string, universidades?: string, page: number = 1, limit: number = 10): Promise<any> => {
@@ -293,6 +298,24 @@ const unfollowUser = async (userId: string, targetId: string, requesterId: strin
     return await Usuario.findById(userId).populate('seguidos', 'nombre avatarUrl');
 };
 
+const assignGrado = async (usuarioId: string, gradoId: string) => {
+    const usuario = await Usuario.findById(usuarioId);
+    if (!usuario) return null;
+
+    usuario.grado = new mongoose.Types.ObjectId(gradoId);
+
+    return await usuario.save();
+};
+
+const setAsignaturas = async (usuarioId: string, asignaturas: string[]) => {
+    const usuario = await Usuario.findById(usuarioId);
+    if (!usuario) return null;
+
+    usuario.asignaturas = asignaturas.map(id => new mongoose.Types.ObjectId(id));
+
+    return await usuario.save();
+};
+
 export default { 
     createUsuario, 
     getUsuario, 
@@ -307,5 +330,7 @@ export default {
     getFollowers,
     getFollowing,
     removeFollower,
-    unfollowUser
+    unfollowUser,
+    assignGrado,
+    setAsignaturas
 };

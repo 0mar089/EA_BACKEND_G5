@@ -173,6 +173,38 @@ const unfollowUser = async (req: AuthRequest, res: Response) => {
     }
 };
 
+const assignGrado = async (req: Request, res: Response) => {
+    try {
+        const usuario = await UsuarioService.assignGrado(
+            req.params.usuarioId,
+            req.body.gradoId
+        );
+
+        return usuario
+            ? res.status(200).json(usuario)
+            : res.status(404).json({ message: 'not found' });
+
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const setAsignaturas = async (req: Request, res: Response) => {
+    try {
+        const usuario = await UsuarioService.setAsignaturas(
+            req.params.usuarioId,
+            req.body.asignaturas
+        );
+
+        return usuario
+            ? res.status(200).json(usuario)
+            : res.status(404).json({ message: 'not found' });
+
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
 export default { 
     createUsuario, 
     readUsuario, 
@@ -185,5 +217,7 @@ export default {
     getFollowers,
     getFollowing,
     removeFollower,
-    unfollowUser
+    unfollowUser,
+    assignGrado,
+    setAsignaturas
 };
