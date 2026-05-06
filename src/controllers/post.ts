@@ -21,21 +21,23 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
     }
 };
 
-const getPost = async (req: Request, res: Response, next: NextFunction) => {
+const getPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const post = await PostService.getPost(req.params.postId);
+        const isAdmin = req.user?.rol === 'admin';
+        const post = await PostService.getPost(req.params.postId, isAdmin);
         return post ? res.status(200).json(post) : res.status(404).json({ message: 'not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-const getAllPosts = async (req: Request, res: Response, next: NextFunction) => {
+const getAllPosts = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
         const search = req.query.search as string;
-        const postes = await PostService.getAllPosts(page, limit, search);
+        const isAdmin = req.user?.rol === 'admin';
+        const postes = await PostService.getAllPosts(page, limit, search, isAdmin);
         return res.status(200).json(postes);
     } catch (error) {
         return res.status(500).json({ error });
@@ -83,13 +85,14 @@ const deletePost = async (req: Request, res: Response) => {
     }
 };
 
-const getAllPostsFromUser = async (req: Request, res: Response, next: NextFunction) => {
+const getAllPostsFromUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const userId = req.params.userId;
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const isAdmin = req.user?.rol === 'admin';
 
     try {
-        const posts = await PostService.getAllPostsFromUser(userId, page, limit);
+        const posts = await PostService.getAllPostsFromUser(userId, page, limit, isAdmin);
         return res.status(200).json(posts);
     } catch (error) {
         return res.status(500).json({ error });
@@ -107,9 +110,9 @@ const deleteAllPostsFromUser = async (req: Request, res: Response, next: NextFun
     }
 }
 
-const darleLike = async (req: Request, res: Response) => {
+const darleLike = async (req: AuthRequest, res: Response) => {
     const postId = req.params.postId;
-    const user = (req as any).user;
+    const user = req.user;
 
     if (!user?.id) {
         return res.status(401).json({ message: 'Usuario no autenticado' });

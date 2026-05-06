@@ -21,25 +21,35 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
     return savedPost.populate('usuario', 'nombre avatarUrl');
 };
 
-const getPost = async (postId: string): Promise<IPostModel | null> => {
-    return await Post.findById(postId)
+const getPost = async (postId: string, isAdmin: boolean = false): Promise<IPostModel | null> => {
+    const filter = isAdmin ? { _id: postId } : { _id: postId, activo: true };
+    const commentMatch = isAdmin ? {} : { activo: true };
+
+    return await Post.findOne(filter)
         .populate('usuario', 'nombre avatarUrl')
         .populate({
             path: 'comments',
+            match: commentMatch,
             select: 'texto usuario',
             populate: {
                 path: 'usuario',
                 select: 'nombre avatarUrl'
             }
         })
-        .populate('likes', 'nombre avatarUrl');
+        .populate({
+            path: 'likes',
+            match: isAdmin ? {} : { activo: true },
+            select: 'nombre avatarUrl'
+        });
 };
 
-const getAllPosts = async (page: number = 1, limit: number = 10, search?: string): Promise<any> => {
-    const filter: any = {};
+const getAllPosts = async (page: number = 1, limit: number = 10, search?: string, isAdmin: boolean = false): Promise<any> => {
+    const filter: any = isAdmin ? {} : { activo: true };
     if (search) {
         filter.caption = { $regex: search, $options: 'i' };
     }
+
+    const commentMatch = isAdmin ? {} : { activo: true };
 
     const options = {
         page,
@@ -49,10 +59,15 @@ const getAllPosts = async (page: number = 1, limit: number = 10, search?: string
             { path: 'usuario', select: 'nombre avatarUrl' },
             { 
                 path: 'comments',
+                match: commentMatch,
                 select: 'texto usuario',
                 populate: { path: 'usuario', select: 'nombre avatarUrl' }
             },
-            { path: 'likes', select: 'nombre avatarUrl' }
+            { 
+                path: 'likes', 
+                match: commentMatch,
+                select: 'nombre avatarUrl' 
+            }
         ]
     };
     return await Post.paginate(filter, options);
@@ -114,7 +129,10 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
     return await Post.findByIdAndDelete(postId);
 };
 
-const getAllPostsFromUser = async (userId: string, page: number = 1, limit: number = 10): Promise<any> => {
+const getAllPostsFromUser = async (userId: string, page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
+    const filter: any = isAdmin ? { usuario: userId } : { usuario: userId, activo: true };
+    const commentMatch = isAdmin ? {} : { activo: true };
+
     const options = {
         page,
         limit,
@@ -123,13 +141,18 @@ const getAllPostsFromUser = async (userId: string, page: number = 1, limit: numb
             { path: 'usuario', select: 'nombre avatarUrl' },
             {
                 path: 'comments',
+                match: commentMatch,
                 select: 'texto usuario',
                 populate: { path: 'usuario', select: 'nombre avatarUrl' }
             },
-            { path: 'likes', select: 'nombre avatarUrl' }
+            { 
+                path: 'likes', 
+                match: commentMatch,
+                select: 'nombre avatarUrl' 
+            }
         ]
     };
-    return await Post.paginate({ usuario: userId }, options);
+    return await Post.paginate(filter, options);
 };
 
 //--- PUEDE QUE LO MUEVA AL USUARIO ---//

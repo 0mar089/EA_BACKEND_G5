@@ -5,6 +5,7 @@ export interface IComment {
     usuario: Types.ObjectId; // Referencia al usuario que hizo el comentario
     post: Types.ObjectId; // Referencia al post al que pertenece el comentario
     texto: string;
+    activo: boolean;
   };
 
   export interface ICommentModel extends IComment, Document { }
@@ -25,6 +26,10 @@ export interface IComment {
             type: String,
             required: [true, 'El texto del comentario es obligatorio'],
             trim: true
+        },
+        activo: {
+            type: Boolean,
+            default: true
         }
     },
     {

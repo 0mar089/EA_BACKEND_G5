@@ -30,17 +30,19 @@ const createComment = async (data: Partial<IComment>): Promise<ICommentModel> =>
     return (await savedComment.populate('usuario', 'nombre avatarUrl'));
 };
 
-const getComment = async (commentId: string): Promise<ICommentModel | null> => {
-    return await Comment.findById(commentId).populate('usuario', 'nombre avatarUrl');
+const getComment = async (commentId: string, isAdmin: boolean = false): Promise<ICommentModel | null> => {
+    const filter = isAdmin ? { _id: commentId } : { _id: commentId, activo: true };
+    return await Comment.findOne(filter).populate('usuario', 'nombre avatarUrl');
 };
 
-const getAllComments = async (page: number = 1, limit: number = 10): Promise<any> => {
+const getAllComments = async (page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
+    const filter = isAdmin ? {} : { activo: true };
     const options = {
         page,
         limit,
         populate: { path: 'usuario', select: 'nombre avatarUrl' }
     };
-    return await Comment.paginate({}, options);
+    return await Comment.paginate(filter, options);
 };
 
 const updateComment = async (commentId: string, data: Partial<IComment>, userId: string, userRole: string): Promise<ICommentModel | null> => {
@@ -80,8 +82,9 @@ const deleteComment = async (commentId: string, userId?: string, userRole?: stri
     return await Comment.findByIdAndDelete(commentId);
 };
 
-const getAllCommentsFromPost = async (postId: string): Promise<ICommentModel[]> => {
-    return await Comment.find({ post: postId }).populate('usuario', 'nombre avatarUrl');
+const getAllCommentsFromPost = async (postId: string, isAdmin: boolean = false): Promise<ICommentModel[]> => {
+    const filter = isAdmin ? { post: postId } : { post: postId, activo: true };
+    return await Comment.find(filter).populate('usuario', 'nombre avatarUrl');
 };
 
 const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
@@ -95,14 +98,15 @@ const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
 };
 
 
-const getAllCommentsFromUser = async (userId: string, page: number = 1, limit: number = 10): Promise<any> => {
+const getAllCommentsFromUser = async (userId: string, page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
+    const filter = isAdmin ? { usuario: userId } : { usuario: userId, activo: true };
     const options = {
         page,
         limit,
         sort: { createdAt: -1 },
         populate: { path: 'usuario', select: 'nombre avatarUrl' }
     };
-    return await Comment.paginate({ usuario: userId }, options);
+    return await Comment.paginate(filter, options);
 };
 
 export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser };

@@ -21,20 +21,22 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
     }
 };
 
-const getComment = async (req: Request, res: Response, next: NextFunction) => {
+const getComment = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const comment = await CommentService.getComment(req.params.commentId);
+        const isAdmin = req.user?.rol === 'admin';
+        const comment = await CommentService.getComment(req.params.commentId, isAdmin);
         return comment ? res.status(200).json(comment) : res.status(404).json({ message: 'not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-const getAllComments = async (req: Request, res: Response, next: NextFunction) => {
+const getAllComments = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-        const commentes = await CommentService.getAllComments(page, limit);
+        const isAdmin = req.user?.rol === 'admin';
+        const commentes = await CommentService.getAllComments(page, limit, isAdmin);
         return res.status(200).json(commentes);
     } catch (error) {
         return res.status(500).json({ error });
@@ -75,11 +77,12 @@ const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction
     }
 };
 
-const getAllCommentsFromPost = async (req: Request, res: Response, next: NextFunction) => {
+const getAllCommentsFromPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const postId = req.params.postId;
+    const isAdmin = req.user?.rol === 'admin';
 
     try {
-        const comments = await CommentService.getAllCommentsFromPost(postId);
+        const comments = await CommentService.getAllCommentsFromPost(postId, isAdmin);
         return res.status(200).json(comments);
     } catch (error) {
         return res.status(500).json({ error });
@@ -97,13 +100,14 @@ const deleteAllCommentsFromPost = async (req: Request, res: Response, next: Next
     }
 }
 
-const getAllCommentsFromUser = async (req: Request, res: Response, next: NextFunction) => {
+const getAllCommentsFromUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const userId = req.params.userId;
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const isAdmin = req.user?.rol === 'admin';
 
     try {
-        const comments = await CommentService.getAllCommentsFromUser(userId, page, limit);
+        const comments = await CommentService.getAllCommentsFromUser(userId, page, limit, isAdmin);
         return res.status(200).json(comments);
     } catch (error) {
         return res.status(500).json({ error });

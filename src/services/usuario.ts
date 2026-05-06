@@ -124,6 +124,11 @@ const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promis
 
 // Soft Delete: marca como inactivo sin eliminar de la BD
 const softDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+    // Desactivar posts del usuario
+    await Post.updateMany({ usuario: usuarioId }, { activo: false });
+    // Desactivar comentarios del usuario
+    await Comment.updateMany({ usuario: usuarioId }, { activo: false });
+
     return await Usuario.findByIdAndUpdate(
         usuarioId,
         { activo: false },
@@ -133,6 +138,11 @@ const softDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
 
 // Recovery: vuelve a activar la cuenta
 const recoveryUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
+    // Reactivar posts del usuario
+    await Post.updateMany({ usuario: usuarioId }, { activo: true });
+    // Reactivar comentarios del usuario
+    await Comment.updateMany({ usuario: usuarioId }, { activo: true });
+
     return await Usuario.findByIdAndUpdate(
         usuarioId,
         { activo: true },
