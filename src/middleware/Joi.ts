@@ -80,7 +80,12 @@ export const Schemas = {
             password: Joi.string().min(6),
             avatarUrl: Joi.string().uri().allow('', null),
             descripcion: Joi.string().max(500).allow('', null),
+
             universidad: Joi.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
+                .allow('', null),
+
+            grado: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null)
         }),
