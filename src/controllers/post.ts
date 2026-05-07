@@ -25,9 +25,13 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
 const getPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const isAdmin = req.user?.rol === 'admin';
-        const post = await PostService.getPost(req.params.postId, isAdmin);
+        const requesterId = req.user?.id;
+        const post = await PostService.getPost(req.params.postId, requesterId, isAdmin);
         return post ? res.status(200).json(post) : res.status(404).json({ message: 'not found' });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'Esta cuenta es privada') {
+            return res.status(403).json({ message: error.message });
+        }
         return res.status(500).json({ error });
     }
 };
@@ -38,7 +42,8 @@ const getAllPosts = async (req: AuthRequest, res: Response, next: NextFunction) 
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
         const search = req.query.search as string;
         const isAdmin = req.user?.rol === 'admin';
-        const postes = await PostService.getAllPosts(page, limit, search, isAdmin);
+        const requesterId = req.user?.id;
+        const postes = await PostService.getAllPosts(page, limit, search, requesterId, isAdmin);
         return res.status(200).json(postes);
     } catch (error) {
         return res.status(500).json({ error });

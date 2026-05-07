@@ -25,7 +25,16 @@ const readUsuario = async (req: AuthRequest, res: Response, next: NextFunction) 
             usuario = await UsuarioService.getUsuarioBasic(usuarioId);
         }
 
-        return usuario ? res.status(200).json(usuario) : res.status(404).json({ message: 'not found' });
+        if (!usuario) return res.status(404).json({ message: 'not found' });
+
+        const requesterId = req.user?.id;
+        const Follow = require('../models/Follow').default;
+        const follow = await Follow.findOne({ follower: requesterId, following: usuarioId });
+        
+        const responseData = usuario.toObject();
+        responseData.followStatus = follow ? follow.status : null;
+
+        return res.status(200).json(responseData);
     } catch (error) {
         return res.status(500).json({ error });
     }
@@ -111,24 +120,40 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
 
     try {
         const result = await UsuarioService.toggleFollow(userId, targetId);
-        
-        // Notificar por socket si el resultado indica un nuevo follow
-        // El servicio devuelve el usuario con los 'seguidos' poblados. 
-        // Si el targetId está en la lista de seguidos, es que acaba de seguirlo.
-        const isFollowing = result?.seguidos?.some((u: any) => u._id.toString() === targetId);
-        
-        if (isFollowing) {
-            const NotificationService = require('../services/notification').default;
-            NotificationService.createNotification({
-                recipient: targetId,
-                sender: userId,
-                type: 'follow'
-            });
-        }
-
         return res.status(200).json(result);
-    } catch (error: any) {
-        return res.status(400).json({ message: error.message });
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : 'Error';
+        return res.status(400).json({ message: msg });
+    }
+};
+
+const acceptFollowRequest = async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    const followerId = req.params.followerId;
+
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+        const result = await UsuarioService.acceptFollowRequest(userId, followerId);
+        return res.status(200).json(result);
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : 'Error';
+        return res.status(400).json({ message: msg });
+    }
+};
+
+const rejectFollowRequest = async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    const followerId = req.params.followerId;
+
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+        const result = await UsuarioService.rejectFollowRequest(userId, followerId);
+        return res.status(200).json(result);
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : 'Error';
+        return res.status(400).json({ message: msg });
     }
 };
 
@@ -234,5 +259,7 @@ export default {
     removeFollower,
     unfollowUser,
     assignGrado,
-    setAsignaturas
+    setAsignaturas,
+    acceptFollowRequest,
+    rejectFollowRequest
 };

@@ -21,12 +21,12 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
     return savedPost.populate('usuario', 'nombre avatarUrl');
 };
 
-const getPost = async (postId: string, isAdmin: boolean = false): Promise<IPostModel | null> => {
+const getPost = async (postId: string, requesterId?: string, isAdmin: boolean = false): Promise<any> => {
     const filter = isAdmin ? { _id: postId } : { _id: postId, activo: true };
     const commentMatch = isAdmin ? {} : { activo: true };
 
-    return await Post.findOne(filter)
-        .populate('usuario', 'nombre avatarUrl')
+    const post = await Post.findOne(filter)
+        .populate('usuario', 'nombre avatarUrl privado seguidores')
         .populate({
             path: 'comments',
             match: commentMatch,
@@ -41,10 +41,39 @@ const getPost = async (postId: string, isAdmin: boolean = false): Promise<IPostM
             match: isAdmin ? {} : { activo: true },
             select: 'nombre avatarUrl'
         });
+
+    if (!post) return null;
+
+    // Verificar privacidad si no es admin y no es el dueño
+    if (!isAdmin && post.usuario._id.toString() !== requesterId) {
+        const author = post.usuario as any;
+        if (author.privado) {
+            const isFollowing = author.seguidores?.some((id: any) => id.toString() === requesterId);
+            if (!isFollowing) {
+                throw new Error('Esta cuenta es privada');
+            }
+        }
+    }
+
+    return post;
 };
 
-const getAllPosts = async (page: number = 1, limit: number = 10, search?: string, isAdmin: boolean = false): Promise<any> => {
-    const filter: any = isAdmin ? {} : { activo: true };
+const getAllPosts = async (page: number = 1, limit: number = 10, search?: string, requesterId?: string, isAdmin: boolean = false): Promise<any> => {
+    let filter: any = isAdmin ? {} : { activo: true };
+
+    if (!isAdmin && requesterId) {
+        const user = await Usuario.findById(requesterId);
+        const following = user?.seguidos || [];
+        
+        const privateNotFollowed = await Usuario.find({
+            privado: true,
+            _id: { $nin: [...following, requesterId] }
+        }).select('_id');
+        
+        const privateNotFollowedIds = privateNotFollowed.map(u => u._id);
+        filter.usuario = { $nin: privateNotFollowedIds };
+    }
+
     if (search) {
         filter.caption = { $regex: search, $options: 'i' };
     }
@@ -91,10 +120,6 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
 
     if (!post) return null;
 
-    // LOG DE SEGURIDAD (Míralo en tu terminal)
-    console.log(`[ACL] Intentando borrar post ${postId}`);
-    console.log(`[ACL] Autor del post: ${post.usuario}`);
-    console.log(`[ACL] Usuario solicita: ${userId} (Rol: ${userRole})`);
 
     // Validar que el usuario sea el dueño del post o un admin
     const isAdmin = userRole === 'admin';
@@ -116,7 +141,6 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
         );
         // 3. Borrar comentarios del post físicamente
         await Comment.deleteMany({ post: postId });
-        console.log(`[CLEANUP] Eliminados ${commentIds.length} comentarios del post ${postId} y sus referencias de usuarios.`);
     }
 
     //  quitar post del usuario
@@ -232,8 +256,6 @@ const getFollowingPosts = async (userId: string, page: number = 1, limit: number
         activo: true 
     };
 
-    console.log(`[FEED] Fetching for user: ${userId}`);
-    console.log(`[FEED] Following authors: ${authors}`);
 
     const options = {
         page,
@@ -245,7 +267,6 @@ const getFollowingPosts = async (userId: string, page: number = 1, limit: number
     };
 
     const result = await Post.paginate(filter, options);
-    console.log(`[FEED] Found ${result.docs.length} posts`);
     return result;
 };
 
@@ -254,11 +275,17 @@ const getDiscoveryPosts = async (userId: string, page: number = 1, limit: number
     if (!usuario) throw new Error('Usuario no encontrado');
 
     const seguidos = usuario.seguidos || [];
-    // Excluir a los que ya sigo y a mí mismo
     const authorsToExclude = [...seguidos, userId];
 
+    // Filtrar privados que no sigo
+    const privateNotFollowed = await Usuario.find({
+        privado: true,
+        _id: { $nin: authorsToExclude }
+    }).select('_id');
+    const privateNotFollowedIds = privateNotFollowed.map(u => u._id);
+
     const filter = { 
-        usuario: { $nin: authorsToExclude },
+        usuario: { $nin: [...authorsToExclude, ...privateNotFollowedIds] },
         activo: true 
     };
 

@@ -9,7 +9,7 @@ const getMyNotifications = async (req: AuthRequest, res: Response, next: NextFun
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
 
-        const result = await NotificationService.getNotificationsForUser(req.user.id, page, limit);
+        const result = await NotificationService.getNotifications(req.user.id, page, limit);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ error });

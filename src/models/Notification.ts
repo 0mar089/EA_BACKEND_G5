@@ -4,7 +4,9 @@ import mongoosePaginate from 'mongoose-paginate-v2';
 export enum NotificationType {
     LIKE = 'like',
     COMMENT = 'comment',
-    FOLLOW = 'follow'
+    FOLLOW = 'follow',
+    FOLLOW_REQUEST = 'follow_request',
+    FOLLOW_ACCEPTED = 'follow_accepted'
 }
 
 export interface INotification {

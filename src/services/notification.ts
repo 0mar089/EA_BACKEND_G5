@@ -2,6 +2,25 @@ import Notification, { NotificationType } from '../models/Notification';
 import { getIO } from '../socket';
 import Logging from '../library/Logging';
 
+export interface Notification {
+    _id: string;
+    recipient: string;
+    sender: {
+        _id: string;
+        nombre: string;
+        avatarUrl?: string;
+        foto?: string;
+    };
+    type: "like" | "comment" | "follow" | "follow_request" | "follow_accepted";
+    post?: {
+        _id: string;
+        imageUrl: string;
+        caption?: string;
+    };
+    isRead: boolean;
+    createdAt: string;
+}
+
 const createNotification = async (data: {
     recipient: string;
     sender: string;
@@ -74,7 +93,7 @@ const deleteNotification = async (notificationId: string, userId: string) => {
 
 export default {
     createNotification,
-    getNotificationsForUser,
+    getNotifications: getNotificationsForUser,
     markAsRead,
     markAllAsRead,
     deleteNotification

@@ -3,6 +3,10 @@ import Usuario, { IUsuarioModel, IUsuario } from '../models/Usuario';
 import Universidad from '../models/Universidad';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
+import Follow, { FollowStatus } from '../models/Follow';
+import Notification from '../models/Notification';
+import notificationService from './notification';
+import { NotificationType } from '../models/Notification';
 
 const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> => {
     // Normalizamos "" a null para evitar errores de validación de ObjectId
@@ -160,7 +164,6 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     const usuario = await Usuario.findById(usuarioId);
     if (!usuario) return null;
 
-    console.log(`[CLEANUP] Iniciando borrado en cascada para el usuario: ${usuarioId}`);
 
     // 1. Eliminar todos los POSTS del usuario y los comentarios que haya en esos posts
     const userPosts = await Post.find({ usuario: usuarioId });
@@ -180,7 +183,6 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
 
         const deletedCommentsCount = await Comment.deleteMany({ post: { $in: userPostIds } });
         const deletedPostsCount = await Post.deleteMany({ usuario: usuarioId });
-        console.log(`[CLEANUP] Eliminados ${deletedPostsCount.deletedCount} posts y ${deletedCommentsCount.deletedCount} comentarios de esos posts.`);
     }
 
     // 2. Eliminar COMENTARIOS hechos por el usuario en posts ajenos
@@ -191,7 +193,6 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
             await Post.findByIdAndUpdate(comment.post, { $pull: { comments: comment._id } });
         }
         await Comment.deleteMany({ usuario: usuarioId });
-        console.log(`[CLEANUP] Eliminados ${userComments.length} comentarios del usuario y limpiadas sus referencias.`);
     }
 
     // 3. Quitar LIKES del usuario en cualquier post de la plataforma
@@ -199,7 +200,6 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
         { likes: usuarioId },
         { $pull: { likes: usuarioId } }
     );
-    console.log(`[CLEANUP] Limpiados likes en ${likesCleanup.modifiedCount} posts.`);
 
     // 5. Limpiar referencias de seguidores/seguidos
     // Quitar al usuario de la lista de 'seguidos' de otros (el usuario era su seguidor)
@@ -212,22 +212,19 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
         { seguidores: usuarioId },
         { $pull: { seguidores: usuarioId } }
     );
-    console.log(`[CLEANUP] Limpiadas referencias de seguidores y seguidos.`);
 
     // 6. Desvincular de la universidad (si existe)
     if (usuario.universidad) {
         await Universidad.findByIdAndUpdate(usuario.universidad, { $pull: { usuarios: usuario._id } });
-        console.log(`[CLEANUP] Usuario desvinculado de la universidad.`);
     }
 
     // 7. Eliminar el usuario definitivamente
     const deletedUser = await Usuario.findByIdAndDelete(usuarioId);
-    console.log(`[CLEANUP] Usuario ${usuarioId} eliminado permanentemente.`);
     
     return deletedUser;
 };
 
-const toggleFollow = async (userId: string, targetId: string): Promise<IUsuarioModel | null> => {
+const toggleFollow = async (userId: string, targetId: string): Promise<any> => {
     if (userId === targetId) throw new Error('No puedes seguirte a ti mismo');
 
     const user = await Usuario.findById(userId);
@@ -235,19 +232,129 @@ const toggleFollow = async (userId: string, targetId: string): Promise<IUsuarioM
 
     if (!user || !target) throw new Error('Usuario no encontrado');
 
-    const alreadyFollowing = user.seguidos?.some(id => id.toString() === targetId);
+    const existingFollow = await Follow.findOne({ follower: userId, following: targetId });
 
-    if (alreadyFollowing) {
-        // Unfollow
-        await Usuario.findByIdAndUpdate(userId, { $pull: { seguidos: targetId } });
-        await Usuario.findByIdAndUpdate(targetId, { $pull: { seguidores: userId } });
+    if (existingFollow) {
+        // Unfollow or Cancel Request
+        await Follow.deleteOne({ _id: existingFollow._id });
+        
+        // Limpiar cualquier notificación previa de este usuario hacia el target
+        await Notification.deleteMany({
+            recipient: targetId,
+            sender: userId,
+            type: { $in: [NotificationType.FOLLOW_REQUEST, NotificationType.FOLLOW] }
+        });
+        
+        // Si estaba aceptado, quitar de los arrays de caché
+        if (existingFollow.status === FollowStatus.ACCEPTED) {
+            await Usuario.findByIdAndUpdate(userId, { $pull: { seguidos: targetId } });
+            await Usuario.findByIdAndUpdate(targetId, { $pull: { seguidores: userId } });
+        }
+        
+        return { message: 'Follow removido', status: null };
     } else {
-        // Follow
-        await Usuario.findByIdAndUpdate(userId, { $addToSet: { seguidos: targetId } });
-        await Usuario.findByIdAndUpdate(targetId, { $addToSet: { seguidores: userId } });
+        // New Follow Request or Instant Follow
+        const status = target.privado ? FollowStatus.PENDING : FollowStatus.ACCEPTED;
+        
+        const newFollow = new Follow({
+            follower: userId,
+            following: targetId,
+            status
+        });
+        await newFollow.save();
+
+        if (status === FollowStatus.ACCEPTED) {
+            await Usuario.findByIdAndUpdate(userId, { $addToSet: { seguidos: targetId } });
+            await Usuario.findByIdAndUpdate(targetId, { $addToSet: { seguidores: userId } });
+            
+            // Notificación de nuevo seguidor
+            await notificationService.createNotification({
+                recipient: targetId,
+                sender: userId,
+                type: NotificationType.FOLLOW
+            });
+        } else {
+            // Notificación de solicitud de seguimiento
+            await notificationService.createNotification({
+                recipient: targetId,
+                sender: userId,
+                type: NotificationType.FOLLOW_REQUEST
+            });
+            
+            // Emitir evento específico de socket (opcional si ya se emite new_notification)
+            try {
+                const { getIO } = require('../socket');
+                const io = getIO();
+                io.to(`user_${targetId}`).emit('new_follow_request', {
+                    follower: {
+                        _id: user._id,
+                        nombre: user.nombre,
+                        avatarUrl: user.avatarUrl
+                    }
+                });
+            } catch (err) {}
+        }
+
+        return { message: target.privado ? 'Solicitud enviada' : 'Siguiendo', status };
+    }
+};
+
+const acceptFollowRequest = async (userId: string, followerId: string) => {
+    const follow = await Follow.findOne({ follower: followerId, following: userId, status: FollowStatus.PENDING });
+    if (!follow) throw new Error('Solicitud no encontrada');
+
+    follow.status = FollowStatus.ACCEPTED;
+    await follow.save();
+
+    // Actualizar caché en modelos de Usuario
+    await Usuario.findByIdAndUpdate(followerId, { $addToSet: { seguidos: userId } });
+    await Usuario.findByIdAndUpdate(userId, { $addToSet: { seguidores: followerId } });
+
+    // 1. Eliminar TODAS las notificaciones de solicitud originales para evitar zombies
+    await Notification.deleteMany({
+        recipient: userId,
+        sender: followerId,
+        type: NotificationType.FOLLOW_REQUEST
+    });
+
+    // 2. Notificar al seguidor que su solicitud fue aceptada
+    const acceptNotification = await notificationService.createNotification({
+        recipient: followerId,
+        sender: userId,
+        type: NotificationType.FOLLOW_ACCEPTED
+    });
+
+    // 3. Emitir evento exclusivo por WebSocket al User B (el que solicitó)
+    try {
+        const { getIO } = require('../socket');
+        const io = getIO();
+        const userA = await Usuario.findById(userId);
+        if (userA) {
+            io.to(`user_${followerId}`).emit('new_notification', {
+                type: 'FOLLOW_ACCEPTED',
+                message: `${userA.nombre} ha aceptado tu solicitud de seguimiento.`,
+                notification: acceptNotification
+            });
+        }
+    } catch (err) {
+        // Ignorar errores de socket
     }
 
-    return await Usuario.findById(userId).populate('seguidos seguidores', 'nombre avatarUrl');
+    return { message: 'Solicitud aceptada' };
+};
+
+const rejectFollowRequest = async (userId: string, followerId: string) => {
+    const result = await Follow.deleteOne({ follower: followerId, following: userId, status: FollowStatus.PENDING });
+    if (result.deletedCount === 0) throw new Error('Solicitud no encontrada');
+
+    // Eliminar TODAS las notificaciones de solicitud originales para evitar zombies
+    await Notification.deleteMany({
+        recipient: userId,
+        sender: followerId,
+        type: NotificationType.FOLLOW_REQUEST
+    });
+
+    return { message: 'Solicitud rechazada' };
 };
 
 const getFollowers = async (userId: string, isAdmin: boolean = false): Promise<IUsuarioModel | null> => {
@@ -332,5 +439,7 @@ export default {
     removeFollower,
     unfollowUser,
     assignGrado,
-    setAsignaturas
+    setAsignaturas,
+    acceptFollowRequest,
+    rejectFollowRequest
 };

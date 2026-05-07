@@ -413,6 +413,46 @@ router.delete('/:usuarioId/followers/:followerId', authenticateToken, controller
 
 /**
  * @openapi
+ * /usuarios/requests/accept/{followerId}:
+ *   post:
+ *     summary: Acepta una solicitud de seguimiento
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: followerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.post('/requests/accept/:followerId', authenticateToken, controller.acceptFollowRequest);
+
+/**
+ * @openapi
+ * /usuarios/requests/reject/{followerId}:
+ *   post:
+ *     summary: Rechaza una solicitud de seguimiento
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: followerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.post('/requests/reject/:followerId', authenticateToken, controller.rejectFollowRequest);
+
+/**
+ * @openapi
  * /usuarios/{usuarioId}/following/{targetId}:
  *   delete:
  *     summary: Deja de seguir a un usuario (Solo Admin o el usuario dueño)
