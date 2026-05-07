@@ -118,15 +118,11 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
         const isFollowing = result?.seguidos?.some((u: any) => u._id.toString() === targetId);
         
         if (isFollowing) {
-            const { getIO } = require('../socket');
-            const io = getIO();
-            // Enviamos al destinatario la info de quién le ha seguido
-            io.to(`user_${targetId}`).emit('new_follow', {
-                follower: {
-                    _id: userId,
-                    nombre: req.user?.nombre,
-                    avatarUrl: (result as any).avatarUrl // Opcional: podrías obtener más info
-                }
+            const NotificationService = require('../services/notification').default;
+            NotificationService.createNotification({
+                recipient: targetId,
+                sender: userId,
+                type: 'follow'
             });
         }
 

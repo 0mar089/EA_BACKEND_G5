@@ -148,22 +148,17 @@ const darleLike = async (req: AuthRequest, res: Response) => {
         const post = await PostService.darleLike(postId, user.id);
 
         if (post) {
-            // Notificar por socket si el like es de otra persona
+            // Notificar por socket y persistir si el like es de otra persona
             const postOwnerId = post.usuario._id.toString();
             const isNewLike = post.likes.some((id: any) => id.toString() === user.id);
 
             if (isNewLike && postOwnerId !== user.id) {
-                const { getIO } = require('../socket');
-                const io = getIO();
-                io.to(`user_${postOwnerId}`).emit('new_like', {
-                    post: {
-                        _id: post._id,
-                        caption: post.caption
-                    },
-                    user: {
-                        _id: user.id,
-                        nombre: user.nombre
-                    }
+                const NotificationService = require('../services/notification').default;
+                NotificationService.createNotification({
+                    recipient: postOwnerId,
+                    sender: user.id,
+                    type: 'like',
+                    post: post._id
                 });
             }
         }
