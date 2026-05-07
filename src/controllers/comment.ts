@@ -15,6 +15,25 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
         };
 
         const savedComment = await CommentService.createComment(commentData);
+
+        // Notificar al dueño del post si no es el mismo autor
+        try {
+            const Post = require('../models/Post').default;
+            const post = await Post.findById(savedComment.post);
+            if (post && post.usuario.toString() !== authorId.toString()) {
+                const NotificationService = require('../services/notification').default;
+                NotificationService.createNotification({
+                    recipient: post.usuario,
+                    sender: authorId,
+                    type: 'comment',
+                    post: post._id,
+                    comment: savedComment._id
+                });
+            }
+        } catch (notifyError) {
+            console.error('Error enviando notificación de comentario:', notifyError);
+        }
+
         return res.status(201).json(savedComment);
     } catch (error) {
         return res.status(500).json({ error });
