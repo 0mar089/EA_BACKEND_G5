@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import PostService from '../services/post';
+import Usuario from '../models/Usuario';
 
 const createPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -87,17 +88,42 @@ const deletePost = async (req: Request, res: Response) => {
 
 const getAllPostsFromUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const userId = req.params.userId;
+    const requesterId = req.user?.id;
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
     const isAdmin = req.user?.rol === 'admin';
 
     try {
+        // 1. Obtener información básica del usuario destino para ver si es privado
+        const targetUser = await Usuario.findById(userId);
+        if (!targetUser) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        // 2. Verificar privacidad
+        if (targetUser.privado && !isAdmin && userId !== requesterId) {
+            // Comprobar si el solicitante sigue al usuario destino
+            const isFollowing = targetUser.seguidores?.some((id: any) => id.toString() === requesterId);
+            
+            if (!isFollowing) {
+                return res.status(200).json({ 
+                    message: 'Esta cuenta es privada',
+                    isPrivate: true,
+                    docs: [],
+                    totalDocs: 0,
+                    limit,
+                    page,
+                    totalPages: 0
+                });
+            }
+        }
+
         const posts = await PostService.getAllPostsFromUser(userId, page, limit, isAdmin);
         return res.status(200).json(posts);
     } catch (error) {
         return res.status(500).json({ error });
     }
-}
+};
 
 const deleteAllPostsFromUser = async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userId;

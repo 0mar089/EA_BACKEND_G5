@@ -19,6 +19,7 @@ export interface IUsuario {
     seguidos?: Types.ObjectId[];
     grado?: Types.ObjectId;
     asignaturas?: Types.ObjectId[];
+    privado: boolean;
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -109,6 +110,10 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
             type: [Schema.Types.ObjectId],
             ref: 'Asignatura',
             default: []
+        },
+        privado: {
+            type: Boolean,
+            default: false
         }
     },
     {

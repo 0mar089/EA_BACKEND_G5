@@ -58,7 +58,8 @@ export const Schemas = {
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null),
             seguidores: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([]),
-            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([])
+            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([]),
+            privado: Joi.boolean().default(false)
         }),
 
         update: Joi.object<IUsuario>({
@@ -72,7 +73,8 @@ export const Schemas = {
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null),
             seguidores: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
-            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
+            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            privado: Joi.boolean()
         }),
         updateSelf: Joi.object<IUsuario>({
             nombre: Joi.string(),
@@ -87,7 +89,8 @@ export const Schemas = {
 
             grado: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
-                .allow('', null)
+                .allow('', null),
+            privado: Joi.boolean()
         }),
         follow: Joi.object({
             targetId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()

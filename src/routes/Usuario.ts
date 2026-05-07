@@ -40,6 +40,9 @@ const router = express.Router();
  *         descripcion:
  *           type: string
  *           example: "Estudiante de Ingeniería y amante del café ☕"
+ *         privado:
+ *           type: boolean
+ *           example: false
  *     UsuarioCreateUpdate:
  *       type: object
  *       required:
@@ -69,6 +72,9 @@ const router = express.Router();
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
+ *         privado:
+ *           type: boolean
+ *           example: false
  *     UsuarioRegister:
  *       type: object
  *       required:
@@ -110,6 +116,9 @@ const router = express.Router();
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
+ *         privado:
+ *           type: boolean
+ *           example: false
  *
  *     UsuarioAcademico:
  *       type: object
