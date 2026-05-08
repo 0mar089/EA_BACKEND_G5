@@ -9,65 +9,149 @@ const readGlobalStats = async (req: Request, res: Response, next: NextFunction) 
         
         if (!isDbConnected) {
             // Devolvemos los datos vacíos pero con un flag de error de DB
-            return res.status(200).json({ 
+            return res.status(503).json({ 
                 users: 0, 
                 universities: 0, 
                 posts: 0, 
                 comments: 0,
                 reports: 0,
-                dbStatus: 'offline' 
+                dbStatus: 'offline',
+                message: 'Database unavailable'
             });
         }
 
         const stats = await StatsService.getGlobalStats();
-        return res.status(200).json({ ...stats, dbStatus: 'online' });
+
+        return res.status(200).json({ 
+            ...stats,
+            dbStatus: 'online'
+        });
+
     } catch (error) {
-        return res.status(500).json({ error, dbStatus: 'offline' });
+        return res.status(500).json({
+            message: 'Internal server error',
+            dbStatus: 'offline'
+        });
     }
 };
 
 const readUserCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+        // Comprobamos conexión antes de consultar
+        const isDbConnected = mongoose.connection.readyState === 1;
+
+        if (!isDbConnected) {
+            return res.status(503).json({
+                message: 'Database unavailable',
+                dbStatus: 'offline'
+            });
+        }
+
         const counts = await StatsService.getUserCount();
+
         return res.status(200).json(counts);
+
     } catch (error) {
-        return res.status(500).json({ error });
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
 const readUniversityCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+        // Comprobamos conexión antes de consultar
+        const isDbConnected = mongoose.connection.readyState === 1;
+
+        if (!isDbConnected) {
+            return res.status(503).json({
+                message: 'Database unavailable',
+                dbStatus: 'offline'
+            });
+        }
+
         const count = await StatsService.getUniversityCount();
+
         return res.status(200).json({ count });
+
     } catch (error) {
-        return res.status(500).json({ error });
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
 const readPostCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+        // Comprobamos conexión antes de consultar
+        const isDbConnected = mongoose.connection.readyState === 1;
+
+        if (!isDbConnected) {
+            return res.status(503).json({
+                message: 'Database unavailable',
+                dbStatus: 'offline'
+            });
+        }
+
         const count = await StatsService.getPostCount();
+
         return res.status(200).json({ count });
+
     } catch (error) {
-        return res.status(500).json({ error });
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
 const readCommentCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+        // Comprobamos conexión antes de consultar
+        const isDbConnected = mongoose.connection.readyState === 1;
+
+        if (!isDbConnected) {
+            return res.status(503).json({
+                message: 'Database unavailable',
+                dbStatus: 'offline'
+            });
+        }
+
         const count = await StatsService.getCommentCount();
+
         return res.status(200).json({ count });
+
     } catch (error) {
-        return res.status(500).json({ error });
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
 const readReportStats = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+        // Comprobamos conexión antes de consultar
+        const isDbConnected = mongoose.connection.readyState === 1;
+
+        if (!isDbConnected) {
+            return res.status(503).json({
+                message: 'Database unavailable',
+                dbStatus: 'offline'
+            });
+        }
+
         const stats = await StatsService.getReportStats();
+
         return res.status(200).json(stats);
+
     } catch (error) {
-        return res.status(500).json({ error });
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 

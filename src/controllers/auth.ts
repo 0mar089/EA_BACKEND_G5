@@ -10,10 +10,18 @@ import Usuario from '../models/Usuario';
  */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const savedUsuario = await usuarioService.createUsuario(req.body);
-        const { accessToken, refreshToken } = authService.getTokens(savedUsuario);
 
-        res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
+        const savedUsuario =
+            await usuarioService.createUsuario(req.body);
+
+        const { accessToken, refreshToken } =
+            authService.getTokens(savedUsuario);
+
+        res.cookie(
+            config.cookies.refreshName,
+            refreshToken,
+            config.cookies.options
+        );
 
         return res.status(201).json({
             message: 'Usuario registrado exitosamente',
@@ -28,8 +36,24 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 rol: savedUsuario.rol
             }
         });
-    } catch (error) {
-        return res.status(500).json({ error });
+
+    } catch (error: any) {
+
+        if (error.name === 'ValidationError') {
+            return res.status(422).json({
+                message: error.message
+            });
+        }
+
+        if (error.code === 11000) {
+            return res.status(409).json({
+                message: 'El email ya está registrado'
+            });
+        }
+
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
@@ -37,18 +61,31 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
  * POST /auth/login
  */
 export const login = async (req: Request, res: Response, next: NextFunction) => {
+
     const { email, password } = req.body;
 
     try {
-        const usuario = await authService.validateUserCredentials(email, password);
+
+        const usuario =
+            await authService.validateUserCredentials(
+                email,
+                password
+            );
 
         if (!usuario) {
-            return res.status(401).json({ message: 'Credenciales incorrectas' });
+            return res.status(401).json({
+                message: 'Credenciales incorrectas'
+            });
         }
 
-        const { accessToken, refreshToken } = authService.getTokens(usuario);
+        const { accessToken, refreshToken } =
+            authService.getTokens(usuario);
 
-        res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
+        res.cookie(
+            config.cookies.refreshName,
+            refreshToken,
+            config.cookies.options
+        );
 
         return res.status(200).json({
             message: 'Login exitoso',
@@ -63,8 +100,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                 rol: usuario.rol
             }
         });
+
     } catch (error) {
-        return res.status(500).json({ error });
+
+
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
@@ -73,23 +115,39 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
  */
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const incomingRefreshToken = req.cookies?.[config.cookies.refreshName] || req.body?.refreshToken;
+
+        const incomingRefreshToken =
+            req.cookies?.[config.cookies.refreshName] ||
+            req.body?.refreshToken;
 
         if (!incomingRefreshToken) {
-            return res.status(401).json({ message: 'Refresh token requerido' });
+            return res.status(401).json({
+                message: 'Refresh token requerido'
+            });
         }
 
-        const { accessToken, refreshToken: newRefreshToken } = await authService.refreshUserSession(incomingRefreshToken);
+        const {
+            accessToken,
+            refreshToken: newRefreshToken
+        } = await authService.refreshUserSession(incomingRefreshToken);
 
-        res.cookie(config.cookies.refreshName, newRefreshToken, config.cookies.options);
+        res.cookie(
+            config.cookies.refreshName,
+            newRefreshToken,
+            config.cookies.options
+        );
 
         return res.status(200).json({
             message: 'Token refrescado',
             accessToken,
             refreshToken: newRefreshToken
         });
+
     } catch (error) {
-        return res.status(401).json({ message: 'Refresh token expirado o inválido' });
+
+        return res.status(401).json({
+            message: 'Refresh token expirado o inválido'
+        });
     }
 };
 
@@ -98,13 +156,21 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
  */
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        res.clearCookie(config.cookies.refreshName, {
-            ...config.cookies.options
+
+        res.clearCookie(
+            config.cookies.refreshName,
+            { ...config.cookies.options }
+        );
+
+        return res.status(200).json({
+            message: 'Logout exitoso'
         });
 
-        return res.status(200).json({ message: 'Logout exitoso' });
     } catch (error) {
-        return res.status(500).json({ error });
+
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
@@ -113,13 +179,30 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
  */
 export const getMe = async (req: AuthRequest, res: Response) => {
     try {
-        const usuario = await Usuario.findById(req.user?.id).populate('universidad');
-        if (!usuario) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
+
+        if (!req.user) {
+            return res.status(401).json({
+                message: 'No autenticado'
+            });
         }
+
+        const usuario =
+            await Usuario.findById(req.user.id)
+                .populate('universidad');
+
+        if (!usuario) {
+            return res.status(404).json({
+                message: 'Usuario no encontrado'
+            });
+        }
+
         return res.status(200).json(usuario);
+
     } catch (error) {
-        return res.status(500).json({ error });
+
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
@@ -128,13 +211,34 @@ export const getMe = async (req: AuthRequest, res: Response) => {
  */
 export const updateMe = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.id;
-        if (!userId) return res.status(401).json({ message: 'No autenticado' });
 
-        const updatedUsuario = await usuarioService.updateUsuario(userId, req.body);
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({
+                message: 'No autenticado'
+            });
+        }
+
+        const updatedUsuario =
+            await usuarioService.updateUsuario(
+                userId,
+                req.body
+            );
+
         return res.status(200).json(updatedUsuario);
-    } catch (error) {
-        return res.status(500).json({ error });
+
+    } catch (error: any) {
+
+        if (error.name === 'ValidationError') {
+            return res.status(422).json({
+                message: error.message
+            });
+        }
+
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
@@ -143,18 +247,42 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
  */
 export const softDeleteMe = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.id;
-        if (!userId) return res.status(401).json({ message: 'No autenticado' });
 
-        const usuario = await usuarioService.softDeleteUsuario(userId);
-        res.clearCookie(config.cookies.refreshName, { ...config.cookies.options }); // Cerrar sesión al desactivar
-        return res.status(200).json({ message: 'Cuenta desactivada correctamente', usuario });
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({
+                message: 'No autenticado'
+            });
+        }
+
+        const usuario =
+            await usuarioService.softDeleteUsuario(userId);
+
+        res.clearCookie(
+            config.cookies.refreshName,
+            { ...config.cookies.options }
+        );
+
+        return res.status(200).json({
+            message: 'Cuenta desactivada correctamente',
+            usuario
+        });
+
     } catch (error) {
-        return res.status(500).json({ error });
+
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
     }
 };
 
-/**
- * DELETE /auth/me
- */
-export default { login, register, refreshToken, logout, getMe, updateMe, softDeleteMe };
+export default {
+    login,
+    register,
+    refreshToken,
+    logout,
+    getMe,
+    updateMe,
+    softDeleteMe
+};
