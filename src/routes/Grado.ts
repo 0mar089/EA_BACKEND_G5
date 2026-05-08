@@ -52,6 +52,18 @@ router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.gr
 
 /**
  * @openapi
+ * /grados:
+ *   get:
+ *     summary: Obtiene todos los grados (Público)
+ *     tags: [Grados]
+ *     responses:
+ *       200:
+ *         description: Lista de grados
+ */
+router.get('/', controller.readAllGrados);
+
+/**
+ * @openapi
  * /grados/universidad/{universidadId}:
  *   get:
  *     summary: Obtiene todos los grados de una universidad (Público)
