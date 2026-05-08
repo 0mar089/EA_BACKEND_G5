@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
+import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
 import { getMutualFollows, getConversation, markAsRead } from '../services/chat';
 
@@ -11,6 +12,7 @@ export const getContacts = async (req: AuthRequest, res: Response) => {
     try {
 
         if (!req.user) {
+            Logging.warning(`[401] [chat] Unauthorized Contacts Access`);
             return res.status(401).json({
                 message: 'No autenticado'
             });
@@ -21,9 +23,13 @@ export const getContacts = async (req: AuthRequest, res: Response) => {
         const contacts =
             await getMutualFollows(userId);
 
+        Logging.info(`[200] [chat] Contacts Retrieved | userId=${userId} count=${contacts?.length ?? 0}`);
+
         return res.status(200).json(contacts);
 
     } catch (error) {
+
+        Logging.error(`[500] [chat] Get Contacts Failed | userId=${req.user?.id} error=${error}`);
 
         return res.status(500).json({
             message: 'Internal server error'
@@ -36,6 +42,7 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
     try {
 
         if (!req.user) {
+            Logging.warning(`[401] [chat] Unauthorized Conversation Access`);
             return res.status(401).json({
                 message: 'No autenticado'
             });
@@ -48,6 +55,7 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
 
         // Validación de paginación
         if (page < 1) {
+            Logging.warning(`[400] [chat] Invalid Page | userId=${myId} page=${page}`);
             return res.status(400).json({
                 message: 'Página inválida'
             });
@@ -55,6 +63,7 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
 
         // Validación de ObjectId
         if (!isValidObjectId(userId)) {
+            Logging.warning(`[400] [chat] Invalid UserId | userId=${userId}`);
             return res.status(400).json({
                 message: 'ID de usuario inválido'
             });
@@ -68,6 +77,7 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
         );
 
         if (!isContact) {
+            Logging.warning(`[403] [chat] Unauthorized Conversation Access | userId=${myId} targetId=${userId}`);
             return res.status(403).json({
                 message: 'No puedes ver esta conversación'
             });
@@ -78,9 +88,13 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
         const messages =
             await getConversation(myId, userId, page);
 
+        Logging.info(`[200] [chat] Conversation Loaded | userId=${myId} targetId=${userId} page=${page}`);
+
         return res.status(200).json(messages);
 
     } catch (error) {
+
+        Logging.error(`[500] [chat] Get History Failed | userId=${req.user?.id} error=${error}`);
 
         return res.status(500).json({
             message: 'Internal server error'

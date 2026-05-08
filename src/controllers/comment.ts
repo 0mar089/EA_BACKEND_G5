@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import CommentService from '../services/comment';
+import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
 
 const isValidObjectId = (id: string) =>
@@ -10,12 +11,12 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
     try {
 
         if (!req.user) {
+            Logging.warning(`[401] [comment] Unauthorized Create`);
             return res.status(401).json({
                 message: 'No autenticado'
             });
         }
 
-        // Si es admin, puede elegir el autor. Si no, forzamos su propio ID.
         const isAdmin = req.user.rol === 'admin';
 
         const authorId =
@@ -31,7 +32,8 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
         const savedComment =
             await CommentService.createComment(commentData);
 
-        // Notificación (no bloquea el flujo)
+        Logging.info(`[201] [comment] Created | commentId=${savedComment._id} userId=${authorId}`);
+
         try {
 
             const Post = require('../models/Post').default;
@@ -52,17 +54,19 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
             }
 
         } catch (notifyError) {
+            Logging.error(`[comment] Notification Failed | commentId=${savedComment._id}`);
         }
 
         return res.status(201).json(savedComment);
 
     } catch (error: any) {
+
         if (error.name === 'ValidationError') {
-            return res.status(422).json({
-                message: error.message
-            });
+            Logging.warning(`[422] [comment] Validation Error | message=${error.message}`);
+            return res.status(422).json({ message: error.message });
         }
 
+        Logging.error(`[500] [comment] Create Failed | error=${error}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -74,6 +78,7 @@ const getComment = async (req: AuthRequest, res: Response, next: NextFunction) =
     const commentId = req.params.commentId;
 
     if (!isValidObjectId(commentId)) {
+        Logging.warning(`[400] [comment] Invalid ID | commentId=${commentId}`);
         return res.status(400).json({
             message: 'ID de comentario inválido'
         });
@@ -89,13 +94,18 @@ const getComment = async (req: AuthRequest, res: Response, next: NextFunction) =
                 isAdmin
             );
 
-        return comment
-            ? res.status(200).json(comment)
-            : res.status(404).json({
-                message: 'not found'
-            });
+        if (!comment) {
+            Logging.warning(`[404] [comment] Not Found | commentId=${commentId}`);
+            return res.status(404).json({ message: 'not found' });
+        }
+
+        Logging.info(`[200] [comment] Retrieved | commentId=${commentId}`);
+
+        return res.status(200).json(comment);
 
     } catch (error) {
+
+        Logging.error(`[500] [comment] Get Failed | commentId=${commentId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -114,6 +124,7 @@ const getAllComments = async (req: AuthRequest, res: Response, next: NextFunctio
             : 10;
 
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [comment] Invalid Pagination | page=${page} limit=${limit}`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -128,9 +139,13 @@ const getAllComments = async (req: AuthRequest, res: Response, next: NextFunctio
                 isAdmin
             );
 
+        Logging.info(`[200] [comment] List All | page=${page} limit=${limit}`);
+
         return res.status(200).json(commentes);
 
     } catch (error) {
+
+        Logging.error(`[500] [comment] List Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -143,12 +158,14 @@ const updateComment = async (req: AuthRequest, res: Response, next: NextFunction
     const user = req.user;
 
     if (!user) {
+        Logging.warning(`[401] [comment] Unauthorized Update`);
         return res.status(401).json({
             message: 'No autenticado'
         });
     }
 
     if (!isValidObjectId(commentId)) {
+        Logging.warning(`[400] [comment] Invalid Update ID | commentId=${commentId}`);
         return res.status(400).json({
             message: 'ID de comentario inválido'
         });
@@ -164,25 +181,30 @@ const updateComment = async (req: AuthRequest, res: Response, next: NextFunction
                 user.rol
             );
 
-        return comment
-            ? res.status(200).json(comment)
-            : res.status(404).json({
-                message: 'not found'
-            });
+        if (!comment) {
+            Logging.warning(`[404] [comment] Update Not Found | commentId=${commentId}`);
+            return res.status(404).json({ message: 'not found' });
+        }
+
+        Logging.info(`[200] [comment] Updated | commentId=${commentId}`);
+
+        return res.status(200).json(comment);
 
     } catch (error: any) {
+
         if (error.message === 'Forbidden') {
+            Logging.warning(`[403] [comment] Forbidden Update | commentId=${commentId}`);
             return res.status(403).json({
                 message: 'No tienes permiso para editar este comentario'
             });
         }
 
         if (error.name === 'ValidationError') {
-            return res.status(422).json({
-                message: error.message
-            });
+            Logging.warning(`[422] [comment] Validation Error | commentId=${commentId}`);
+            return res.status(422).json({ message: error.message });
         }
 
+        Logging.error(`[500] [comment] Update Failed | commentId=${commentId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -195,12 +217,14 @@ const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction
     const user = req.user;
 
     if (!user) {
+        Logging.warning(`[401] [comment] Unauthorized Delete`);
         return res.status(401).json({
             message: 'No autenticado'
         });
     }
 
     if (!isValidObjectId(commentId)) {
+        Logging.warning(`[400] [comment] Invalid Delete ID | commentId=${commentId}`);
         return res.status(400).json({
             message: 'ID de comentario inválido'
         });
@@ -215,19 +239,25 @@ const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction
                 user.rol
             );
 
-        return comment
-            ? res.status(200).json(comment)
-            : res.status(404).json({
-                message: 'not found'
-            });
+        if (!comment) {
+            Logging.warning(`[404] [comment] Delete Not Found | commentId=${commentId}`);
+            return res.status(404).json({ message: 'not found' });
+        }
+
+        Logging.info(`[200] [comment] Deleted | commentId=${commentId}`);
+
+        return res.status(200).json(comment);
 
     } catch (error: any) {
+
         if (error.message === 'Forbidden') {
+            Logging.warning(`[403] [comment] Forbidden Delete | commentId=${commentId}`);
             return res.status(403).json({
                 message: 'No tienes permiso para eliminar este comentario'
             });
         }
 
+        Logging.error(`[500] [comment] Delete Failed | commentId=${commentId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -239,6 +269,7 @@ const getAllCommentsFromPost = async (req: AuthRequest, res: Response, next: Nex
     const postId = req.params.postId;
 
     if (!isValidObjectId(postId)) {
+        Logging.warning(`[400] [comment] Invalid Post ID | postId=${postId}`);
         return res.status(400).json({
             message: 'ID de post inválido'
         });
@@ -254,9 +285,13 @@ const getAllCommentsFromPost = async (req: AuthRequest, res: Response, next: Nex
                 isAdmin
             );
 
+        Logging.info(`[200] [comment] From Post | postId=${postId}`);
+
         return res.status(200).json(comments);
 
     } catch (error) {
+
+        Logging.error(`[500] [comment] From Post Failed | postId=${postId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -268,6 +303,7 @@ const deleteAllCommentsFromPost = async (req: Request, res: Response, next: Next
     const postId = req.params.postId;
 
     if (!isValidObjectId(postId)) {
+        Logging.warning(`[400] [comment] Invalid Bulk Delete Post ID | postId=${postId}`);
         return res.status(400).json({
             message: 'ID de post inválido'
         });
@@ -277,11 +313,15 @@ const deleteAllCommentsFromPost = async (req: Request, res: Response, next: Next
 
         await CommentService.deleteAllCommentsFromPost(postId);
 
+        Logging.info(`[200] [comment] Bulk Deleted | postId=${postId}`);
+
         return res.status(200).json({
             message: 'All comments from post deleted successfully'
         });
 
     } catch (error) {
+
+        Logging.error(`[500] [comment] Bulk Delete Failed | postId=${postId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -293,6 +333,7 @@ const getAllCommentsFromUser = async (req: AuthRequest, res: Response, next: Nex
     const userId = req.params.userId;
 
     if (!isValidObjectId(userId)) {
+        Logging.warning(`[400] [comment] Invalid User ID | userId=${userId}`);
         return res.status(400).json({
             message: 'ID de usuario inválido'
         });
@@ -309,6 +350,7 @@ const getAllCommentsFromUser = async (req: AuthRequest, res: Response, next: Nex
             : 10;
 
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [comment] Invalid Pagination | userId=${userId}`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -324,9 +366,13 @@ const getAllCommentsFromUser = async (req: AuthRequest, res: Response, next: Nex
                 isAdmin
             );
 
+        Logging.info(`[200] [comment] From User | userId=${userId}`);
+
         return res.status(200).json(comments);
 
     } catch (error) {
+
+        Logging.error(`[500] [comment] From User Failed | userId=${userId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });

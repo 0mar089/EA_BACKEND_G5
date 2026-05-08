@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import PostService from '../services/post';
 import Usuario from '../models/Usuario';
+import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
 
 const isValidObjectId = (id: string) =>
@@ -11,12 +12,12 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
     try {
 
         if (!req.user) {
+            Logging.warning(`[401] [post] Unauthorized Create`);
             return res.status(401).json({
                 message: 'No autenticado'
             });
         }
 
-        // Si es admin, puede elegir el autor. Si no, forzamos su propio ID.
         const isAdmin = req.user.rol === 'admin';
 
         const authorId =
@@ -24,8 +25,8 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
                 ? req.body.usuario
                 : req.user.id;
 
-        // Validamos el ID del autor
         if (!isValidObjectId(authorId)) {
+            Logging.warning(`[400] [post] Invalid Author ID | userId=${authorId}`);
             return res.status(400).json({
                 message: 'ID de usuario inválido'
             });
@@ -39,16 +40,20 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
         const savedPost =
             await PostService.createPost(postData);
 
+        Logging.info(`[201] [post] Created | postId=${savedPost._id} userId=${authorId}`);
+
         return res.status(201).json(savedPost);
 
     } catch (error: any) {
-        // errores de validación
+
         if (error.name === 'ValidationError') {
+            Logging.warning(`[422] [post] Validation Error`);
             return res.status(422).json({
                 message: error.message
             });
         }
 
+        Logging.error(`[500] [post] Create Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -59,8 +64,8 @@ const getPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const postId = req.params.postId;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(postId)) {
+        Logging.warning(`[400] [post] Invalid ID | postId=${postId}`);
         return res.status(400).json({
             message: 'ID de post inválido'
         });
@@ -78,19 +83,23 @@ const getPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
                 isAdmin
             );
 
-        return post
-            ? res.status(200).json(post)
-            : res.status(404).json({
-                message: 'not found'
-            });
-
-    } catch (error: any) {
-        if (error.message === 'Esta cuenta es privada') {
-            return res.status(403).json({
-                message: error.message
-            });
+        if (!post) {
+            Logging.warning(`[404] [post] Not Found | postId=${postId}`);
+            return res.status(404).json({ message: 'not found' });
         }
 
+        Logging.info(`[200] [post] Retrieved | postId=${postId}`);
+
+        return res.status(200).json(post);
+
+    } catch (error: any) {
+
+        if (error.message === 'Esta cuenta es privada') {
+            Logging.warning(`[403] [post] Private Access Blocked | postId=${postId}`);
+            return res.status(403).json({ message: error.message });
+        }
+
+        Logging.error(`[500] [post] Get Failed | postId=${postId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -110,8 +119,8 @@ const getAllPosts = async (req: AuthRequest, res: Response, next: NextFunction) 
 
         const search = req.query.search as string;
 
-        // Validación básica de paginación
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [post] Invalid Pagination`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -129,9 +138,13 @@ const getAllPosts = async (req: AuthRequest, res: Response, next: NextFunction) 
                 isAdmin
             );
 
+        Logging.info(`[200] [post] List All | page=${page} limit=${limit}`);
+
         return res.status(200).json(postes);
 
     } catch (error) {
+
+        Logging.error(`[500] [post] List Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -144,13 +157,14 @@ const updatePost = async (req: AuthRequest, res: Response, next: NextFunction) =
     const user = req.user;
 
     if (!user) {
+        Logging.warning(`[401] [post] Unauthorized Update`);
         return res.status(401).json({
             message: 'No autenticado'
         });
     }
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(postId)) {
+        Logging.warning(`[400] [post] Invalid Update ID | postId=${postId}`);
         return res.status(400).json({
             message: 'ID de post inválido'
         });
@@ -166,25 +180,30 @@ const updatePost = async (req: AuthRequest, res: Response, next: NextFunction) =
                 user.rol
             );
 
-        return post
-            ? res.status(200).json(post)
-            : res.status(404).json({
-                message: 'not found'
-            });
+        if (!post) {
+            Logging.warning(`[404] [post] Update Not Found | postId=${postId}`);
+            return res.status(404).json({ message: 'not found' });
+        }
+
+        Logging.info(`[200] [post] Updated | postId=${postId}`);
+
+        return res.status(200).json(post);
 
     } catch (error: any) {
+
         if (error.message === 'Forbidden') {
+            Logging.warning(`[403] [post] Forbidden Update | postId=${postId}`);
             return res.status(403).json({
                 message: 'No tienes permiso para editar este post'
             });
         }
 
         if (error.name === 'ValidationError') {
-            return res.status(422).json({
-                message: error.message
-            });
+            Logging.warning(`[422] [post] Validation Error | postId=${postId}`);
+            return res.status(422).json({ message: error.message });
         }
 
+        Logging.error(`[500] [post] Update Failed | postId=${postId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -196,8 +215,8 @@ const deletePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
     const user = (req as any).user;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(postId)) {
+        Logging.warning(`[400] [post] Invalid Delete ID | postId=${postId}`);
         return res.status(400).json({
             message: 'ID de post inválido'
         });
@@ -212,19 +231,23 @@ const deletePost = async (req: Request, res: Response) => {
                 user.rol
             );
 
-        return post
-            ? res.status(200).json(post)
-            : res.status(404).json({
-                message: 'not found'
-            });
-
-    } catch (error: any) {
-        if (error.message === 'Forbidden') {
-            return res.status(403).json({
-                message: 'Forbidden'
-            });
+        if (!post) {
+            Logging.warning(`[404] [post] Delete Not Found | postId=${postId}`);
+            return res.status(404).json({ message: 'not found' });
         }
 
+        Logging.info(`[200] [post] Deleted | postId=${postId}`);
+
+        return res.status(200).json(post);
+
+    } catch (error: any) {
+
+        if (error.message === 'Forbidden') {
+            Logging.warning(`[403] [post] Forbidden Delete | postId=${postId}`);
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        Logging.error(`[500] [post] Delete Failed | postId=${postId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -235,8 +258,8 @@ const getAllPostsFromUser = async (req: AuthRequest, res: Response, next: NextFu
 
     const userId = req.params.userId;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(userId)) {
+        Logging.warning(`[400] [post] Invalid User ID | userId=${userId}`);
         return res.status(400).json({
             message: 'ID de usuario inválido'
         });
@@ -256,32 +279,31 @@ const getAllPostsFromUser = async (req: AuthRequest, res: Response, next: NextFu
 
     try {
 
-        // Validación básica de paginación
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [post] Invalid Pagination | userId=${userId}`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
         }
 
-        // 1. Obtener información básica del usuario destino para ver si es privado
         const targetUser = await Usuario.findById(userId);
 
         if (!targetUser) {
+            Logging.warning(`[404] [post] User Not Found | userId=${userId}`);
             return res.status(404).json({
                 message: 'Usuario no encontrado'
             });
         }
 
-        // 2. Verificar privacidad
         if (targetUser.privado && !isAdmin && userId !== requesterId) {
 
-            // Comprobar si el solicitante sigue al usuario destino
             const isFollowing =
                 targetUser.seguidores?.some(
                     (id: any) => id.toString() === requesterId
                 );
 
             if (!isFollowing) {
+                Logging.info(`[200] [post] Private Feed Blocked | userId=${userId}`);
                 return res.status(200).json({
                     message: 'Esta cuenta es privada',
                     isPrivate: true,
@@ -302,9 +324,13 @@ const getAllPostsFromUser = async (req: AuthRequest, res: Response, next: NextFu
                 isAdmin
             );
 
+        Logging.info(`[200] [post] User Feed | userId=${userId}`);
+
         return res.status(200).json(posts);
 
     } catch (error) {
+
+        Logging.error(`[500] [post] User Feed Failed | userId=${userId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -315,8 +341,8 @@ const deleteAllPostsFromUser = async (req: Request, res: Response, next: NextFun
 
     const userId = req.params.userId;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(userId)) {
+        Logging.warning(`[400] [post] Invalid Bulk Delete User ID | userId=${userId}`);
         return res.status(400).json({
             message: 'ID de usuario inválido'
         });
@@ -326,11 +352,15 @@ const deleteAllPostsFromUser = async (req: Request, res: Response, next: NextFun
 
         await PostService.deleteAllPostsFromUser(userId);
 
+        Logging.info(`[200] [post] Bulk Deleted | userId=${userId}`);
+
         return res.status(200).json({
             message: 'All posts from user deleted successfully'
         });
 
     } catch (error) {
+
+        Logging.error(`[500] [post] Bulk Delete Failed | userId=${userId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -343,13 +373,14 @@ const darleLike = async (req: AuthRequest, res: Response) => {
     const user = req.user;
 
     if (!user?.id) {
+        Logging.warning(`[401] [post] Unauthorized Like`);
         return res.status(401).json({
             message: 'Usuario no autenticado'
         });
     }
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(postId)) {
+        Logging.warning(`[400] [post] Invalid Like ID | postId=${postId}`);
         return res.status(400).json({
             message: 'ID de post inválido'
         });
@@ -365,7 +396,6 @@ const darleLike = async (req: AuthRequest, res: Response) => {
 
         if (post) {
 
-            // Notificar por socket y persistir si el like es de otra persona
             const postOwnerId = post.usuario._id.toString();
 
             const isNewLike =
@@ -387,6 +417,8 @@ const darleLike = async (req: AuthRequest, res: Response) => {
             }
         }
 
+        Logging.info(`[200] [post] Like Toggled | postId=${postId} userId=${user.id}`);
+
         return post
             ? res.status(200).json(post)
             : res.status(404).json({
@@ -394,6 +426,8 @@ const darleLike = async (req: AuthRequest, res: Response) => {
             });
 
     } catch (error) {
+
+        Logging.error(`[500] [post] Like Failed | postId=${postId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -404,6 +438,7 @@ const getFollowingPosts = async (req: AuthRequest, res: Response) => {
     try {
 
         if (!req.user) {
+            Logging.warning(`[401] [post] Unauthorized Following Feed`);
             return res.status(401).json({
                 message: 'No autenticado'
             });
@@ -417,8 +452,8 @@ const getFollowingPosts = async (req: AuthRequest, res: Response) => {
             ? parseInt(req.query.limit as string)
             : 10;
 
-        // Validación básica de paginación
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [post] Invalid Pagination (following)`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -431,9 +466,13 @@ const getFollowingPosts = async (req: AuthRequest, res: Response) => {
                 limit
             );
 
+        Logging.info(`[200] [post] Following Feed | userId=${req.user.id}`);
+
         return res.status(200).json(posts);
 
     } catch (error) {
+
+        Logging.error(`[500] [post] Following Feed Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -444,6 +483,7 @@ const getDiscoveryPosts = async (req: AuthRequest, res: Response) => {
     try {
 
         if (!req.user) {
+            Logging.warning(`[401] [post] Unauthorized Discovery Feed`);
             return res.status(401).json({
                 message: 'No autenticado'
             });
@@ -457,8 +497,8 @@ const getDiscoveryPosts = async (req: AuthRequest, res: Response) => {
             ? parseInt(req.query.limit as string)
             : 10;
 
-        // Validación básica de paginación
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [post] Invalid Pagination (discovery)`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -471,9 +511,13 @@ const getDiscoveryPosts = async (req: AuthRequest, res: Response) => {
                 limit
             );
 
+        Logging.info(`[200] [post] Discovery Feed | userId=${req.user.id}`);
+
         return res.status(200).json(posts);
 
     } catch (error) {
+
+        Logging.error(`[500] [post] Discovery Feed Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });

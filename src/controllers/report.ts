@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import ReportService from '../services/report';
 import { AuthRequest } from '../middleware/auth';
+import Logging from '../library/Logging';
 
 const isValidObjectId = (id: string) =>
     mongoose.Types.ObjectId.isValid(id);
@@ -12,6 +13,7 @@ const createReport = async (req: AuthRequest, res: Response) => {
         const usuarioReporta = req.user?.id; // El ID viene del token
 
         if (!usuarioReporta) {
+            Logging.warning(`[401] [report] Create Report Unauthorized`);
             return res.status(401).json({
                 message: 'No se pudo identificar al usuario que reporta'
             });
@@ -25,23 +27,27 @@ const createReport = async (req: AuthRequest, res: Response) => {
         const savedReport =
             await ReportService.createReport(reportData);
 
+        Logging.info(`[201] [report] Report Created | reportId=${savedReport._id} | userId=${usuarioReporta}`);
+
         return res.status(201).json(savedReport);
 
     } catch (error: any) {
-        // errores de validación
+
         if (error.name === 'ValidationError') {
+            Logging.warning(`[422] [report] Validation Error: ${error.message}`);
             return res.status(422).json({
                 message: error.message
             });
         }
 
-        // conflictos / duplicados
         if (error.code === 11000) {
+            Logging.warning(`[409] [report] Duplicate Report`);
             return res.status(409).json({
                 message: 'Reporte duplicado'
             });
         }
 
+        Logging.error(`[500] [report] Create Report Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -52,8 +58,8 @@ const readReport = async (req: Request, res: Response) => {
 
     const reportId = req.params.reportId;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(reportId)) {
+        Logging.warning(`[400] [report] Invalid Report ID: ${reportId}`);
         return res.status(400).json({
             message: 'ID de reporte inválido'
         });
@@ -64,13 +70,18 @@ const readReport = async (req: Request, res: Response) => {
         const report =
             await ReportService.getReport(reportId);
 
-        return report
-            ? res.status(200).json(report)
-            : res.status(404).json({
-                message: 'Reporte no encontrado'
-            });
+        if (report) {
+            Logging.info(`[200] [report] Report Fetched | reportId=${reportId}`);
+            return res.status(200).json(report);
+        }
+
+        Logging.warning(`[404] [report] Report Not Found | reportId=${reportId}`);
+        return res.status(404).json({
+            message: 'Reporte no encontrado'
+        });
 
     } catch (error) {
+        Logging.error(`[500] [report] Read Report Failed | reportId=${reportId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -112,8 +123,8 @@ const readAll = async (req: Request, res: Response) => {
             ? req.query.estado as string
             : 'all';
 
-        // Validación básica de paginación
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [report] Invalid Pagination`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -131,9 +142,12 @@ const readAll = async (req: Request, res: Response) => {
                 estado
             );
 
+        Logging.info(`[200] [report] Reports Listed | page=${page} limit=${limit}`);
+
         return res.status(200).json(reports);
 
     } catch (error) {
+        Logging.error(`[500] [report] Read All Reports Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -145,8 +159,8 @@ const updateStatus = async (req: Request, res: Response) => {
     const reportId = req.params.reportId;
     const { estado } = req.body;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(reportId)) {
+        Logging.warning(`[400] [report] Invalid Report ID: ${reportId}`);
         return res.status(400).json({
             message: 'ID de reporte inválido'
         });
@@ -154,8 +168,8 @@ const updateStatus = async (req: Request, res: Response) => {
 
     try {
 
-        // Validación básica
         if (!estado) {
+            Logging.warning(`[400] [report] Missing Status`);
             return res.status(400).json({
                 message: 'El estado es obligatorio'
             });
@@ -167,19 +181,26 @@ const updateStatus = async (req: Request, res: Response) => {
                 estado
             );
 
-        return updatedReport
-            ? res.status(200).json(updatedReport)
-            : res.status(404).json({
-                message: 'Reporte no encontrado'
-            });
+        if (updatedReport) {
+            Logging.info(`[200] [report] Status Updated | reportId=${reportId} | estado=${estado}`);
+            return res.status(200).json(updatedReport);
+        }
+
+        Logging.warning(`[404] [report] Report Not Found | reportId=${reportId}`);
+        return res.status(404).json({
+            message: 'Reporte no encontrado'
+        });
 
     } catch (error: any) {
+
         if (error.name === 'ValidationError') {
+            Logging.warning(`[422] [report] Validation Error: ${error.message}`);
             return res.status(422).json({
                 message: error.message
             });
         }
 
+        Logging.error(`[500] [report] Update Status Failed | reportId=${reportId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -190,8 +211,8 @@ const deleteReport = async (req: Request, res: Response) => {
 
     const reportId = req.params.reportId;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(reportId)) {
+        Logging.warning(`[400] [report] Invalid Report ID: ${reportId}`);
         return res.status(400).json({
             message: 'ID de reporte inválido'
         });
@@ -202,15 +223,20 @@ const deleteReport = async (req: Request, res: Response) => {
         const deletedReport =
             await ReportService.deleteReport(reportId);
 
-        return deletedReport
-            ? res.status(200).json({
+        if (deletedReport) {
+            Logging.info(`[200] [report] Report Deleted | reportId=${reportId}`);
+            return res.status(200).json({
                 message: 'Reporte eliminado con éxito'
-            })
-            : res.status(404).json({
-                message: 'Reporte no encontrado'
             });
+        }
+
+        Logging.warning(`[404] [report] Report Not Found | reportId=${reportId}`);
+        return res.status(404).json({
+            message: 'Reporte no encontrado'
+        });
 
     } catch (error) {
+        Logging.error(`[500] [report] Delete Report Failed | reportId=${reportId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -229,8 +255,8 @@ const readByUser = async (req: Request, res: Response) => {
         ? parseInt(req.query.limit as string)
         : 10;
 
-    // Validamos el ObjectId antes de consultar
     if (!isValidObjectId(userId)) {
+        Logging.warning(`[400] [report] Invalid User ID: ${userId}`);
         return res.status(400).json({
             message: 'ID de usuario inválido'
         });
@@ -238,8 +264,8 @@ const readByUser = async (req: Request, res: Response) => {
 
     try {
 
-        // Validación básica de paginación
         if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [report] Invalid Pagination`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -252,9 +278,12 @@ const readByUser = async (req: Request, res: Response) => {
                 limit
             );
 
+        Logging.info(`[200] [report] Reports By User | userId=${userId}`);
+
         return res.status(200).json(reports);
 
     } catch (error) {
+        Logging.error(`[500] [report] Read By User Failed | userId=${userId}`);
         return res.status(500).json({
             message: 'Internal server error'
         });
