@@ -21,7 +21,8 @@ const getAllReports = async (
     tipo: string = 'all',
     activeOnly: string = 'false',
     startDate: string = '',
-    endDate: string = ''
+    endDate: string = '',
+    estado: string = 'all'
 ): Promise<any> => {
     const query: any = {};
 
@@ -36,7 +37,9 @@ const getAllReports = async (
         query.tipo = tipo;
     }
 
-    if (activeOnly === 'true') {
+    if (estado !== 'all') {
+        query.estado = estado;
+    } else if (activeOnly === 'true') {
         query.estado = { $ne: 'resuelto' };
     }
 

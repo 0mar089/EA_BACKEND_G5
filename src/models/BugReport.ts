@@ -8,6 +8,7 @@ export interface IBugReport {
     comoReplicarlo: string;
     imageUrls: string[];
     estado: 'pendiente' | 'en_progreso' | 'resuelto' | 'rechazado';
+    plataforma: 'web' | 'app' | 'otro';
 }
 
 export interface IBugReportModel extends IBugReport, Document { }
@@ -42,6 +43,11 @@ const BugReportSchema: Schema<IBugReportModel> = new Schema(
             type: String,
             enum: ['pendiente', 'en_progreso', 'resuelto', 'rechazado'],
             default: 'pendiente'
+        },
+        plataforma: {
+            type: String,
+            enum: ['web', 'app', 'otro'],
+            default: 'otro'
         }
     },
     {

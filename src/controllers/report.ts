@@ -40,8 +40,9 @@ const readAll = async (req: Request, res: Response) => {
         const activeOnly = req.query.activeOnly ? req.query.activeOnly as string : 'false';
         const startDate = req.query.startDate ? req.query.startDate as string : '';
         const endDate = req.query.endDate ? req.query.endDate as string : '';
+        const estado = req.query.estado ? req.query.estado as string : 'all';
         
-        const reports = await ReportService.getAllReports(page, limit, search, tipo, activeOnly, startDate, endDate);
+        const reports = await ReportService.getAllReports(page, limit, search, tipo, activeOnly, startDate, endDate, estado);
         return res.status(200).json(reports);
     } catch (error) {
         return res.status(500).json({ error });

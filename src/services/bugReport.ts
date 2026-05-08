@@ -16,11 +16,19 @@ const getBugReport = async (bugId: string): Promise<IBugReportModel | null> => {
 const getAllBugReports = async (
     page: number = 1, 
     limit: number = 10,
-    estado: string = 'all'
+    estado: string = 'all',
+    plataforma: string = 'all',
+    activeOnly: string = 'false'
 ): Promise<any> => {
     const query: any = {};
     if (estado !== 'all') {
         query.estado = estado;
+    } else if (activeOnly === 'true') {
+        query.estado = { $nin: ['resuelto', 'rechazado'] };
+    }
+    
+    if (plataforma !== 'all') {
+        query.plataforma = plataforma;
     }
 
     const options = {

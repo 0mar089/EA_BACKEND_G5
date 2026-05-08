@@ -35,8 +35,10 @@ const getAllBugReports = async (req: Request, res: Response) => {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
         const estado = req.query.estado ? req.query.estado as string : 'all';
-        
-        const bugs = await BugReportService.getAllBugReports(page, limit, estado);
+        const plataforma = req.query.plataforma ? req.query.plataforma as string : 'all';
+        const activeOnly = req.query.activeOnly ? req.query.activeOnly as string : 'false';
+
+        const bugs = await BugReportService.getAllBugReports(page, limit, estado, plataforma, activeOnly);
         return res.status(200).json(bugs);
     } catch (error) {
         return res.status(500).json({ error });
