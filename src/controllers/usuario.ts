@@ -45,15 +45,34 @@ const readAll = async (req: AuthRequest, res: Response) => {
         const rol = req.user?.rol;
         const search = req.query.search as string | undefined;
         const universidades = req.query.universidades as string | undefined;
+        
+        //separar grados y asignaturas
+        const grados = req.query.grados as string | undefined;
+        const asignaturas = req.query.asignaturas as string | undefined;
+
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
 
         let result;
 
         if (rol === 'admin') {
-            result = await UsuarioService.getAllUsuariosAdmin(search, universidades, page, limit);
+            result = await UsuarioService.getAllUsuariosAdmin(
+                search, 
+                universidades, 
+                grados, 
+                asignaturas, 
+                page, 
+                limit
+            );
         } else {
-            result = await UsuarioService.getAllUsuarios(search, universidades, page, limit);
+            result = await UsuarioService.getAllUsuarios(
+                search, 
+                universidades, 
+                grados, 
+                asignaturas, 
+                page, 
+                limit
+            );
         }
 
         return res.status(200).json(result);

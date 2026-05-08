@@ -40,25 +40,41 @@ const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null>
     .populate('asignaturas', 'nombre');
 };
 
-const getAllUsuarios = async (search?: string, universidades?: string, page: number = 1, limit: number = 10): Promise<any> => {
+const getAllUsuarios = async (
+    search?: string, 
+    universidades?: string, 
+    grados?: string,      
+    asignaturas?: string,  
+    page: number = 1, 
+    limit: number = 10
+): Promise<any> => {
     const filter: any = { activo: true };
-
 
     if (search) {
         filter.nombre = { $regex: search, $options: "i" };
     }
 
+    //filtrar por universidad
     if (universidades) {
-        let uniArray: string[] = [];
-
-        if (typeof universidades === "string") {
-            uniArray = universidades.split(",");
-        } else if (Array.isArray(universidades)) {
-            uniArray = universidades;
-        }
-
+        const uniArray = Array.isArray(universidades) ? universidades : universidades.split(",");
         filter.universidad = {
             $in: uniArray.map(id => new mongoose.Types.ObjectId(id))
+        };
+    }
+
+    //filtrar por grado
+    if (grados) {
+        const gradoArray = Array.isArray(grados) ? grados : grados.split(",");
+        filter.grado = {
+            $in: gradoArray.map(id => new mongoose.Types.ObjectId(id))
+        };
+    }
+
+    //filtrar por asignaturas
+    if (asignaturas) {
+        const asigArray = Array.isArray(asignaturas) ? asignaturas : asignaturas.split(",");
+        filter.asignaturas = {
+            $in: asigArray.map(id => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -66,38 +82,63 @@ const getAllUsuarios = async (search?: string, universidades?: string, page: num
         page,
         limit,
         select: "nombre email avatarUrl descripcion universidad",
-        populate: { path: "universidad", select: "nombre ubicacion" }
+        populate: [
+            { path: "universidad", select: "nombre ubicacion" },
+            { path: "grado", select: "nombre" },
+            { path: "asignaturas", select: "nombre" }
+        ]
     };
 
     return await Usuario.paginate(filter, options);
 };
 
-const getAllUsuariosAdmin = async (search?: string, universidades?: string, page: number = 1, limit: number = 10): Promise<any> => {
-    const filter: any = {};
-
+const getAllUsuariosAdmin= async (
+    search?: string, 
+    universidades?: string, 
+    grados?: string,      
+    asignaturas?: string,  
+    page: number = 1, 
+    limit: number = 10
+): Promise<any> => {
+    const filter: any = { activo: true };
 
     if (search) {
         filter.nombre = { $regex: search, $options: "i" };
     }
 
+    //filtrar por universidad
     if (universidades) {
-        let uniArray: string[] = [];
-
-        if (typeof universidades === "string") {
-            uniArray = universidades.split(",");
-        } else if (Array.isArray(universidades)) {
-            uniArray = universidades;
-        }
-
+        const uniArray = Array.isArray(universidades) ? universidades : universidades.split(",");
         filter.universidad = {
             $in: uniArray.map(id => new mongoose.Types.ObjectId(id))
         };
     }
-    
+
+    //filtrar por grado
+    if (grados) {
+        const gradoArray = Array.isArray(grados) ? grados : grados.split(",");
+        filter.grado = {
+            $in: gradoArray.map(id => new mongoose.Types.ObjectId(id))
+        };
+    }
+
+    //filtrar por asignaturas
+    if (asignaturas) {
+        const asigArray = Array.isArray(asignaturas) ? asignaturas : asignaturas.split(",");
+        filter.asignaturas = {
+            $in: asigArray.map(id => new mongoose.Types.ObjectId(id))
+        };
+    }
+
     const options = {
         page,
         limit,
-        populate: 'universidad'
+        select: "nombre email avatarUrl descripcion universidad",
+        populate: [
+            { path: "universidad", select: "nombre ubicacion" },
+            { path: "grado", select: "nombre" },
+            { path: "asignaturas", select: "nombre" }
+        ]
     };
 
     return await Usuario.paginate(filter, options);
