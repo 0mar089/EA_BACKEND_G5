@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import GradoService from '../services/grado';
+import { read } from 'fs';
 
 const createGrado = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -14,6 +15,15 @@ const readGrado = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const grado = await GradoService.getGrado(req.params.gradoId);
         return grado ? res.status(200).json(grado) : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const readAllGrados = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const grados = await GradoService.getAllGrados();
+        return res.status(200).json(grados);
     } catch (error) {
         return res.status(500).json({ error });
     }
@@ -55,4 +65,4 @@ const readAsignaturasByGrado = async (req: Request, res: Response, next: NextFun
     }
 };
 
-export default { createGrado, readGrado, readGradosByUniversidad, updateGrado, deleteGrado, readAsignaturasByGrado };
+export default { createGrado, readGrado, readGradosByUniversidad, updateGrado, deleteGrado, readAsignaturasByGrado, readAllGrados };
