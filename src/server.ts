@@ -19,6 +19,7 @@ import asignaturaRoutes from './routes/Asignatura';
 import chatRoutes from './routes/Chat';
 import notificationRoutes from './routes/Notification';
 import uploadRoutes from './routes/Upload';
+import bugRoutes from './routes/BugReport';
 import { initSocket } from './socket';
 
 const router = express();
@@ -72,6 +73,7 @@ const StartServer = () => {
     router.use('/chat', chatRoutes);
     router.use('/notifications', notificationRoutes);
     router.use('/upload', uploadRoutes);
+    router.use('/bugs', bugRoutes);
 
 
     /** Healthcheck */
