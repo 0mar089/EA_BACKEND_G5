@@ -95,7 +95,7 @@ const StartServer = () => {
     // Inicializar Socket.io sobre el mismo servidor HTTP
     initSocket(httpServer);
 
-    httpServer.listen(config.server.port, '0.0.0.0', () => {
+    httpServer.listen(config.server.port, () => {
         Logging.info(`Server is running on port ${config.server.port}`);
         Logging.info(`Accessible from emulator at http://10.0.2.2:${config.server.port}`);
         Logging.info(`Swagger is running on http://localhost:${config.server.port}/api`);
