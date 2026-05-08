@@ -29,6 +29,7 @@ mongoose
     .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
     .then(() => {
         Logging.info('Mongo connected successfully.');
+        Logging.info('Cloudinary service initialized successfully.');
         StartServer();
     })
     .catch((error) => Logging.error(error));

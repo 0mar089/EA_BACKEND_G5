@@ -3,10 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// El SDK de Cloudinary detecta automáticamente la variable de entorno CLOUDINARY_URL
+if (process.env.CLOUDINARY_URL) {
+    cloudinary.config(true);
+}
 
 export default cloudinary;
