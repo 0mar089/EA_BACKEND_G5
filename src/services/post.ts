@@ -4,6 +4,7 @@ import Usuario from '../models/Usuario';
 import Comment from '../models/Comment';
 import NotificationService from './notification';
 import { NotificationType } from '../models/Notification';
+import Logging from '../library/Logging';
 
 const postPopulate = [
     {
