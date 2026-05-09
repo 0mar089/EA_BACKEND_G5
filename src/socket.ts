@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { verifyAccessToken } from './utils/jwt';
-import { saveMessage, deleteMessages } from './services/chat';
+import { saveMessage, deleteMessages, reactToMessage } from './services/chat';
 import Logging from './library/Logging';
 
 let io: SocketServer;
@@ -33,14 +33,14 @@ export const initSocket = (httpServer: HttpServer) => {
         socket.join(`user_${userId}`);
 
         // ── Enviar mensaje ──────────────────────────────────────────────────
-        socket.on('send_message', async ({ destinatarioId, contenido, postId }) => {
-            Logging.info(`[Socket] Mensaje recibido de ${userId} para ${destinatarioId} | postId: ${postId}`);
+        socket.on('send_message', async ({ destinatarioId, contenido, postId, parentMessageId }) => {
+            Logging.info(`[Socket] Mensaje recibido de ${userId} para ${destinatarioId} | postId: ${postId} | parent: ${parentMessageId}`);
             if (!destinatarioId || (!contenido?.trim() && !postId)) {
                 Logging.warning(`[Socket] Mensaje rechazado: falta destinatario o contenido/postId`);
                 return;
             }
             try {
-                const msg = await saveMessage(userId, destinatarioId, contenido?.trim() || '', postId);
+                const msg = await saveMessage(userId, destinatarioId, contenido?.trim() || '', postId, parentMessageId);
                 // Emitir al destinatario
                 io.to(`user_${destinatarioId}`).emit('receive_message', msg);
                 // Confirmar al remitente (para reflejar en su UI)
@@ -57,6 +57,18 @@ export const initSocket = (httpServer: HttpServer) => {
         });
         socket.on('stop_typing', ({ destinatarioId }) => {
             io.to(`user_${destinatarioId}`).emit('user_stop_typing', { userId });
+        });
+
+        // ── Reaccionar a mensaje ────────────────────────────────────────────
+        socket.on('react_message', async ({ messageId, emoji, destinatarioId }) => {
+            try {
+                const msg = await reactToMessage(userId, messageId, emoji);
+                // Emitir a ambos
+                io.to(`user_${destinatarioId}`).emit('message_updated', msg);
+                socket.emit('message_updated', msg);
+            } catch (err) {
+                Logging.error(`[Socket] Error en reacción: ${err}`);
+            }
         });
 
         // ── Eliminar mensajes ───────────────────────────────────────────────

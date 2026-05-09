@@ -5,6 +5,8 @@ export interface IMessage {
     destinatario: Types.ObjectId;
     contenido: string;
     post?: Types.ObjectId; // Nueva referencia a post
+    parentMessage?: Types.ObjectId; // Referencia al mensaje citado
+    reactions?: { usuario: Types.ObjectId; emoji: string }[];
     leido: boolean;
     eliminadoPara: Types.ObjectId[];
     eliminadoParaTodos: boolean;
@@ -33,6 +35,16 @@ const MessageSchema: Schema<IMessageModel> = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Post'
         },
+        parentMessage: {
+            type: Schema.Types.ObjectId,
+            ref: 'Message'
+        },
+        reactions: [
+            {
+                usuario: { type: Schema.Types.ObjectId, ref: 'Usuario' },
+                emoji: { type: String }
+            }
+        ],
         leido: {
             type: Boolean,
             default: false

@@ -13,8 +13,8 @@ export const getMutualFollows = async (userId: string) => {
     const seguidoresSet = new Set(user.seguidores?.map((id: any) => id.toString()) ?? []);
     const seguidosSet = new Set(user.seguidos?.map((id: any) => id.toString()) ?? []);
 
-    // Mutuo = aparece en ambos sets
-    const mutualIds = [...seguidoresSet].filter(id => seguidosSet.has(id));
+    // Mutuo = aparece en ambos sets, pero no puede ser uno mismo
+    const mutualIds = [...seguidoresSet].filter(id => seguidosSet.has(id) && id !== userId);
 
     const contacts = await Usuario.find({ _id: { $in: mutualIds } })
         .select('_id nombre avatarUrl');
@@ -78,6 +78,11 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
         .populate({
             path: 'post',
             populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores' }
+        })
+        .populate({
+            path: 'parentMessage',
+            select: '_id contenido remitente',
+            populate: { path: 'remitente', select: '_id nombre' }
         });
 
     // Mapear contenido si fue eliminado para todos (Soft Delete)
@@ -96,12 +101,13 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
 /**
  * Guarda un mensaje en la base de datos.
  */
-export const saveMessage = async (remitenteId: string, destinatarioId: string, contenido: string, postId?: string) => {
+export const saveMessage = async (remitenteId: string, destinatarioId: string, contenido: string, postId?: string, parentMessageId?: string) => {
     const msg = await Message.create({
         remitente: remitenteId,
         destinatario: destinatarioId,
         contenido,
-        post: postId || undefined
+        post: postId || undefined,
+        parentMessage: parentMessageId || undefined
     });
 
     return msg.populate([
@@ -110,6 +116,11 @@ export const saveMessage = async (remitenteId: string, destinatarioId: string, c
         { 
             path: 'post', 
             populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores' } 
+        },
+        {
+            path: 'parentMessage',
+            select: '_id contenido remitente',
+            populate: { path: 'remitente', select: '_id nombre' }
         }
     ]);
 };
@@ -144,4 +155,39 @@ export const deleteMessages = async (userId: string, messageIds: string[], type:
         // everyone: Solo el remitente puede eliminar para todos
         await Message.updateMany({ _id: { $in: ids }, remitente: uId }, { $set: { eliminadoParaTodos: true } });
     }
+};
+
+/**
+ * Añade o quita una reacción a un mensaje.
+ */
+export const reactToMessage = async (userId: string, messageId: string, emoji: string) => {
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Mensaje no encontrado');
+
+    const userIdObj = new mongoose.Types.ObjectId(userId);
+    
+    if (!message.reactions) message.reactions = [];
+
+    // Buscar si el usuario ya reaccionó
+    const existingIndex = message.reactions.findIndex((r) => r.usuario.toString() === userId);
+
+    if (existingIndex !== -1) {
+        if (message.reactions[existingIndex].emoji === emoji) {
+            // Si es el mismo emoji, quitar la reacción
+            message.reactions.splice(existingIndex, 1);
+        } else {
+            // Si es diferente, cambiar el emoji
+            message.reactions[existingIndex].emoji = emoji;
+        }
+    } else {
+        // Añadir nueva reacción
+        message.reactions.push({ usuario: userIdObj, emoji });
+    }
+
+    await message.save();
+    return message.populate([
+        { path: 'remitente', select: '_id nombre avatarUrl' },
+        { path: 'destinatario', select: '_id nombre avatarUrl' },
+        { path: 'parentMessage', populate: { path: 'remitente', select: '_id nombre' } }
+    ]);
 };
