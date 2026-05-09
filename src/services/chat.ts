@@ -33,7 +33,8 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
         $or: [
             { remitente: a, destinatario: b },
             { remitente: b, destinatario: a }
-        ]
+        ],
+        eliminadoPara: { $ne: a }
     })
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
@@ -41,8 +42,16 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
         .populate('remitente', '_id nombre avatarUrl')
         .populate('destinatario', '_id nombre avatarUrl');
 
-    // Devolvemos en orden cronológico (los más nuevos al final)
-    return messages.reverse();
+    // Mapear contenido si fue eliminado para todos (Soft Delete)
+    const result = messages.map((m) => {
+        const doc = m.toObject();
+        if (doc.eliminadoParaTodos) {
+            doc.contenido = 'El mensaje ha sido eliminado';
+        }
+        return doc;
+    });
+
+    return result.reverse();
 };
 
 /**
@@ -76,4 +85,19 @@ export const markAsRead = async (remitenteId: string, destinatarioId: string) =>
  */
 export const getUnreadCount = async (userId: string) => {
     return Message.countDocuments({ destinatario: userId, leido: false });
+};
+
+/**
+ * Elimina mensajes para el usuario o para todos.
+ */
+export const deleteMessages = async (userId: string, messageIds: string[], type: 'me' | 'everyone') => {
+    const ids = messageIds.map((id) => new mongoose.Types.ObjectId(id));
+    const uId = new mongoose.Types.ObjectId(userId);
+
+    if (type === 'me') {
+        await Message.updateMany({ _id: { $in: ids } }, { $addToSet: { eliminadoPara: uId } });
+    } else {
+        // everyone: Solo el remitente puede eliminar para todos
+        await Message.updateMany({ _id: { $in: ids }, remitente: uId }, { $set: { eliminadoParaTodos: true } });
+    }
 };

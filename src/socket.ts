@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { verifyAccessToken } from './utils/jwt';
-import { saveMessage } from './services/chat';
+import { saveMessage, deleteMessages } from './services/chat';
 import Logging from './library/Logging';
 
 let io: SocketServer;
@@ -53,6 +53,22 @@ export const initSocket = (httpServer: HttpServer) => {
         });
         socket.on('stop_typing', ({ destinatarioId }) => {
             io.to(`user_${destinatarioId}`).emit('user_stop_typing', { userId });
+        });
+
+        // ── Eliminar mensajes ───────────────────────────────────────────────
+        socket.on('delete_messages', async ({ messageIds, type, destinatarioId }) => {
+            if (!messageIds || !Array.isArray(messageIds) || !type) return;
+            try {
+                await deleteMessages(userId, messageIds, type);
+                // Confirmar al remitente
+                socket.emit('messages_deleted', { messageIds, type });
+                // Si es para todos, notificar al destinatario
+                if (type === 'everyone' && destinatarioId) {
+                    io.to(`user_${destinatarioId}`).emit('messages_deleted', { messageIds, type: 'everyone' });
+                }
+            } catch (err) {
+                Logging.error(`[Socket] Error eliminando mensajes: ${err}`);
+            }
         });
 
         socket.on('disconnect', () => {

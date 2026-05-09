@@ -5,6 +5,8 @@ export interface IMessage {
     destinatario: Types.ObjectId;
     contenido: string;
     leido: boolean;
+    eliminadoPara: Types.ObjectId[];
+    eliminadoParaTodos: boolean;
 }
 
 export interface IMessageModel extends IMessage, Document {}
@@ -28,6 +30,16 @@ const MessageSchema: Schema<IMessageModel> = new Schema(
             maxlength: 2000
         },
         leido: {
+            type: Boolean,
+            default: false
+        },
+        eliminadoPara: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Usuario'
+            }
+        ],
+        eliminadoParaTodos: {
             type: Boolean,
             default: false
         }
