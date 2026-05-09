@@ -414,6 +414,15 @@ const darleLike = async (req: AuthRequest, res: Response) => {
                     type: 'like',
                     post: post._id
                 });
+            } else if (!isNewLike && postOwnerId !== user.id) {
+                // If it's an unlike, delete the existing notification
+                const Notification = require('../models/Notification').default;
+                await Notification.findOneAndDelete({
+                    recipient: postOwnerId,
+                    sender: user.id,
+                    type: 'like',
+                    post: post._id
+                });
             }
         }
 

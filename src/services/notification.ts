@@ -91,10 +91,15 @@ const deleteNotification = async (notificationId: string, userId: string) => {
     return await Notification.findOneAndDelete({ _id: notificationId, recipient: userId });
 };
 
+const deleteNotificationsByPost = async (postId: string) => {
+    return await Notification.deleteMany({ post: postId });
+};
+
 export default {
     createNotification,
     getNotifications: getNotificationsForUser,
     markAsRead,
     markAllAsRead,
-    deleteNotification
+    deleteNotification,
+    deleteNotificationsByPost
 };

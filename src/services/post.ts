@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Post, { IPostModel, IPost } from '../models/Post';
 import Usuario from '../models/Usuario';
 import Comment from '../models/Comment';
+import NotificationService from './notification';
 
 const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
     const post = new Post({
@@ -148,6 +149,9 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
         { posts: postId },
         { $pull: { posts: postId } }
     );
+    
+    // 5. Eliminar notificaciones relacionadas con el post
+    await NotificationService.deleteNotificationsByPost(postId);
 
     // eliminar post
     return await Post.findByIdAndDelete(postId);
@@ -202,6 +206,9 @@ const deleteAllPostsFromUser = async (userId: string): Promise<void> => {
 
         // 4. Borrar posts físicos
         await Post.deleteMany({ usuario: userId });
+
+        // 5. Borrar notificaciones relacionadas con esos posts
+        await Promise.all(postIds.map(id => NotificationService.deleteNotificationsByPost(id.toString())));
     }
 
     // limpiar usuario

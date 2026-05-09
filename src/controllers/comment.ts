@@ -244,6 +244,15 @@ const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction
             return res.status(404).json({ message: 'not found' });
         }
 
+        try {
+            const Notification = require('../models/Notification').default;
+            await Notification.findOneAndDelete({
+                comment: comment._id
+            });
+        } catch (notifyError) {
+            Logging.error(`[comment] Notification Delete Failed | commentId=${commentId}`);
+        }
+
         Logging.info(`[200] [comment] Deleted | commentId=${commentId}`);
 
         return res.status(200).json(comment);
