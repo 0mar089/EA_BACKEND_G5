@@ -5,7 +5,12 @@ const uploadImage = async (fileBuffer: Buffer) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 folder: 'univy_uploads',
-                resource_type: 'auto'
+                resource_type: 'auto',
+                transformation: [
+                    { width: 720, crop: "limit" },
+                    { quality: "auto" },
+                    { fetch_format: "auto" }
+                ]
             },
             (error, result) => {
                 if (error) reject(error);
