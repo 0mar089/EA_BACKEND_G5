@@ -32,10 +32,13 @@ const CommentSchema: Schema<ICommentModel> = new Schema(
             type: Boolean,
             default: true
         },
-        likes: [{
-            type: Schema.Types.ObjectId,
-            ref: 'Usuario'
-        }]
+        likes: {
+            type: [{
+                type: Schema.Types.ObjectId,
+                ref: 'Usuario'
+            }],
+            default: []
+        }
     },
     {
         timestamps: true,

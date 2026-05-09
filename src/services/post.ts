@@ -12,7 +12,7 @@ const postPopulate = [
     {
         path: 'comments',
         match: { activo: true },
-        select: 'texto usuario createdAt',
+        select: 'texto usuario createdAt likes',
         populate: {
             path: 'usuario',
             select: 'nombre avatarUrl'
