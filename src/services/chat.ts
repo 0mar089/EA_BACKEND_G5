@@ -57,6 +57,38 @@ export const getMutualFollows = async (userId: string) => {
 };
 
 /**
+ * Filtra el contenido de un mensaje (como posts privados) según los permisos del usuario que lo ve.
+ */
+export const filterMessageForUser = (message: any, viewerId: string) => {
+    const doc = message.toObject ? message.toObject() : { ...message };
+    
+    if (doc.eliminadoParaTodos) {
+        doc.contenido = 'El mensaje ha sido eliminado';
+        doc.post = undefined;
+        return doc;
+    }
+
+    if (doc.post) {
+        const postOwner = doc.post.usuario;
+        if (postOwner && postOwner.privado) {
+            if (postOwner._id.toString() !== viewerId.toString()) {
+                const seguidoresOwner = postOwner.seguidores?.map((s: any) => s.toString()) || [];
+                const seguidosOwner = postOwner.seguidos?.map((s: any) => s.toString()) || [];
+                
+                const viewerFollowsOwner = seguidoresOwner.includes(viewerId.toString());
+                const ownerFollowsViewer = seguidosOwner.includes(viewerId.toString());
+
+                if (!viewerFollowsOwner || !ownerFollowsViewer) {
+                    doc.post = undefined;
+                    doc.contenido = 'Esta publicación es privada y no puedes verla.';
+                }
+            }
+        }
+    }
+    return doc;
+};
+
+/**
  * Devuelve el historial de mensajes entre dos usuarios, ordenados por fecha.
  */
 export const getConversation = async (userAId: string, userBId: string, page = 1, limit = 40) => {
@@ -77,7 +109,7 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
         .populate('destinatario', '_id nombre avatarUrl')
         .populate({
             path: 'post',
-            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores' }
+            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores seguidos' }
         })
         .populate({
             path: 'parentMessage',
@@ -85,15 +117,7 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
             populate: { path: 'remitente', select: '_id nombre' }
         });
 
-    // Mapear contenido si fue eliminado para todos (Soft Delete)
-    const result = messages.map((m) => {
-        const doc = m.toObject();
-        if (doc.eliminadoParaTodos) {
-            doc.contenido = 'El mensaje ha sido eliminado';
-            doc.post = undefined;
-        }
-        return doc;
-    });
+    const result = messages.map((m) => filterMessageForUser(m, userAId));
 
     return result.reverse();
 };
@@ -110,12 +134,12 @@ export const saveMessage = async (remitenteId: string, destinatarioId: string, c
         parentMessage: parentMessageId || undefined
     });
 
-    return msg.populate([
+    const populated = await msg.populate([
         { path: 'remitente', select: '_id nombre avatarUrl' },
         { path: 'destinatario', select: '_id nombre avatarUrl' },
         { 
             path: 'post', 
-            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores' } 
+            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores seguidos' } 
         },
         {
             path: 'parentMessage',
@@ -123,6 +147,8 @@ export const saveMessage = async (remitenteId: string, destinatarioId: string, c
             populate: { path: 'remitente', select: '_id nombre' }
         }
     ]);
+
+    return populated;
 };
 
 /**

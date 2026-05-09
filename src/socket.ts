@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { verifyAccessToken } from './utils/jwt';
-import { saveMessage, deleteMessages, reactToMessage } from './services/chat';
+import { saveMessage, deleteMessages, reactToMessage, filterMessageForUser } from './services/chat';
 import Logging from './library/Logging';
 
 let io: SocketServer;
@@ -41,10 +41,14 @@ export const initSocket = (httpServer: HttpServer) => {
             }
             try {
                 const msg = await saveMessage(userId, destinatarioId, contenido?.trim() || '', postId, parentMessageId);
-                // Emitir al destinatario
-                io.to(`user_${destinatarioId}`).emit('receive_message', msg);
-                // Confirmar al remitente (para reflejar en su UI)
-                socket.emit('message_sent', msg);
+                
+                // Filtrar para el destinatario
+                const filteredForDest = filterMessageForUser(msg, destinatarioId);
+                io.to(`user_${destinatarioId}`).emit('receive_message', filteredForDest);
+                
+                // Filtrar para el remitente
+                const filteredForSender = filterMessageForUser(msg, userId);
+                socket.emit('message_sent', filteredForSender);
             } catch (err) {
                 Logging.error(`[Socket] Error guardando mensaje: ${err}`);
                 socket.emit('message_error', { message: 'Error enviando el mensaje' });
