@@ -19,7 +19,37 @@ export const getMutualFollows = async (userId: string) => {
     const contacts = await Usuario.find({ _id: { $in: mutualIds } })
         .select('_id nombre avatarUrl');
 
-    return contacts;
+    // Añadir recuento de mensajes sin leer y último mensaje para cada contacto
+    const contactsWithUnread = await Promise.all(contacts.map(async (contact) => {
+        const unreadCount = await Message.countDocuments({
+            remitente: contact._id,
+            destinatario: userId,
+            leido: false
+        });
+
+        // Buscar el último mensaje entre ambos
+        const lastMessage = await Message.findOne({
+            $or: [
+                { remitente: contact._id, destinatario: userId },
+                { remitente: userId, destinatario: contact._id }
+            ]
+        }).sort({ createdAt: -1 });
+
+        let lastMessageText = null;
+        if (lastMessage) {
+            lastMessageText = lastMessage.eliminadoParaTodos 
+                ? 'El mensaje ha sido eliminado' 
+                : lastMessage.contenido;
+        }
+
+        return {
+            ...contact.toObject(),
+            unreadCount,
+            lastMessage: lastMessageText
+        };
+    }));
+
+    return contactsWithUnread;
 };
 
 /**
