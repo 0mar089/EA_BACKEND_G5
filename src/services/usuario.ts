@@ -59,9 +59,7 @@ const getAllUsuarios = async (
             { email: { $regex: search, $options: "i" } }
         ];
     }
-    Logging.info(`[UsuarioService] Listing users with filter: ${JSON.stringify(filter)}`);
-
-    //filtrar por universidad
+    // filtrado por universidad
     if (universidades) {
         const uniArray = Array.isArray(universidades) ? universidades : universidades.split(",");
         filter.universidad = {
@@ -116,9 +114,7 @@ const getAllUsuariosAdmin= async (
             { email: { $regex: search, $options: "i" } }
         ];
     }
-    Logging.info(`[UsuarioService] Admin Listing users with filter: ${JSON.stringify(filter)}`);
-
-    //filtrar por universidad
+    // filtrado por universidad
     if (universidades) {
         const uniArray = Array.isArray(universidades) ? universidades : universidades.split(",");
         filter.universidad = {
@@ -158,7 +154,6 @@ const getAllUsuariosAdmin= async (
 };
 
 const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promise<IUsuarioModel | null> => {
-    Logging.info(`[UsuarioService] Updating user ${usuarioId} with data: ${JSON.stringify(data)}`);
     const usuario = await Usuario.findById(usuarioId);
     if (!usuario) return null;
 

@@ -107,11 +107,6 @@ const readAll = async (req: AuthRequest, res: Response) => {
             Logging.info(`[200] [usuario] List Users | page=${page} limit=${limit}`);
         }
 
-        if (result && result.docs) {
-            const statusSummary = result.docs.map((u: any) => `${u.nombre}: ${u.activo}`).join(', ');
-            Logging.info(`[UsuarioController] Sending users: ${statusSummary}`);
-        }
-
         return res.status(200).json(result);
 
     } catch (error) {
