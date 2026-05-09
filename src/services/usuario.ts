@@ -88,7 +88,7 @@ const getAllUsuarios = async (
     const options = {
         page,
         limit,
-        select: { nombre: 1, email: 1, avatarUrl: 1, descripcion: 1, universidad: 1, rol: 1, activo: 1 },
+        select: { nombre: 1, email: 1, avatarUrl: 1, descripcion: 1, universidad: 1, rol: 1, activo: 1, privado: 1 },
         lean: true,
         populate: [
             { path: "universidad", select: "nombre ubicacion" },
@@ -145,7 +145,7 @@ const getAllUsuariosAdmin= async (
     const options = {
         page,
         limit,
-        select: { nombre: 1, email: 1, avatarUrl: 1, descripcion: 1, universidad: 1, rol: 1, activo: 1 },
+        select: { nombre: 1, email: 1, avatarUrl: 1, descripcion: 1, universidad: 1, rol: 1, activo: 1, privado: 1 },
         lean: true,
         populate: [
             { path: "universidad", select: "nombre ubicacion" },
@@ -158,6 +158,7 @@ const getAllUsuariosAdmin= async (
 };
 
 const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promise<IUsuarioModel | null> => {
+    Logging.info(`[UsuarioService] Updating user ${usuarioId} with data: ${JSON.stringify(data)}`);
     const usuario = await Usuario.findById(usuarioId);
     if (!usuario) return null;
 
@@ -179,6 +180,10 @@ const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promis
                 await Universidad.findByIdAndUpdate(newUniId, { $addToSet: { usuarios: usuario._id } });
             }
         }
+    }
+
+    if ('universidad' in data && data.universidad === null) {
+        await Usuario.findByIdAndUpdate(usuarioId, { $unset: { universidad: "" } });
     }
 
     usuario.set(data);
