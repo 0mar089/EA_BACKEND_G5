@@ -81,7 +81,7 @@ const getAllUsuarios = async (
     const options = {
         page,
         limit,
-        select: "nombre email avatarUrl descripcion universidad",
+        select: "nombre email avatarUrl descripcion universidad rol",
         populate: [
             { path: "universidad", select: "nombre ubicacion" },
             { path: "grado", select: "nombre" },
@@ -133,7 +133,7 @@ const getAllUsuariosAdmin= async (
     const options = {
         page,
         limit,
-        select: "nombre email avatarUrl descripcion universidad",
+        select: "nombre email avatarUrl descripcion universidad rol",
         populate: [
             { path: "universidad", select: "nombre ubicacion" },
             { path: "grado", select: "nombre" },
