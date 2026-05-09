@@ -109,4 +109,36 @@ const getAllCommentsFromUser = async (userId: string, page: number = 1, limit: n
     return await Comment.paginate(filter, options);
 };
 
-export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser };
+const darleLike = async (
+    commentId: string,
+    userId: string
+) => {
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+        throw new Error('Invalid commentId');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error('Invalid userId');
+    }
+
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) return null;
+
+    const alreadyLiked = comment.likes?.some(
+        (id) => id.toString() === userId
+    );
+
+    if (alreadyLiked) {
+        comment.likes = comment.likes.filter(
+            (id) => id.toString() !== userId
+        );
+    } else {
+        if (!comment.likes) comment.likes = [];
+        comment.likes.push(new mongoose.Types.ObjectId(userId));
+    }
+
+    return await comment.save();
+};
+
+export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser, darleLike };

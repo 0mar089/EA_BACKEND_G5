@@ -238,5 +238,35 @@ router.delete(
     checkRole(['admin']),
     controller.deleteComment
 );
+/**
+ * @openapi
+ * /comments/{commentId}/like:
+ *   patch:
+ *     summary: Dar o quitar like a un comentario (toggle)
+ *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ObjectId del comentario
+ *     responses:
+ *       200:
+ *         description: Comentario actualizado con like/unlike
+ *       401:
+ *         description: No autorizado
+ *       404:
+ *         description: Comentario no encontrado
+ *       400:
+ *         description: ID inválido
+ */
+router.patch(
+    '/:commentId/like',
+    authenticateToken,
+    controller.darleLike
+);
 
 export default router;

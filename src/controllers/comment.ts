@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import CommentService from '../services/comment';
+import NotificationService from '../services/notification';
+import Notification from '../models/Notification';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
 
@@ -34,39 +36,18 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
 
         Logging.info(`[201] [comment] Created | commentId=${savedComment._id} userId=${authorId}`);
 
-        try {
-
-            const Post = require('../models/Post').default;
-            const post = await Post.findById(savedComment.post);
-
-            if (post && post.usuario.toString() !== authorId.toString()) {
-
-                const NotificationService =
-                    require('../services/notification').default;
-
-                NotificationService.createNotification({
-                    recipient: post.usuario,
-                    sender: authorId,
-                    type: 'comment',
-                    post: post._id,
-                    comment: savedComment._id
-                });
-            }
-
-        } catch (notifyError) {
-            Logging.error(`[comment] Notification Failed | commentId=${savedComment._id}`);
-        }
-
         return res.status(201).json(savedComment);
 
     } catch (error: any) {
 
         if (error.name === 'ValidationError') {
-            Logging.warning(`[422] [comment] Validation Error | message=${error.message}`);
-            return res.status(422).json({ message: error.message });
+            Logging.warning(`[422] [comment] Validation Error`);
+            return res.status(422).json({
+                message: error.message
+            });
         }
 
-        Logging.error(`[500] [comment] Create Failed | error=${error}`);
+        Logging.error(`[500] [comment] Create Failed`);
         return res.status(500).json({
             message: 'Internal server error'
         });
@@ -124,7 +105,7 @@ const getAllComments = async (req: AuthRequest, res: Response, next: NextFunctio
             : 10;
 
         if (page < 1 || limit < 1) {
-            Logging.warning(`[400] [comment] Invalid Pagination | page=${page} limit=${limit}`);
+            Logging.warning(`[400] [comment] Invalid Pagination`);
             return res.status(400).json({
                 message: 'Valores de paginación inválidos'
             });
@@ -132,7 +113,7 @@ const getAllComments = async (req: AuthRequest, res: Response, next: NextFunctio
 
         const isAdmin = req.user?.rol === 'admin';
 
-        const commentes =
+        const comments =
             await CommentService.getAllComments(
                 page,
                 limit,
@@ -141,7 +122,7 @@ const getAllComments = async (req: AuthRequest, res: Response, next: NextFunctio
 
         Logging.info(`[200] [comment] List All | page=${page} limit=${limit}`);
 
-        return res.status(200).json(commentes);
+        return res.status(200).json(comments);
 
     } catch (error) {
 
@@ -211,7 +192,7 @@ const updateComment = async (req: AuthRequest, res: Response, next: NextFunction
     }
 };
 
-const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction) => {
+const deleteComment = async (req: AuthRequest, res: Response) => {
 
     const commentId = req.params.commentId;
     const user = req.user;
@@ -244,15 +225,6 @@ const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction
             return res.status(404).json({ message: 'not found' });
         }
 
-        try {
-            const Notification = require('../models/Notification').default;
-            await Notification.findOneAndDelete({
-                comment: comment._id
-            });
-        } catch (notifyError) {
-            Logging.error(`[comment] Notification Delete Failed | commentId=${commentId}`);
-        }
-
         Logging.info(`[200] [comment] Deleted | commentId=${commentId}`);
 
         return res.status(200).json(comment);
@@ -261,9 +233,7 @@ const deleteComment = async (req: AuthRequest, res: Response, next: NextFunction
 
         if (error.message === 'Forbidden') {
             Logging.warning(`[403] [comment] Forbidden Delete | commentId=${commentId}`);
-            return res.status(403).json({
-                message: 'No tienes permiso para eliminar este comentario'
-            });
+            return res.status(403).json({ message: 'Forbidden' });
         }
 
         Logging.error(`[500] [comment] Delete Failed | commentId=${commentId}`);
@@ -284,9 +254,9 @@ const getAllCommentsFromPost = async (req: AuthRequest, res: Response, next: Nex
         });
     }
 
-    try {
+    const isAdmin = req.user?.rol === 'admin';
 
-        const isAdmin = req.user?.rol === 'admin';
+    try {
 
         const comments =
             await CommentService.getAllCommentsFromPost(
@@ -388,6 +358,57 @@ const getAllCommentsFromUser = async (req: AuthRequest, res: Response, next: Nex
     }
 };
 
+const darleLike = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const commentId = req.params.commentId;
+    const user = req.user;
+
+    if (!user?.id) {
+        Logging.warning(`[401] [comment] Unauthorized Like`);
+        return res.status(401).json({
+            message: 'Usuario no autenticado'
+        });
+    }
+
+    if (!isValidObjectId(commentId)) {
+        Logging.warning(`[400] [comment] Invalid Like ID | commentId=${commentId}`);
+        return res.status(400).json({
+            message: 'ID de comentario inválido'
+        });
+    }
+
+    try {
+        const comment = await CommentService.darleLike(commentId, user.id);
+
+        if (comment) {
+            const commentOwnerId = comment.usuario._id?.toString() || comment.usuario.toString();
+            const isNewLike = comment.likes?.some((id: any) => id.toString() === user.id);
+
+            if (isNewLike && commentOwnerId !== user.id) {
+                NotificationService.createNotification({
+                    recipient: commentOwnerId,
+                    sender: user.id,
+                    type: 'like_comment' as any,
+                    comment: comment._id
+                });
+            } else if (!isNewLike && commentOwnerId !== user.id) {
+                await Notification.findOneAndDelete({
+                    recipient: commentOwnerId,
+                    sender: user.id,
+                    type: 'like_comment',
+                    comment: comment._id
+                });
+            }
+        }
+
+        Logging.info(`[200] [comment] Like Toggled | commentId=${commentId} userId=${user.id}`);
+        return comment ? res.status(200).json(comment) : res.status(404).json({ message: 'Comentario no encontrado' });
+
+    } catch (error) {
+        Logging.error(`[500] [comment] Like Failed | commentId=${commentId} error=${error}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export default {
     createComment,
     getComment,
@@ -396,5 +417,6 @@ export default {
     deleteComment,
     getAllCommentsFromPost,
     deleteAllCommentsFromPost,
-    getAllCommentsFromUser
+    getAllCommentsFromUser,
+    darleLike
 };

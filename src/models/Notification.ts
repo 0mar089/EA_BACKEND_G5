@@ -3,6 +3,7 @@ import mongoosePaginate from 'mongoose-paginate-v2';
 
 export enum NotificationType {
     LIKE = 'like',
+    LIKE_COMMENT = 'like_comment',
     COMMENT = 'comment',
     FOLLOW = 'follow',
     FOLLOW_REQUEST = 'follow_request',

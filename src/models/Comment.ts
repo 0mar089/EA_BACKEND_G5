@@ -6,11 +6,12 @@ export interface IComment {
     post: Types.ObjectId; // Referencia al post al que pertenece el comentario
     texto: string;
     activo: boolean;
-  };
+    likes: Types.ObjectId[];
+};
 
-  export interface ICommentModel extends IComment, Document { }
+export interface ICommentModel extends IComment, Document { }
 
-  const CommentSchema: Schema<ICommentModel> = new Schema(
+const CommentSchema: Schema<ICommentModel> = new Schema(
     {
         usuario: {
             type: Schema.Types.ObjectId,
@@ -30,7 +31,11 @@ export interface IComment {
         activo: {
             type: Boolean,
             default: true
-        }
+        },
+        likes: [{
+            type: Schema.Types.ObjectId,
+            ref: 'Usuario'
+        }]
     },
     {
         timestamps: true,
