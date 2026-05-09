@@ -394,38 +394,6 @@ const darleLike = async (req: AuthRequest, res: Response) => {
                 user.id
             );
 
-        if (post) {
-
-            const postOwnerId = post.usuario._id.toString();
-
-            const isNewLike =
-                post.likes.some(
-                    (id: any) => id.toString() === user.id
-                );
-
-            if (isNewLike && postOwnerId !== user.id) {
-
-                const NotificationService =
-                    require('../services/notification').default;
-
-                NotificationService.createNotification({
-                    recipient: postOwnerId,
-                    sender: user.id,
-                    type: 'like',
-                    post: post._id
-                });
-            } else if (!isNewLike && postOwnerId !== user.id) {
-                // If it's an unlike, delete the existing notification
-                const Notification = require('../models/Notification').default;
-                await Notification.findOneAndDelete({
-                    recipient: postOwnerId,
-                    sender: user.id,
-                    type: 'like',
-                    post: post._id
-                });
-            }
-        }
-
         Logging.info(`[200] [post] Like Toggled | postId=${postId} userId=${user.id}`);
 
         return post

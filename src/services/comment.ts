@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import Comment, { ICommentModel, IComment } from '../models/Comment';
 import Usuario from '../models/Usuario';
 import Post from '../models/Post';
+import NotificationService from './notification';
+import { NotificationType } from '../models/Notification';
 
 const createComment = async (data: Partial<IComment>): Promise<ICommentModel> => {
     const comment = new Comment({
@@ -21,10 +23,21 @@ const createComment = async (data: Partial<IComment>): Promise<ICommentModel> =>
 
     // Vincular comentario al post
     if (savedComment.post) {
-        await Post.findByIdAndUpdate(
+        const post = await Post.findByIdAndUpdate(
             savedComment.post,
             { $addToSet: { comments: savedComment._id } }
         );
+
+        // Crear notificación de comentario
+        if (post) {
+            await NotificationService.createNotification({
+                sender: savedComment.usuario.toString(),
+                recipient: post.usuario.toString(),
+                type: NotificationType.COMMENT,
+                post: post._id.toString(),
+                comment: savedComment._id.toString()
+            });
+        }
     }
 
     return (await savedComment.populate('usuario', 'nombre avatarUrl'));
@@ -133,9 +146,25 @@ const darleLike = async (
         comment.likes = comment.likes.filter(
             (id) => id.toString() !== userId
         );
+
+        // Eliminar notificación de like en comentario
+        await NotificationService.deleteNotificationByCriteria({
+            sender: userId,
+            recipient: comment.usuario.toString(),
+            type: NotificationType.LIKE_COMMENT,
+            comment: comment._id.toString()
+        });
     } else {
         if (!comment.likes) comment.likes = [];
         comment.likes.push(new mongoose.Types.ObjectId(userId));
+
+        // Crear notificación de like en comentario
+        await NotificationService.createNotification({
+            sender: userId,
+            recipient: comment.usuario.toString(),
+            type: NotificationType.LIKE_COMMENT,
+            comment: comment._id.toString()
+        });
     }
 
     return await comment.save();

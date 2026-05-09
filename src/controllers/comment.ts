@@ -379,27 +379,6 @@ const darleLike = async (req: AuthRequest, res: Response, next: NextFunction) =>
     try {
         const comment = await CommentService.darleLike(commentId, user.id);
 
-        if (comment) {
-            const commentOwnerId = comment.usuario._id?.toString() || comment.usuario.toString();
-            const isNewLike = comment.likes?.some((id: any) => id.toString() === user.id);
-
-            if (isNewLike && commentOwnerId !== user.id) {
-                NotificationService.createNotification({
-                    recipient: commentOwnerId,
-                    sender: user.id,
-                    type: 'like_comment' as any,
-                    comment: comment._id
-                });
-            } else if (!isNewLike && commentOwnerId !== user.id) {
-                await Notification.findOneAndDelete({
-                    recipient: commentOwnerId,
-                    sender: user.id,
-                    type: 'like_comment',
-                    comment: comment._id
-                });
-            }
-        }
-
         Logging.info(`[200] [comment] Like Toggled | commentId=${commentId} userId=${user.id}`);
         return comment ? res.status(200).json(comment) : res.status(404).json({ message: 'Comentario no encontrado' });
 

@@ -30,7 +30,10 @@ const createNotification = async (data: {
 }) => {
     try {
         // Don't notify if sender is the recipient
-        if (data.sender === data.recipient) return;
+        if (data.sender.toString() === data.recipient.toString()) {
+            Logging.info(`[NotificationService] Skipping notification: sender is recipient (${data.sender})`);
+            return;
+        }
 
         // Save to Database
         const notification = new Notification(data);
@@ -38,7 +41,7 @@ const createNotification = async (data: {
 
         // Populate sender info for the client
         const populatedNotification = await Notification.findById(notification._id)
-            .populate('sender', 'nombre foto')
+            .populate('sender', 'nombre avatarUrl')
             .populate('post', 'imageUrl caption');
 
         // Emit via Socket.io
@@ -65,7 +68,7 @@ const getNotificationsForUser = async (userId: string, page: number = 1, limit: 
             limit,
             sort: { createdAt: -1 },
             populate: [
-                { path: 'sender', select: 'nombre foto' },
+                { path: 'sender', select: 'nombre avatarUrl' },
                 { path: 'post', select: 'imageUrl caption' }
             ]
         }
@@ -95,11 +98,16 @@ const deleteNotificationsByPost = async (postId: string) => {
     return await Notification.deleteMany({ post: postId });
 };
 
+const deleteNotificationByCriteria = async (criteria: { sender: string; recipient: string; type: NotificationType; post?: string; comment?: string }) => {
+    return await Notification.findOneAndDelete(criteria);
+};
+
 export default {
     createNotification,
     getNotifications: getNotificationsForUser,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    deleteNotificationsByPost
+    deleteNotificationsByPost,
+    deleteNotificationByCriteria
 };

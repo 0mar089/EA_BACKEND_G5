@@ -3,6 +3,7 @@ import Post, { IPostModel, IPost } from '../models/Post';
 import Usuario from '../models/Usuario';
 import Comment from '../models/Comment';
 import NotificationService from './notification';
+import { NotificationType } from '../models/Notification';
 
 const postPopulate = [
     {
@@ -294,16 +295,30 @@ const darleLike = async (
     );
 
     if (alreadyLiked) {
-
         post.likes = post.likes.filter(
             (id) => id.toString() !== userId
         );
 
+        // Eliminar notificación de like
+        await NotificationService.deleteNotificationByCriteria({
+            sender: userId,
+            recipient: post.usuario.toString(),
+            type: NotificationType.LIKE,
+            post: post._id.toString()
+        });
     } else {
-
         post.likes.push(
             new mongoose.Types.ObjectId(userId)
         );
+
+        // Crear notificación de like
+        Logging.info(`[Notification] Creating like notification: sender=${userId}, recipient=${post.usuario.toString()}, post=${post._id}`);
+        await NotificationService.createNotification({
+            sender: userId,
+            recipient: post.usuario.toString(),
+            type: NotificationType.LIKE,
+            post: post._id.toString()
+        });
     }
 
     await post.save();
