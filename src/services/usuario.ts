@@ -7,6 +7,7 @@ import Follow, { FollowStatus } from '../models/Follow';
 import Notification from '../models/Notification';
 import notificationService from './notification';
 import { NotificationType } from '../models/Notification';
+import Logging from '../library/Logging';
 
 const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> => {
     // Normalizamos "" a null para evitar errores de validación de ObjectId
@@ -46,13 +47,19 @@ const getAllUsuarios = async (
     grados?: string,      
     asignaturas?: string,  
     page: number = 1, 
-    limit: number = 10
+    limit: number = 10,
+    soloActivos: boolean = true
 ): Promise<any> => {
-    const filter: any = { activo: true };
+    const filter: any = {};
+    if (soloActivos) filter.activo = true;
 
     if (search) {
-        filter.nombre = { $regex: search, $options: "i" };
+        filter.$or = [
+            { nombre: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } }
+        ];
     }
+    Logging.info(`[UsuarioService] Listing users with filter: ${JSON.stringify(filter)}`);
 
     //filtrar por universidad
     if (universidades) {
@@ -81,7 +88,8 @@ const getAllUsuarios = async (
     const options = {
         page,
         limit,
-        select: "nombre email avatarUrl descripcion universidad rol",
+        select: { nombre: 1, email: 1, avatarUrl: 1, descripcion: 1, universidad: 1, rol: 1, activo: 1 },
+        lean: true,
         populate: [
             { path: "universidad", select: "nombre ubicacion" },
             { path: "grado", select: "nombre" },
@@ -100,11 +108,15 @@ const getAllUsuariosAdmin= async (
     page: number = 1, 
     limit: number = 10
 ): Promise<any> => {
-    const filter: any = { activo: true };
+    const filter: any = {}; // Eliminado el filtro activo: true para admins
 
     if (search) {
-        filter.nombre = { $regex: search, $options: "i" };
+        filter.$or = [
+            { nombre: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } }
+        ];
     }
+    Logging.info(`[UsuarioService] Admin Listing users with filter: ${JSON.stringify(filter)}`);
 
     //filtrar por universidad
     if (universidades) {
@@ -133,7 +145,8 @@ const getAllUsuariosAdmin= async (
     const options = {
         page,
         limit,
-        select: "nombre email avatarUrl descripcion universidad rol",
+        select: { nombre: 1, email: 1, avatarUrl: 1, descripcion: 1, universidad: 1, rol: 1, activo: 1 },
+        lean: true,
         populate: [
             { path: "universidad", select: "nombre ubicacion" },
             { path: "grado", select: "nombre" },

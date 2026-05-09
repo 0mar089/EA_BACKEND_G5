@@ -4,6 +4,7 @@ export interface IMessage {
     remitente: Types.ObjectId;
     destinatario: Types.ObjectId;
     contenido: string;
+    post?: Types.ObjectId; // Nueva referencia a post
     leido: boolean;
     eliminadoPara: Types.ObjectId[];
     eliminadoParaTodos: boolean;
@@ -25,9 +26,12 @@ const MessageSchema: Schema<IMessageModel> = new Schema(
         },
         contenido: {
             type: String,
-            required: true,
             trim: true,
             maxlength: 2000
+        },
+        post: {
+            type: Schema.Types.ObjectId,
+            ref: 'Post'
         },
         leido: {
             type: Boolean,

@@ -37,9 +37,13 @@ export const getMutualFollows = async (userId: string) => {
 
         let lastMessageText = null;
         if (lastMessage) {
-            lastMessageText = lastMessage.eliminadoParaTodos 
-                ? 'El mensaje ha sido eliminado' 
-                : lastMessage.contenido;
+            if (lastMessage.eliminadoParaTodos) {
+                lastMessageText = 'El mensaje ha sido eliminado';
+            } else if (lastMessage.post) {
+                lastMessageText = 'Envió una publicación';
+            } else {
+                lastMessageText = lastMessage.contenido;
+            }
         }
 
         return {
@@ -70,13 +74,18 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
         .skip((page - 1) * limit)
         .limit(limit)
         .populate('remitente', '_id nombre avatarUrl')
-        .populate('destinatario', '_id nombre avatarUrl');
+        .populate('destinatario', '_id nombre avatarUrl')
+        .populate({
+            path: 'post',
+            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores' }
+        });
 
     // Mapear contenido si fue eliminado para todos (Soft Delete)
     const result = messages.map((m) => {
         const doc = m.toObject();
         if (doc.eliminadoParaTodos) {
             doc.contenido = 'El mensaje ha sido eliminado';
+            doc.post = undefined;
         }
         return doc;
     });
@@ -87,16 +96,21 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
 /**
  * Guarda un mensaje en la base de datos.
  */
-export const saveMessage = async (remitenteId: string, destinatarioId: string, contenido: string) => {
+export const saveMessage = async (remitenteId: string, destinatarioId: string, contenido: string, postId?: string) => {
     const msg = await Message.create({
         remitente: remitenteId,
         destinatario: destinatarioId,
-        contenido
+        contenido,
+        post: postId || undefined
     });
 
     return msg.populate([
         { path: 'remitente', select: '_id nombre avatarUrl' },
-        { path: 'destinatario', select: '_id nombre avatarUrl' }
+        { path: 'destinatario', select: '_id nombre avatarUrl' },
+        { 
+            path: 'post', 
+            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores' } 
+        }
     ]);
 };
 

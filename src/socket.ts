@@ -33,10 +33,14 @@ export const initSocket = (httpServer: HttpServer) => {
         socket.join(`user_${userId}`);
 
         // ── Enviar mensaje ──────────────────────────────────────────────────
-        socket.on('send_message', async ({ destinatarioId, contenido }) => {
-            if (!destinatarioId || !contenido?.trim()) return;
+        socket.on('send_message', async ({ destinatarioId, contenido, postId }) => {
+            Logging.info(`[Socket] Mensaje recibido de ${userId} para ${destinatarioId} | postId: ${postId}`);
+            if (!destinatarioId || (!contenido?.trim() && !postId)) {
+                Logging.warning(`[Socket] Mensaje rechazado: falta destinatario o contenido/postId`);
+                return;
+            }
             try {
-                const msg = await saveMessage(userId, destinatarioId, contenido.trim());
+                const msg = await saveMessage(userId, destinatarioId, contenido?.trim() || '', postId);
                 // Emitir al destinatario
                 io.to(`user_${destinatarioId}`).emit('receive_message', msg);
                 // Confirmar al remitente (para reflejar en su UI)
