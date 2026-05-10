@@ -34,12 +34,14 @@ const getReportStats = async () => {
     const userReports = await Report.countDocuments({ tipo: 'user', estado: { $ne: 'resuelto' } });
     const postReports = await Report.countDocuments({ tipo: 'post', estado: { $ne: 'resuelto' } });
     const commentReports = await Report.countDocuments({ tipo: 'comment', estado: { $ne: 'resuelto' } });
+    const chatReports = await Report.countDocuments({ tipo: 'chat', estado: { $ne: 'resuelto' } });
 
     return {
         total: totalActive,
         user: userReports,
         post: postReports,
-        comment: commentReports
+        comment: commentReports,
+        chat: chatReports
     };
 };
 

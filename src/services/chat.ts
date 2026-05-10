@@ -217,3 +217,39 @@ export const reactToMessage = async (userId: string, messageId: string, emoji: s
         { path: 'parentMessage', populate: { path: 'remitente', select: '_id nombre' } }
     ]);
 };
+
+export const getMessageById = async (id: string) => {
+    return await Message.findById(id)
+        .populate('remitente', '_id nombre avatarUrl')
+        .populate('destinatario', '_id nombre avatarUrl');
+};
+
+export const getConversationForAdmin = async (userAId: string, userBId: string, limit = 50) => {
+    const a = new mongoose.Types.ObjectId(userAId);
+    const b = new mongoose.Types.ObjectId(userBId);
+
+    const messages = await Message.find({
+        $or: [
+            { remitente: a, destinatario: b },
+            { remitente: b, destinatario: a }
+        ]
+    })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .populate('remitente', '_id nombre avatarUrl')
+        .populate('destinatario', '_id nombre avatarUrl')
+        .populate({
+            path: 'post',
+            populate: { path: 'usuario', select: '_id nombre avatarUrl' }
+        })
+        .populate({
+            path: 'parentMessage',
+            model: 'Message',
+            populate: [
+                { path: 'remitente', model: 'Usuario', select: '_id nombre avatarUrl' },
+                { path: 'post', model: 'Post', select: '_id imageUrl caption' }
+            ]
+        });
+
+    return messages.reverse();
+};

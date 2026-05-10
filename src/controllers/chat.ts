@@ -2,10 +2,53 @@ import { Response } from 'express';
 import mongoose from 'mongoose';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
-import { getMutualFollows, getConversation, markAsRead, getUnreadCount } from '../services/chat';
+import { getMutualFollows, getConversation, markAsRead, getUnreadCount, getMessageById, getConversationForAdmin } from '../services/chat';
 
 const isValidObjectId = (id: string) =>
     mongoose.Types.ObjectId.isValid(id);
+
+/** GET /chat/context/:userAId/:userBId → Historial para moderación (ADMIN ONLY) */
+export const getConversationContext = async (req: AuthRequest, res: Response) => {
+    try {
+        if (req.user?.rol !== 'admin') {
+            return res.status(403).json({ message: 'Acceso denegado' });
+        }
+
+        const { userAId, userBId } = req.params;
+
+        if (!isValidObjectId(userAId) || !isValidObjectId(userBId)) {
+            return res.status(400).json({ message: 'IDs de usuario inválidos' });
+        }
+
+        const messages = await getConversationForAdmin(userAId, userBId);
+        return res.status(200).json(messages);
+    } catch (error) {
+        Logging.error(`[500] [chat] Get Conversation Context Failed: ${error}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/** GET /chat/message/:messageId */
+export const getMessage = async (req: AuthRequest, res: Response) => {
+    try {
+        const { messageId } = req.params;
+
+        if (!isValidObjectId(messageId)) {
+            return res.status(400).json({ message: 'ID de mensaje inválido' });
+        }
+
+        const message = await getMessageById(messageId);
+
+        if (!message) {
+            return res.status(404).json({ message: 'Mensaje no encontrado' });
+        }
+
+        return res.status(200).json(message);
+    } catch (error) {
+        Logging.error(`[500] [chat] Get Message Failed: ${error}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 /** GET /chat/contacts → Seguidores mutuos (con quién puedes chatear) */
 export const getContacts = async (req: AuthRequest, res: Response) => {
