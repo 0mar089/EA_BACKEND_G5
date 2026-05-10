@@ -68,24 +68,40 @@ export const filterMessageForUser = (message: any, viewerId: string) => {
         return doc;
     }
 
+    // Filtrar post principal
     if (doc.post) {
-        const postOwner = doc.post.usuario;
-        if (postOwner && postOwner.privado) {
-            if (postOwner._id.toString() !== viewerId.toString()) {
-                const seguidoresOwner = postOwner.seguidores?.map((s: any) => s.toString()) || [];
-                const seguidosOwner = postOwner.seguidos?.map((s: any) => s.toString()) || [];
-                
-                const viewerFollowsOwner = seguidoresOwner.includes(viewerId.toString());
-                const ownerFollowsViewer = seguidosOwner.includes(viewerId.toString());
-
-                if (!viewerFollowsOwner || !ownerFollowsViewer) {
-                    doc.post = undefined;
-                    doc.contenido = 'Esta publicación es privada y no puedes verla.';
-                }
-            }
+        doc.post = filterPostContent(doc.post, viewerId);
+        if (!doc.post) {
+            doc.contenido = 'Esta publicación es privada y no puedes verla.';
         }
     }
+
+    // Filtrar post en mensaje citado (parent)
+    if (doc.parentMessage?.post) {
+        doc.parentMessage.post = filterPostContent(doc.parentMessage.post, viewerId);
+        if (!doc.parentMessage.post) {
+            doc.parentMessage.contenido = 'Esta publicación es privada y no puedes verla.';
+        }
+    }
+
     return doc;
+};
+
+/** Helper para filtrar el contenido del post según privacidad */
+const filterPostContent = (post: any, viewerId: string) => {
+    if (!post) return undefined;
+    const postOwner = post.usuario;
+    if (!postOwner || !postOwner.privado) return post;
+
+    const viewerIdStr = String(viewerId).toLowerCase();
+    // Dueño siempre ve su post
+    if (String(postOwner._id || postOwner).toLowerCase() === viewerIdStr) return post;
+
+    const seguidoresOwner = postOwner.seguidores || [];
+    const viewerFollowsOwner = seguidoresOwner.some((s: any) => String(s._id || s).toLowerCase() === viewerIdStr);
+
+    if (!viewerFollowsOwner) return undefined;
+    return post;
 };
 
 /**
@@ -214,7 +230,11 @@ export const reactToMessage = async (userId: string, messageId: string, emoji: s
     return message.populate([
         { path: 'remitente', select: '_id nombre avatarUrl' },
         { path: 'destinatario', select: '_id nombre avatarUrl' },
-        { path: 'parentMessage', populate: { path: 'remitente', select: '_id nombre' } }
+        { path: 'parentMessage', populate: { path: 'remitente', select: '_id nombre' } },
+        { 
+            path: 'post', 
+            populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores seguidos' } 
+        }
     ]);
 };
 

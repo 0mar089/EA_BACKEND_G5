@@ -67,9 +67,14 @@ export const initSocket = (httpServer: HttpServer) => {
         socket.on('react_message', async ({ messageId, emoji, destinatarioId }) => {
             try {
                 const msg = await reactToMessage(userId, messageId, emoji);
-                // Emitir a ambos
-                io.to(`user_${destinatarioId}`).emit('message_updated', msg);
-                socket.emit('message_updated', msg);
+                
+                // Filtrar para el destinatario
+                const filteredForDest = filterMessageForUser(msg, destinatarioId);
+                io.to(`user_${destinatarioId}`).emit('message_updated', filteredForDest);
+                
+                // Filtrar para el remitente
+                const filteredForSender = filterMessageForUser(msg, userId);
+                socket.emit('message_updated', filteredForSender);
             } catch (err) {
                 Logging.error(`[Socket] Error en reacción: ${err}`);
             }

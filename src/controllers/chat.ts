@@ -124,30 +124,21 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        console.log(`[Chat] Buscando historial para ${myId} con ${userId}`);
         const contacts = await getMutualFollows(myId);
-        console.log(`[Chat] Contactos encontrados: ${contacts.length}`);
 
         const isContact = contacts.some(
             (c: any) => c._id.toString() === userId
         );
 
         if (!isContact) {
-            console.log(`[Chat] Acceso denegado: ${userId} no es contacto mutuo de ${myId}`);
             Logging.warning(`[403] [chat] Unauthorized Conversation Access | userId=${myId} targetId=${userId}`);
             return res.status(403).json({
                 message: 'No puedes ver esta conversación'
             });
         }
 
-        console.log(`[Chat] Marcando como leído...`);
         await markAsRead(userId, myId);
-
-        console.log(`[Chat] Obteniendo mensajes...`);
         const messages = await getConversation(myId, userId, page);
-
-        console.log(`[Chat] Historial cargado exitosamente`);
-        Logging.info(`[200] [chat] Conversation Loaded | userId=${myId} targetId=${userId} page=${page}`);
 
         return res.status(200).json(messages);
 
