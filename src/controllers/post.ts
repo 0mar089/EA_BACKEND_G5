@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import PostService from '../services/post';
+import AuditService from '../services/audit';
 import Usuario from '../models/Usuario';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
@@ -210,10 +211,12 @@ const updatePost = async (req: AuthRequest, res: Response, next: NextFunction) =
     }
 };
 
-const deletePost = async (req: Request, res: Response) => {
+const deletePost = async (req: AuthRequest, res: Response) => {
 
     const postId = req.params.postId;
-    const user = (req as any).user;
+    const user = req.user;
+
+    if (!user) return res.status(401).json({ message: 'No autenticado' });
 
     if (!isValidObjectId(postId)) {
         Logging.warning(`[400] [post] Invalid Delete ID | postId=${postId}`);
@@ -237,6 +240,18 @@ const deletePost = async (req: Request, res: Response) => {
         }
 
         Logging.info(`[200] [post] Deleted | postId=${postId}`);
+
+        // Log Auditoría si es admin borrando contenido
+        if (user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(user.id) as any,
+                accion: AuditService.AdminAction.DELETE_POST,
+                tipoObjetivo: 'post',
+                objetivoId: postId,
+                detalles: `Post eliminado por moderación`,
+                ip: req.ip
+            });
+        }
 
         return res.status(200).json(post);
 

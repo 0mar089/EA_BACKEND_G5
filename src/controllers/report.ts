@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import ReportService from '../services/report';
+import AuditService from '../services/audit';
 import { AuthRequest } from '../middleware/auth';
 import Logging from '../library/Logging';
 
@@ -154,10 +155,11 @@ const readAll = async (req: Request, res: Response) => {
     }
 };
 
-const updateStatus = async (req: Request, res: Response) => {
+const updateStatus = async (req: AuthRequest, res: Response) => {
 
     const reportId = req.params.reportId;
     const { estado } = req.body;
+    const adminId = req.user?.id;
 
     if (!isValidObjectId(reportId)) {
         Logging.warning(`[400] [report] Invalid Report ID: ${reportId}`);
@@ -183,6 +185,19 @@ const updateStatus = async (req: Request, res: Response) => {
 
         if (updatedReport) {
             Logging.info(`[200] [report] Status Updated | reportId=${reportId} | estado=${estado}`);
+            
+            // Log Auditoría
+            if (adminId) {
+                await AuditService.recordLog({
+                    admin: new mongoose.Types.ObjectId(adminId) as any,
+                    accion: AuditService.AdminAction.UPDATE_REPORT_STATUS,
+                    tipoObjetivo: 'report',
+                    objetivoId: reportId,
+                    detalles: `Estado cambiado a: ${estado}`,
+                    ip: req.ip
+                });
+            }
+
             return res.status(200).json(updatedReport);
         }
 
@@ -207,9 +222,10 @@ const updateStatus = async (req: Request, res: Response) => {
     }
 };
 
-const deleteReport = async (req: Request, res: Response) => {
+const deleteReport = async (req: AuthRequest, res: Response) => {
 
     const reportId = req.params.reportId;
+    const adminId = req.user?.id;
 
     if (!isValidObjectId(reportId)) {
         Logging.warning(`[400] [report] Invalid Report ID: ${reportId}`);
@@ -225,6 +241,19 @@ const deleteReport = async (req: Request, res: Response) => {
 
         if (deletedReport) {
             Logging.info(`[200] [report] Report Deleted | reportId=${reportId}`);
+            
+            // Log Auditoría
+            if (adminId) {
+                await AuditService.recordLog({
+                    admin: new mongoose.Types.ObjectId(adminId) as any,
+                    accion: AuditService.AdminAction.DELETE_REPORT,
+                    tipoObjetivo: 'report',
+                    objetivoId: reportId,
+                    detalles: `Reporte eliminado`,
+                    ip: req.ip
+                });
+            }
+
             return res.status(200).json({
                 message: 'Reporte eliminado con éxito'
             });

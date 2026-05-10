@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import CommentService from '../services/comment';
+import AuditService from '../services/audit';
 import NotificationService from '../services/notification';
 import Notification from '../models/Notification';
 import Logging from '../library/Logging';
@@ -220,14 +221,23 @@ const deleteComment = async (req: AuthRequest, res: Response) => {
                 user.rol
             );
 
-        if (!comment) {
-            Logging.warning(`[404] [comment] Delete Not Found | commentId=${commentId}`);
-            return res.status(404).json({ message: 'not found' });
+        if (comment) {
+            Logging.info(`[200] [comment] Deleted | commentId=${commentId}`);
+            
+            // Log Auditoría si es admin borrando contenido
+            if (user.rol === 'admin') {
+                await AuditService.recordLog({
+                    admin: new mongoose.Types.ObjectId(user.id) as any,
+                    accion: AuditService.AdminAction.DELETE_COMMENT,
+                    tipoObjetivo: 'comment',
+                    objetivoId: commentId,
+                    detalles: `Comentario eliminado por moderación`,
+                    ip: req.ip
+                });
+            }
+
+            return res.status(200).json(comment);
         }
-
-        Logging.info(`[200] [comment] Deleted | commentId=${commentId}`);
-
-        return res.status(200).json(comment);
 
     } catch (error: any) {
 

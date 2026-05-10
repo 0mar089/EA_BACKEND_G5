@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import UsuarioService from '../services/usuario';
+import AuditService from '../services/audit';
 import Logging from '../library/Logging';
+import mongoose from 'mongoose';
 
 const createUsuario = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -115,15 +117,32 @@ const readAll = async (req: AuthRequest, res: Response) => {
     }
 };
 
-const updateUsuario = async (req: Request, res: Response, next: NextFunction) => {
+const updateUsuario = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const usuarioId = req.params.usuarioId;
+    const admin = req.user;
 
     try {
         const updatedUsuario = await UsuarioService.updateUsuario(usuarioId, req.body);
 
         if (updatedUsuario) {
             Logging.info(`[200] [usuario] User Updated | userId=${usuarioId}`);
+            
+            // Log Auditoría si es un admin cambiando datos de otro (ej: rol)
+            if (admin && admin.rol === 'admin' && admin.id !== usuarioId) {
+                let detalles = 'Usuario actualizado';
+                if (req.body.rol) detalles = `Rol cambiado a: ${req.body.rol}`;
+                
+                await AuditService.recordLog({
+                    admin: new mongoose.Types.ObjectId(admin.id) as any,
+                    accion: req.body.rol ? AuditService.AdminAction.CHANGE_ROLE : AuditService.AdminAction.UPDATE_USER,
+                    tipoObjetivo: 'user',
+                    objetivoId: usuarioId,
+                    detalles: detalles,
+                    ip: req.ip
+                });
+            }
+
             return res.status(200).json(updatedUsuario);
         }
 
@@ -142,15 +161,29 @@ const updateUsuario = async (req: Request, res: Response, next: NextFunction) =>
     }
 };
 
-const softDeleteUsuario = async (req: Request, res: Response, next: NextFunction) => {
+const softDeleteUsuario = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const usuarioId = req.params.usuarioId;
+    const admin = req.user;
 
     try {
         const usuario = await UsuarioService.softDeleteUsuario(usuarioId);
 
         if (usuario) {
             Logging.info(`[200] [usuario] Soft Delete | userId=${usuarioId}`);
+            
+            // Log Auditoría si es un admin desactivando la cuenta
+            if (admin && admin.rol === 'admin' && admin.id !== usuarioId) {
+                await AuditService.recordLog({
+                    admin: new mongoose.Types.ObjectId(admin.id) as any,
+                    accion: AuditService.AdminAction.BAN_USER,
+                    tipoObjetivo: 'user',
+                    objetivoId: usuarioId,
+                    detalles: `Cuenta desactivada por moderación`,
+                    ip: req.ip
+                });
+            }
+
             return res.status(200).json({ message: 'Cuenta desactivada correctamente', usuario });
         }
 
