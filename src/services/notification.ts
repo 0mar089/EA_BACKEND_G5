@@ -42,7 +42,10 @@ const createNotification = async (data: {
         // Populate sender info for the client
         const populatedNotification = await Notification.findById(notification._id)
             .populate('sender', 'nombre avatarUrl')
-            .populate('post', 'imageUrl caption');
+            .populate({
+                path: 'post',
+                select: 'imageUrl caption usuario'
+            });
 
         // Emit via Socket.io
         try {
@@ -69,7 +72,10 @@ const getNotificationsForUser = async (userId: string, page: number = 1, limit: 
             sort: { createdAt: -1 },
             populate: [
                 { path: 'sender', select: 'nombre avatarUrl' },
-                { path: 'post', select: 'imageUrl caption' }
+                { 
+                    path: 'post', 
+                    select: 'imageUrl caption usuario' 
+                }
             ]
         }
     );

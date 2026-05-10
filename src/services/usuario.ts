@@ -35,7 +35,7 @@ const getUsuario = async (usuarioId: string): Promise<IUsuarioModel | null> => {
 };
 
 const getUsuarioBasic = async (usuarioId: string): Promise<IUsuarioModel | null> => {
-    return await Usuario.findOne({ _id: usuarioId, activo: true }).select('nombre universidad')
+    return await Usuario.findOne({ _id: usuarioId, activo: true }).select('nombre universidad avatarUrl descripcion email privado')
     .populate('universidad', 'nombre ubicacion')
     .populate('grado', 'nombre')
     .populate('asignaturas', 'nombre');
@@ -364,11 +364,14 @@ const acceptFollowRequest = async (userId: string, followerId: string) => {
     await Usuario.findByIdAndUpdate(followerId, { $addToSet: { seguidos: userId } });
     await Usuario.findByIdAndUpdate(userId, { $addToSet: { seguidores: followerId } });
 
-    // 1. Eliminar TODAS las notificaciones de solicitud originales para evitar zombies
-    await Notification.deleteMany({
+    // 1. Convertir la notificación de solicitud original en una de "seguimiento" normal
+    // Esto permite que el usuario pueda devolver el follow incluso si recarga la página
+    await Notification.updateMany({
         recipient: userId,
         sender: followerId,
         type: NotificationType.FOLLOW_REQUEST
+    }, {
+        $set: { type: NotificationType.FOLLOW }
     });
 
     // 2. Notificar al seguidor que su solicitud fue aceptada
