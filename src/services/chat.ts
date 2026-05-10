@@ -129,7 +129,7 @@ export const getConversation = async (userAId: string, userBId: string, page = 1
         })
         .populate({
             path: 'parentMessage',
-            select: '_id contenido remitente',
+            select: '_id contenido remitente post',
             populate: { path: 'remitente', select: '_id nombre' }
         });
 
@@ -159,7 +159,7 @@ export const saveMessage = async (remitenteId: string, destinatarioId: string, c
         },
         {
             path: 'parentMessage',
-            select: '_id contenido remitente',
+            select: '_id contenido remitente post',
             populate: { path: 'remitente', select: '_id nombre' }
         }
     ]);
@@ -227,15 +227,20 @@ export const reactToMessage = async (userId: string, messageId: string, emoji: s
     }
 
     await message.save();
-    return message.populate([
+    const populated = await message.populate([
         { path: 'remitente', select: '_id nombre avatarUrl' },
         { path: 'destinatario', select: '_id nombre avatarUrl' },
-        { path: 'parentMessage', populate: { path: 'remitente', select: '_id nombre' } },
         { 
             path: 'post', 
             populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores seguidos' } 
+        },
+        {
+            path: 'parentMessage',
+            select: '_id contenido remitente post',
+            populate: { path: 'remitente', select: '_id nombre' }
         }
     ]);
+    return populated;
 };
 
 export const getMessageById = async (id: string) => {
