@@ -7,7 +7,8 @@ export enum NotificationType {
     COMMENT = 'comment',
     FOLLOW = 'follow',
     FOLLOW_REQUEST = 'follow_request',
-    FOLLOW_ACCEPTED = 'follow_accepted'
+    FOLLOW_ACCEPTED = 'follow_accepted',
+    MATCH = 'match'
 }
 
 export interface INotification {

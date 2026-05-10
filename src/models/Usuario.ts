@@ -20,6 +20,7 @@ export interface IUsuario {
     grado?: Types.ObjectId;
     asignaturas?: Types.ObjectId[];
     privado: boolean;
+    hasAcceptedUnimatchTerms: boolean;
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -112,6 +113,10 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
             default: []
         },
         privado: {
+            type: Boolean,
+            default: false
+        },
+        hasAcceptedUnimatchTerms: {
             type: Boolean,
             default: false
         }
