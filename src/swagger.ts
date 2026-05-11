@@ -10,11 +10,11 @@ const options: Options = {
       version: '1.0.0',
       description: 'Documentación del Backend EA para la gestión de Organizaciones y Usuarios',
     },
-    servers: [
-      {
-        url: `http://localhost:${config.server.port}`,
-      },
-    ],
+      servers: [
+        {
+          url: config.server.baseUrl,
+        },
+      ],
     components: {
       securitySchemes: {
         bearerAuth: {
