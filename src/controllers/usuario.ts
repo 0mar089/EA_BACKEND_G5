@@ -442,11 +442,19 @@ const unfollowUser = async (req: AuthRequest, res: Response) => {
     }
 };
 
-const assignGrado = async (req: Request, res: Response) => {
+const assignGrado = async (req: AuthRequest, res: Response) => {
+    const { usuarioId } = req.params;
+    const { id: requesterId, rol: requesterRole } = req.user || {};
+
+    // IDOR Protection: Only the user themselves or an admin can change this
+    if (usuarioId !== requesterId && requesterRole !== 'admin') {
+        Logging.warning(`[403] [usuario] Forbidden Assign Grado | requesterId=${requesterId} targetId=${usuarioId}`);
+        return res.status(403).json({ message: 'No tienes permiso para modificar este perfil' });
+    }
 
     try {
         const usuario = await UsuarioService.assignGrado(
-            req.params.usuarioId,
+            usuarioId,
             req.body.gradoId
         );
 
@@ -464,11 +472,19 @@ const assignGrado = async (req: Request, res: Response) => {
     }
 };
 
-const setAsignaturas = async (req: Request, res: Response) => {
+const setAsignaturas = async (req: AuthRequest, res: Response) => {
+    const { usuarioId } = req.params;
+    const { id: requesterId, rol: requesterRole } = req.user || {};
+
+    // IDOR Protection: Only the user themselves or an admin can change this
+    if (usuarioId !== requesterId && requesterRole !== 'admin') {
+        Logging.warning(`[403] [usuario] Forbidden Set Asignaturas | requesterId=${requesterId} targetId=${usuarioId}`);
+        return res.status(403).json({ message: 'No tienes permiso para modificar este perfil' });
+    }
 
     try {
         const usuario = await UsuarioService.setAsignaturas(
-            req.params.usuarioId,
+            usuarioId,
             req.body.asignaturas
         );
 
