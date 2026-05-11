@@ -18,8 +18,12 @@ const createGrado = async (data: Partial<IGrado>): Promise<IGradoModel> => {
 };
 
 const getGrado = async (gradoId: string): Promise<IGradoModel | null> => {
-    return await Grado.findById(gradoId).populate('universidad');
+    return await Grado.findById(gradoId).populate('universidad', 'nombre').populate('asignaturas', 'nombre');
 };
+
+const getAllGrados = async (): Promise<IGradoModel[]> => {
+    return await Grado.find().populate('universidad', 'nombre').populate('asignaturas', 'nombre');
+}
 
 const getGradosByUniversidad = async (universidadId: string): Promise<IGradoModel[]> => {
     return await Grado.find({ universidad: universidadId });
@@ -40,4 +44,9 @@ const deleteGrado = async (gradoId: string): Promise<IGradoModel | null> => {
     return await Grado.findByIdAndDelete(gradoId);
 };
 
-export default { createGrado, getGrado, getGradosByUniversidad, updateGrado, deleteGrado };
+const getAsignaturasByGrado = async (gradoId: string) => {
+    const grado = await Grado.findById(gradoId).populate('asignaturas', 'nombre');
+    return grado?.asignaturas || [];
+};
+
+export default { createGrado, getGrado, getGradosByUniversidad, updateGrado, deleteGrado, getAsignaturasByGrado, getAllGrados };

@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
-export type ReportType = 'user' | 'post' | 'comment';
+export type ReportType = 'user' | 'post' | 'comment' | 'chat';
 
 export interface IReport {
     usuarioReporta: Types.ObjectId; // Quién hace el reporte
@@ -21,7 +22,7 @@ const ReportSchema: Schema<IReportModel> = new Schema(
         },
         tipo: {
             type: String,
-            enum: ['user', 'post', 'comment'],
+            enum: ['user', 'post', 'comment', 'chat'],
             required: [true, 'El tipo de reporte es obligatorio']
         },
         objetivoId: {
@@ -47,6 +48,8 @@ const ReportSchema: Schema<IReportModel> = new Schema(
     }
 );
 
-const Report = mongoose.model<IReportModel>('Report', ReportSchema);
+ReportSchema.plugin(mongoosePaginate);
+
+const Report = mongoose.model<IReportModel, mongoose.PaginateModel<IReportModel>>('Report', ReportSchema);
 
 export default Report;

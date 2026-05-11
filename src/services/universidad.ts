@@ -14,14 +14,29 @@ const getUniversidad = async (universidadId: string): Promise<IUniversidadModel 
     return await Universidad.findById(universidadId).populate('usuarios');
 };
 
-const getAllUniversidades = async () => {
-    const universidades = await Universidad.find().select('nombre ubicacion usuarios').lean();
-    return universidades.map((uni) => ({
+const getAllUniversidades = async (page: number = 1, limit: number = 10, search: string = ''): Promise<any> => {
+    const filter: any = {};
+    if (search) {
+        filter.$or = [
+            { nombre: { $regex: search, $options: 'i' } },
+            { ubicacion: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    const options = {
+        page,
+        limit,
+        select: 'nombre ubicacion usuarios',
+        lean: true
+    };
+    const paginated: any = await Universidad.paginate(filter, options);
+    paginated.docs = paginated.docs.map((uni: any) => ({
         _id: uni._id,
         nombre: uni.nombre,
         ubicacion: uni.ubicacion,
         numIntegrantes: uni.usuarios ? uni.usuarios.length : 0
     }));
+    return paginated;
 };
 
 const updateUniversidad = async (universidadId: string, data: Partial<IUniversidad>): Promise<IUniversidadModel | null> => {

@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import Comment, { ICommentModel, IComment } from '../models/Comment';
 import Usuario from '../models/Usuario';
 import Post from '../models/Post';
+import NotificationService from './notification';
+import { NotificationType } from '../models/Notification';
 
 const createComment = async (data: Partial<IComment>): Promise<ICommentModel> => {
     const comment = new Comment({
@@ -21,21 +23,39 @@ const createComment = async (data: Partial<IComment>): Promise<ICommentModel> =>
 
     // Vincular comentario al post
     if (savedComment.post) {
-        await Post.findByIdAndUpdate(
+        const post = await Post.findByIdAndUpdate(
             savedComment.post,
             { $addToSet: { comments: savedComment._id } }
         );
+
+        // Crear notificación de comentario
+        if (post) {
+            await NotificationService.createNotification({
+                sender: savedComment.usuario.toString(),
+                recipient: post.usuario.toString(),
+                type: NotificationType.COMMENT,
+                post: post._id.toString(),
+                comment: savedComment._id.toString()
+            });
+        }
     }
 
     return (await savedComment.populate('usuario', 'nombre avatarUrl'));
 };
 
-const getComment = async (commentId: string): Promise<ICommentModel | null> => {
-    return await Comment.findById(commentId).populate('usuario', 'nombre avatarUrl');
+const getComment = async (commentId: string, isAdmin: boolean = false): Promise<ICommentModel | null> => {
+    const filter = isAdmin ? { _id: commentId } : { _id: commentId, activo: true };
+    return await Comment.findOne(filter).populate('usuario', 'nombre avatarUrl');
 };
 
-const getAllComments = async (): Promise<ICommentModel[]> => {
-    return await Comment.find().populate('usuario', 'nombre avatarUrl');
+const getAllComments = async (page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
+    const filter = isAdmin ? {} : { activo: true };
+    const options = {
+        page,
+        limit,
+        populate: { path: 'usuario', select: 'nombre avatarUrl' }
+    };
+    return await Comment.paginate(filter, options);
 };
 
 const updateComment = async (commentId: string, data: Partial<IComment>, userId: string, userRole: string): Promise<ICommentModel | null> => {
@@ -75,8 +95,9 @@ const deleteComment = async (commentId: string, userId?: string, userRole?: stri
     return await Comment.findByIdAndDelete(commentId);
 };
 
-const getAllCommentsFromPost = async (postId: string): Promise<ICommentModel[]> => {
-    return await Comment.find({ post: postId }).populate('usuario', 'nombre avatarUrl');
+const getAllCommentsFromPost = async (postId: string, isAdmin: boolean = false): Promise<ICommentModel[]> => {
+    const filter = isAdmin ? { post: postId } : { post: postId, activo: true };
+    return await Comment.find(filter).populate('usuario', 'nombre avatarUrl');
 };
 
 const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
@@ -90,4 +111,63 @@ const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
 };
 
 
-export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost };
+const getAllCommentsFromUser = async (userId: string, page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
+    const filter = isAdmin ? { usuario: userId } : { usuario: userId, activo: true };
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: { path: 'usuario', select: 'nombre avatarUrl' }
+    };
+    return await Comment.paginate(filter, options);
+};
+
+const darleLike = async (
+    commentId: string,
+    userId: string
+) => {
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+        throw new Error('Invalid commentId');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error('Invalid userId');
+    }
+
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) return null;
+
+    const alreadyLiked = comment.likes?.some(
+        (id) => id.toString() === userId
+    );
+
+    if (alreadyLiked) {
+        comment.likes = comment.likes.filter(
+            (id) => id.toString() !== userId
+        );
+
+        // Eliminar notificación de like en comentario
+        await NotificationService.deleteNotificationByCriteria({
+            sender: userId,
+            recipient: comment.usuario.toString(),
+            type: NotificationType.LIKE_COMMENT,
+            comment: comment._id.toString()
+        });
+    } else {
+        if (!comment.likes) comment.likes = [];
+        comment.likes.push(new mongoose.Types.ObjectId(userId));
+
+        // Crear notificación de like en comentario
+        await NotificationService.createNotification({
+            sender: userId,
+            recipient: comment.usuario.toString(),
+            type: NotificationType.LIKE_COMMENT,
+            comment: comment._id.toString()
+        });
+    }
+
+    return await comment.save();
+};
+
+export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser, darleLike };

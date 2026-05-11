@@ -2,8 +2,31 @@ import mongoose from 'mongoose';
 import Post, { IPostModel, IPost } from '../models/Post';
 import Usuario from '../models/Usuario';
 import Comment from '../models/Comment';
+import NotificationService from './notification';
+import { NotificationType } from '../models/Notification';
+import Logging from '../library/Logging';
 
-const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
+const postPopulate = [
+    {
+        path: 'usuario',
+        select: 'nombre avatarUrl privado seguidores'
+    },
+    {
+        path: 'comments',
+        match: { activo: true },
+        select: 'texto usuario createdAt likes',
+        populate: {
+            path: 'usuario',
+            select: 'nombre avatarUrl'
+        }
+    },
+    {
+        path: 'likes',
+        select: 'nombre avatarUrl'
+    }
+];
+
+const createPost = async (data: Partial<IPost>): Promise<IPostModel | any> => {
     const post = new Post({
         _id: new mongoose.Types.ObjectId(),
         ...data
@@ -17,58 +40,128 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
             { $addToSet: { posts: savedPost._id } }
         );
     }
-    
-    return savedPost.populate('usuario', 'nombre avatarUrl');
+
+    return await Post.findById(savedPost._id)
+        .populate(postPopulate);
 };
 
-const getPost = async (postId: string): Promise<IPostModel | null> => {
-    return await Post.findById(postId)
-        .populate('usuario', 'nombre avatarUrl')
-        .populate({
-          path: 'comments',
-          select: 'texto usuario',
-          populate: {
-            path: 'usuario',
-            select: 'nombre avatarUrl'
-          }
-        });
+const getPost = async (
+    postId: string,
+    requesterId?: string,
+    isAdmin: boolean = false
+): Promise<any> => {
+
+    const filter = isAdmin
+        ? { _id: postId }
+        : { _id: postId, activo: true };
+
+    const post = await Post.findOne(filter)
+        .populate(postPopulate);
+
+    if (!post) return null;
+
+    // Verificar privacidad si no es admin y no es el dueño
+    if (!isAdmin && post.usuario._id.toString() !== requesterId) {
+
+        const author = post.usuario as any;
+
+        if (author.privado) {
+
+            const isFollowing = author.seguidores?.some(
+                (id: any) => id.toString() === requesterId
+            );
+
+            if (!isFollowing) {
+                throw new Error('Esta cuenta es privada');
+            }
+        }
+    }
+
+    return post;
 };
 
-const getAllPosts = async (): Promise<IPostModel[]> => {
-    return await Post.find()
-        .populate('usuario', 'nombre avatarUrl')
-        .populate({
-          path: 'comments',
-          select: 'texto usuario',
-          populate: {
-            path: 'usuario',
-            select: 'nombre avatarUrl'
-          }
-        });
+const getAllPosts = async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    requesterId?: string,
+    isAdmin: boolean = false
+): Promise<any> => {
+
+    let filter: any = isAdmin
+        ? {}
+        : { activo: true };
+
+    if (!isAdmin && requesterId) {
+
+        const user = await Usuario.findById(requesterId);
+
+        const following = user?.seguidos || [];
+
+        const privateNotFollowed = await Usuario.find({
+            privado: true,
+            _id: { $nin: [...following, requesterId] }
+        }).select('_id');
+
+        const privateNotFollowedIds = privateNotFollowed.map(u => u._id);
+
+        filter.usuario = {
+            $nin: privateNotFollowedIds
+        };
+    }
+
+    if (search) {
+        filter.caption = {
+            $regex: search,
+            $options: 'i'
+        };
+    }
+
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: postPopulate
+    };
+
+    return await Post.paginate(filter, options);
 };
 
-const updatePost = async (postId: string, data: Partial<IPost>, userId: string, userRole: string): Promise<IPostModel | null> => {
+const updatePost = async (
+    postId: string,
+    data: Partial<IPost>,
+    userId: string,
+    userRole: string
+): Promise<IPostModel | null> => {
+
     const post = await Post.findById(postId);
+
     if (!post) return null;
 
     // Validar que el usuario sea el dueño del post o un admin
-    if (post.usuario.toString() !== userId && userRole !== 'admin') {
+    if (
+        post.usuario.toString() !== userId &&
+        userRole !== 'admin'
+    ) {
         throw new Error('Forbidden');
     }
 
-    return await Post.findByIdAndUpdate(postId, data, { new: true }).populate('usuario', 'nombre avatarUrl').populate('comments');
+    return await Post.findByIdAndUpdate(
+        postId,
+        data,
+        { new: true }
+    ).populate(postPopulate);
 };
 
-const deletePost = async (postId: string, userId: string, userRole: string): Promise<IPostModel | null> => {
+const deletePost = async (
+    postId: string,
+    userId: string,
+    userRole: string
+): Promise<IPostModel | null> => {
 
     const post = await Post.findById(postId);
 
     if (!post) return null;
-
-    // LOG DE SEGURIDAD (Míralo en tu terminal)
-    console.log(`[ACL] Intentando borrar post ${postId}`);
-    console.log(`[ACL] Autor del post: ${post.usuario}`);
-    console.log(`[ACL] Usuario solicita: ${userId} (Rol: ${userRole})`);
 
     // Validar que el usuario sea el dueño del post o un admin
     const isAdmin = userRole === 'admin';
@@ -83,54 +176,95 @@ const deletePost = async (postId: string, userId: string, userRole: string): Pro
     const commentIds = postComments.map(c => c._id);
 
     if (commentIds.length > 0) {
+
         // 2. Quitar las referencias de estos comentarios de los perfiles de los usuarios
         await Usuario.updateMany(
             { comments: { $in: commentIds } },
             { $pull: { comments: { $in: commentIds } } }
         );
+
         // 3. Borrar comentarios del post físicamente
         await Comment.deleteMany({ post: postId });
-        console.log(`[CLEANUP] Eliminados ${commentIds.length} comentarios del post ${postId} y sus referencias de usuarios.`);
     }
 
-    //  quitar post del usuario
+    // quitar post del usuario
     await Usuario.updateMany(
         { posts: postId },
         { $pull: { posts: postId } }
     );
 
+    // 5. Eliminar notificaciones relacionadas con el post
+    await NotificationService.deleteNotificationsByPost(postId);
+
     // eliminar post
     return await Post.findByIdAndDelete(postId);
 };
 
-const getAllPostsFromUser = async (userId: string): Promise<IPostModel[]> => {
-    return await Post.find({ usuario: userId })
-        .select('-usuario') // Excluir el campo 'usuario' para evitar redundancia
-}
+const getAllPostsFromUser = async (
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+    isAdmin: boolean = false
+): Promise<any> => {
+
+    const filter: any = isAdmin
+        ? { usuario: userId }
+        : { usuario: userId, activo: true };
+
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: postPopulate
+    };
+
+    return await Post.paginate(filter, options);
+};
 
 //--- PUEDE QUE LO MUEVA AL USUARIO ---//
 
 const deleteAllPostsFromUser = async (userId: string): Promise<void> => {
+
     const posts = await Post.find({ usuario: userId });
+
     const postIds = posts.map(p => p._id);
 
     if (postIds.length > 0) {
+
         // 1. Encontrar todos los comentarios vinculados a esos posts
-        const comments = await Comment.find({ post: { $in: postIds } });
+        const comments = await Comment.find({
+            post: { $in: postIds }
+        });
+
         const commentIds = comments.map(c => c._id);
 
         if (commentIds.length > 0) {
+
             // 2. Limpiar referencias de esos comentarios en todos los usuarios
             await Usuario.updateMany(
                 { comments: { $in: commentIds } },
                 { $pull: { comments: { $in: commentIds } } }
             );
+
             // 3. Borrar comentarios físicos
-            await Comment.deleteMany({ post: { $in: postIds } });
+            await Comment.deleteMany({
+                post: { $in: postIds }
+            });
         }
 
         // 4. Borrar posts físicos
-        await Post.deleteMany({ usuario: userId });
+        await Post.deleteMany({
+            usuario: userId
+        });
+
+        // 5. Borrar notificaciones relacionadas con esos posts
+        await Promise.all(
+            postIds.map(id =>
+                NotificationService.deleteNotificationsByPost(
+                    id.toString()
+                )
+            )
+        );
     }
 
     // limpiar usuario
@@ -138,10 +272,13 @@ const deleteAllPostsFromUser = async (userId: string): Promise<void> => {
         { _id: userId },
         { $set: { posts: [] } }
     );
-}
+};
 
+const darleLike = async (
+    postId: string,
+    userId: string
+) => {
 
-const darleLike = async (postId: string, userId: string) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
         throw new Error('Invalid postId');
     }
@@ -151,6 +288,7 @@ const darleLike = async (postId: string, userId: string) => {
     }
 
     const post = await Post.findById(postId);
+
     if (!post) return null;
 
     const alreadyLiked = post.likes.some(
@@ -161,15 +299,124 @@ const darleLike = async (postId: string, userId: string) => {
         post.likes = post.likes.filter(
             (id) => id.toString() !== userId
         );
+
+        // Eliminar notificación de like
+        await NotificationService.deleteNotificationByCriteria({
+            sender: userId,
+            recipient: post.usuario.toString(),
+            type: NotificationType.LIKE,
+            post: post._id.toString()
+        });
     } else {
-        post.likes.push(new mongoose.Types.ObjectId(userId));
+        post.likes.push(
+            new mongoose.Types.ObjectId(userId)
+        );
+
+        // Crear notificación de like
+        Logging.info(`[Notification] Creating like notification: sender=${userId}, recipient=${post.usuario.toString()}, post=${post._id}`);
+        await NotificationService.createNotification({
+            sender: userId,
+            recipient: post.usuario.toString(),
+            type: NotificationType.LIKE,
+            post: post._id.toString()
+        });
     }
 
     await post.save();
 
-    return Post.findById(postId)
-        .populate('usuario', 'nombre avatarUrl');
+    return await Post.findById(postId)
+        .populate(postPopulate);
 };
 
+const getFollowingPosts = async (
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+): Promise<any> => {
 
-export default { createPost, getPost, getAllPosts, updatePost, deletePost, getAllPostsFromUser, deleteAllPostsFromUser, darleLike };
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+        throw new Error('Usuario no encontrado');
+    }
+
+    const seguidos = usuario.seguidos || [];
+
+    // Incluir al propio usuario en su feed
+    const authors = [...seguidos, userId];
+
+    const filter = {
+        usuario: { $in: authors },
+        activo: true
+    };
+
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: postPopulate
+    };
+
+    return await Post.paginate(filter, options);
+};
+
+const getDiscoveryPosts = async (
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+): Promise<any> => {
+
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+        throw new Error('Usuario no encontrado');
+    }
+
+    const seguidos = usuario.seguidos || [];
+
+    const authorsToExclude = [
+        ...seguidos,
+        userId
+    ];
+
+    // Filtrar privados que no sigo
+    const privateNotFollowed = await Usuario.find({
+        privado: true,
+        _id: { $nin: authorsToExclude }
+    }).select('_id');
+
+    const privateNotFollowedIds =
+        privateNotFollowed.map(u => u._id);
+
+    const filter = {
+        usuario: {
+            $nin: [
+                ...authorsToExclude,
+                ...privateNotFollowedIds
+            ]
+        },
+        activo: true
+    };
+
+    const options = {
+        page,
+        limit,
+        sort: { createdAt: -1 },
+        populate: postPopulate
+    };
+
+    return await Post.paginate(filter, options);
+};
+
+export default {
+    createPost,
+    getPost,
+    getAllPosts,
+    updatePost,
+    deletePost,
+    getAllPostsFromUser,
+    deleteAllPostsFromUser,
+    darleLike,
+    getFollowingPosts,
+    getDiscoveryPosts
+};

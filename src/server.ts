@@ -15,6 +15,14 @@ import commentRoutes from './routes/Comment';
 import statsRoutes from './routes/Stats';
 import reportRoutes from './routes/Report';
 import gradoRoutes from './routes/Grado';
+import asignaturaRoutes from './routes/Asignatura';
+import chatRoutes from './routes/Chat';
+import notificationRoutes from './routes/Notification';
+import uploadRoutes from './routes/Upload';
+import bugRoutes from './routes/BugReport';
+import unimatchRoutes from './routes/UniMatch';
+import auditRoutes from './routes/Audit';
+import { initSocket } from './socket';
 
 const router = express();
 
@@ -23,6 +31,7 @@ mongoose
     .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
     .then(() => {
         Logging.info('Mongo connected successfully.');
+        Logging.info('Cloudinary service initialized successfully.');
         StartServer();
     })
     .catch((error) => Logging.error(error));
@@ -63,6 +72,13 @@ const StartServer = () => {
     router.use('/stats', statsRoutes);
     router.use('/reports', reportRoutes);
     router.use('/grados', gradoRoutes);
+    router.use('/asignaturas', asignaturaRoutes);
+    router.use('/chat', chatRoutes);
+    router.use('/notifications', notificationRoutes);
+    router.use('/upload', uploadRoutes);
+    router.use('/bugs', bugRoutes);
+    router.use('/unimatch', unimatchRoutes);
+    router.use('/audit', auditRoutes);
 
 
     /** Healthcheck */
@@ -79,9 +95,15 @@ const StartServer = () => {
         });
     });
 
-    http.createServer(router).listen(config.server.port, () => {
+    const httpServer = http.createServer(router);
+
+    // Inicializar Socket.io sobre el mismo servidor HTTP
+    initSocket(httpServer);
+
+    httpServer.listen(config.server.port, () => {
         Logging.info(`Server is running on port ${config.server.port}`);
+        Logging.info(`Accessible from emulator at http://10.0.2.2:${config.server.port}`);
         Logging.info(`Swagger is running on http://localhost:${config.server.port}/api`);
     });
-    
+
 };

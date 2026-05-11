@@ -58,7 +58,8 @@ export const Schemas = {
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null),
             seguidores: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([]),
-            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([])
+            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).default([]),
+            privado: Joi.boolean().default(false)
         }),
 
         update: Joi.object<IUsuario>({
@@ -72,7 +73,8 @@ export const Schemas = {
                 .regex(/^[0-9a-fA-F]{24}$/)
                 .allow('', null),
             seguidores: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
-            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
+            seguidos: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            privado: Joi.boolean()
         }),
         updateSelf: Joi.object<IUsuario>({
             nombre: Joi.string(),
@@ -80,9 +82,15 @@ export const Schemas = {
             password: Joi.string().min(6),
             avatarUrl: Joi.string().uri().allow('', null),
             descripcion: Joi.string().max(500).allow('', null),
+
             universidad: Joi.string()
                 .regex(/^[0-9a-fA-F]{24}$/)
-                .allow('', null)
+                .allow('', null),
+
+            grado: Joi.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
+                .allow('', null),
+            privado: Joi.boolean()
         }),
         follow: Joi.object({
             targetId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()
@@ -138,13 +146,30 @@ export const Schemas = {
     grado: {
         create: Joi.object<IGrado>({
             nombre: Joi.string().required(),
-            asignaturas: Joi.array().items(Joi.string()).default([]),
+            asignaturas: Joi.array()
+                .items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
             universidad: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()
         }),
         update: Joi.object<IGrado>({
             nombre: Joi.string(),
-            asignaturas: Joi.array().items(Joi.string()),
+            asignaturas: Joi.array()
+                .items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
+                .default([]),
             universidad: Joi.string().regex(/^[0-9a-fA-F]{24}$/)
         })
+    },
+    asignatura: {
+    create: Joi.object({
+        nombre: Joi.string().required(),
+        usuarios: Joi.array()
+            .items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
+            .default([])
+    }),
+        update: Joi.object({
+            nombre: Joi.string(),
+            usuarios: Joi.array()
+                .items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
+        })
     }
+    
 };

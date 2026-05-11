@@ -7,7 +7,7 @@ const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'secret_de_acceso_super_seguro';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'secret_de_refresh_super_seguro';
-const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || '5h';
+const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || '2h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
 export const config = {

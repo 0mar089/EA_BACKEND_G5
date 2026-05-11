@@ -20,7 +20,11 @@ const getGlobalStats = async () => {
     };
 };
 
-const getUserCount = async () => await Usuario.countDocuments();
+const getUserCount = async () => {
+    return {
+        count: await Usuario.countDocuments()
+    };
+};
 const getUniversityCount = async () => await Universidad.countDocuments();
 const getPostCount = async () => await Post.countDocuments();
 const getCommentCount = async () => await Comment.countDocuments();
@@ -30,12 +34,14 @@ const getReportStats = async () => {
     const userReports = await Report.countDocuments({ tipo: 'user', estado: { $ne: 'resuelto' } });
     const postReports = await Report.countDocuments({ tipo: 'post', estado: { $ne: 'resuelto' } });
     const commentReports = await Report.countDocuments({ tipo: 'comment', estado: { $ne: 'resuelto' } });
+    const chatReports = await Report.countDocuments({ tipo: 'chat', estado: { $ne: 'resuelto' } });
 
     return {
         total: totalActive,
         user: userReports,
         post: postReports,
-        comment: commentReports
+        comment: commentReports,
+        chat: chatReports
     };
 };
 

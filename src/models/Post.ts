@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 export interface IPost {
     usuario: Types.ObjectId; // Referencia al usuario que hizo el post
@@ -6,6 +7,7 @@ export interface IPost {
     caption?: string;
     likes: Types.ObjectId[]; // Referencia a los usuarios que le dieron like
     comments: Types.ObjectId[];
+    activo: boolean;
   };
 
 export interface IPostModel extends IPost, Document { }
@@ -39,7 +41,11 @@ const PostSchema: Schema<IPostModel> = new Schema(
                 type: Schema.Types.ObjectId,
                 ref: 'Comment'
             }
-        ]
+        ],
+        activo: {
+            type: Boolean,
+            default: true
+        }
     },
     {
         timestamps: true,
@@ -48,6 +54,8 @@ const PostSchema: Schema<IPostModel> = new Schema(
     }
 );
 
-const Post = mongoose.model<IPostModel>('Post', PostSchema);
+PostSchema.plugin(mongoosePaginate);
+
+const Post = mongoose.model<IPostModel, mongoose.PaginateModel<IPostModel>>('Post', PostSchema);
 
 export default Post;  

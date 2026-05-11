@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -6,6 +7,7 @@ export interface IUniversidad {
     nombre: string;
     ubicacion: string;
     usuarios: Types.ObjectId[];
+    grados?: Types.ObjectId[];
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -31,6 +33,12 @@ const UniversidadSchema: Schema<IUniversidadModel> = new Schema(
                 type: Schema.Types.ObjectId,
                 ref: 'Usuario'
             }
+        ],
+        grados: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Grado'
+            }
         ]
     },
     {
@@ -40,8 +48,10 @@ const UniversidadSchema: Schema<IUniversidadModel> = new Schema(
     }
 );
 
+UniversidadSchema.plugin(mongoosePaginate);
+
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-const Universidad = mongoose.model<IUniversidadModel>('Universidad', UniversidadSchema);
+const Universidad = mongoose.model<IUniversidadModel, mongoose.PaginateModel<IUniversidadModel>>('Universidad', UniversidadSchema);
 
 export default Universidad;

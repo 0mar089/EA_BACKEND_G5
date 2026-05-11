@@ -4,21 +4,16 @@ import Usuario from '../models/Usuario';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
 import Report from '../models/Report';
+import Logging from '../library/Logging';
 
 const seed = async () => {
     try {
-        console.log('Conectando a MongoDB...');
+        Logging.info('Conectando a MongoDB...');
         await mongoose.connect(config.mongo.url);
-        console.log('Conectado con éxito.');
+        Logging.info('Conectado con éxito.');
 
-        // Opcional: Limpiar colecciones anteriores para empezar de cero
-        // console.log('Limpiando base de datos...');
-        // await Usuario.deleteMany({});
-        // await Post.deleteMany({});
-        // await Comment.deleteMany({});
-        // await Report.deleteMany({});
 
-        console.log('Creando usuarios...');
+
         const usersData = [
             { nombre: 'Juan Perez', email: 'juan@univy.com', password: 'password123', rol: 'user' as const },
             { nombre: 'Maria Garcia', email: 'maria@univy.com', password: 'password123', rol: 'user' as const },
@@ -27,10 +22,11 @@ const seed = async () => {
             { nombre: 'Ana Lopez', email: 'ana@univy.com', password: 'password123', rol: 'user' as const }
         ];
 
+        Logging.info('Creando usuarios...');
         const createdUsers = await Usuario.insertMany(usersData);
-        console.log(`${createdUsers.length} usuarios creados.`);
+        Logging.info(`${createdUsers.length} usuarios creados.`);
 
-        console.log('Creando posts...');
+
         const postsData = [];
         for (let i = 0; i < 10; i++) {
             const author = createdUsers[i % createdUsers.length];
@@ -42,15 +38,16 @@ const seed = async () => {
                 comments: []
             });
         }
+        Logging.info('Creando posts...');
         const createdPosts = await Post.insertMany(postsData);
-        console.log(`${createdPosts.length} posts creados.`);
+        Logging.info(`${createdPosts.length} posts creados.`);
 
         // Actualizar referencia de posts en usuarios
         for (const post of createdPosts) {
             await Usuario.findByIdAndUpdate(post.usuario, { $push: { posts: post._id } });
         }
 
-        console.log('Creando comentarios...');
+
         const commentsData = [];
         for (let i = 0; i < 20; i++) {
             const author = createdUsers[Math.floor(Math.random() * createdUsers.length)];
@@ -61,8 +58,9 @@ const seed = async () => {
                 texto: `Me gusta mucho este contenido! (${i + 1})`
             });
         }
+        Logging.info('Creando comentarios...');
         const createdComments = await Comment.insertMany(commentsData);
-        console.log(`${createdComments.length} comentarios creados.`);
+        Logging.info(`${createdComments.length} comentarios creados.`);
 
         // Actualizar referencia de comentarios en posts y usuarios
         for (const comment of createdComments) {
@@ -70,7 +68,7 @@ const seed = async () => {
             await Usuario.findByIdAndUpdate(comment.usuario, { $push: { comments: comment._id } });
         }
 
-        console.log('Creando reportes...');
+
         const reportsData = [];
         
         // Reportes de usuarios
@@ -112,13 +110,16 @@ const seed = async () => {
             });
         }
 
+        Logging.info('Creando reportes...');
         const createdReports = await Report.insertMany(reportsData);
-        console.log(`${createdReports.length} reportes creados.`);
+        Logging.info(`${createdReports.length} reportes creados.`);
 
-        console.log('Seeding completado con éxito.');
+        Logging.info('Seeding completado con éxito.');
+
+
         process.exit(0);
     } catch (error) {
-        console.error('Error durante el seeding:', error);
+        Logging.error(`Error durante el seeding: ${error}`);
         process.exit(1);
     }
 };

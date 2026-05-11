@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -16,6 +17,10 @@ export interface IUsuario {
     comments?: Types.ObjectId[];
     seguidores?: Types.ObjectId[];
     seguidos?: Types.ObjectId[];
+    grado?: Types.ObjectId;
+    asignaturas?: Types.ObjectId[];
+    privado: boolean;
+    hasAcceptedUnimatchTerms: boolean;
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -52,7 +57,7 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
         },
         avatarUrl: {
             type: String,
-            default: 'https://api.dicebear.com/7.x/avataaars/svg?seed=default-avatar',
+            default: 'https://api.dicebear.com/7.x/avataaars/png?seed=default-avatar',
             trim: true
         },
         descripcion: {
@@ -96,6 +101,24 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
             type: [Schema.Types.ObjectId],
             ref: 'Usuario',
             default: []
+        },
+        grado: {
+            type: Schema.Types.ObjectId,
+            ref: 'Grado',
+            default: null
+        },
+        asignaturas: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Asignatura',
+            default: []
+        },
+        privado: {
+            type: Boolean,
+            default: false
+        },
+        hasAcceptedUnimatchTerms: {
+            type: Boolean,
+            default: false
         }
     },
     {
@@ -138,8 +161,11 @@ UsuarioSchema.methods.comparePassword = async function (password: string): Promi
     return await bcrypt.compare(password, this.password);
 };
 
+// Plugins
+UsuarioSchema.plugin(mongoosePaginate);
+
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-const Usuario = mongoose.model<IUsuarioModel>('Usuario', UsuarioSchema);
+const Usuario = mongoose.model<IUsuarioModel, mongoose.PaginateModel<IUsuarioModel>>('Usuario', UsuarioSchema);
 
 export default Usuario;

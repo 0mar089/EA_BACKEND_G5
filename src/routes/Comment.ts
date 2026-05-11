@@ -150,6 +150,33 @@ router.get('/:commentId', authenticateToken, controller.getComment);
 
 /**
  * @openapi
+ * /comments/user/{userId}:
+ *   get:
+ *     summary: Obtener todos los comentarios de un usuario
+ *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ObjectId del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de comentarios del usuario
+ *       401:
+ *         description: No autorizado
+ */
+router.get(
+    '/user/:userId',
+    authenticateToken,
+    controller.getAllCommentsFromUser
+);
+
+/**
+ * @openapi
  * /comments/{commentId}:
  *   patch:
  *     summary: Actualizar un comentario
@@ -210,6 +237,36 @@ router.delete(
     authenticateToken,
     checkRole(['admin']),
     controller.deleteComment
+);
+/**
+ * @openapi
+ * /comments/{commentId}/like:
+ *   patch:
+ *     summary: Dar o quitar like a un comentario (toggle)
+ *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ObjectId del comentario
+ *     responses:
+ *       200:
+ *         description: Comentario actualizado con like/unlike
+ *       401:
+ *         description: No autorizado
+ *       404:
+ *         description: Comentario no encontrado
+ *       400:
+ *         description: ID inválido
+ */
+router.patch(
+    '/:commentId/like',
+    authenticateToken,
+    controller.darleLike
 );
 
 export default router;

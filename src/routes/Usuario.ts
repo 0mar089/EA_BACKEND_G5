@@ -40,6 +40,9 @@ const router = express.Router();
  *         descripcion:
  *           type: string
  *           example: "Estudiante de Ingeniería y amante del café ☕"
+ *         privado:
+ *           type: boolean
+ *           example: false
  *     UsuarioCreateUpdate:
  *       type: object
  *       required:
@@ -69,6 +72,9 @@ const router = express.Router();
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
+ *         privado:
+ *           type: boolean
+ *           example: false
  *     UsuarioRegister:
  *       type: object
  *       required:
@@ -110,7 +116,27 @@ const router = express.Router();
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
+ *         privado:
+ *           type: boolean
+ *           example: false
+ *
+ *     UsuarioAcademico:
+ *       type: object
+ *       required:
+ *         - gradoId
+ *       properties:
+ *         gradoId:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789014"
+ *       asignaturas:
+ *         type: array
+ *         items:
+ *           type: string
+ *         example:
+ *           - "65f1c2a1b2c3d4e5f6789011"
+ *           - "65f1c2a1b2c3d4e5f6789012"
  */
+ 
 
 /**
  * @openapi
@@ -387,6 +413,46 @@ router.delete('/:usuarioId/followers/:followerId', authenticateToken, controller
 
 /**
  * @openapi
+ * /usuarios/requests/accept/{followerId}:
+ *   post:
+ *     summary: Acepta una solicitud de seguimiento
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: followerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.post('/requests/accept/:followerId', authenticateToken, controller.acceptFollowRequest);
+
+/**
+ * @openapi
+ * /usuarios/requests/reject/{followerId}:
+ *   post:
+ *     summary: Rechaza una solicitud de seguimiento
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: followerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.post('/requests/reject/:followerId', authenticateToken, controller.rejectFollowRequest);
+
+/**
+ * @openapi
  * /usuarios/{usuarioId}/following/{targetId}:
  *   delete:
  *     summary: Deja de seguir a un usuario (Solo Admin o el usuario dueño)
@@ -405,5 +471,84 @@ router.delete('/:usuarioId/followers/:followerId', authenticateToken, controller
  *         description: OK
  */
 router.delete('/:usuarioId/following/:targetId', authenticateToken, controller.unfollowUser);
+
+/**
+ * @openapi
+ * /usuarios/{usuarioId}/grado:
+ *   patch:
+ *     summary: Asigna un grado a un usuario
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - gradoId
+ *             properties:
+ *               gradoId:
+ *                 type: string
+ *                 example: "65f1c2a1b2c3d4e5f6789014"
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.patch(
+    '/:usuarioId/grado',
+    authenticateToken,
+    checkRole(['admin', 'user']),
+    controller.assignGrado
+);
+
+/**
+ * @openapi
+ * /usuarios/{usuarioId}/asignaturas:
+ *   patch:
+ *     summary: Define las asignaturas actuales del usuario
+ *     description: Reemplaza completamente las asignaturas del usuario (no añade, reemplaza)
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuarioId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - asignaturas
+ *             properties:
+ *               asignaturas:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example:
+ *                   - "65f1c2a1b2c3d4e5f6789011"
+ *                   - "65f1c2a1b2c3d4e5f6789012"
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.patch(
+    '/:usuarioId/asignaturas',
+    authenticateToken,
+    checkRole(['admin', 'user']),
+    controller.setAsignaturas
+);
 
 export default router;

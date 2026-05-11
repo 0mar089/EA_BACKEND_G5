@@ -110,6 +110,56 @@ router.get('/', authenticateToken, controller.getAllPosts);
 
 /**
  * @openapi
+ * /posts/following:
+ *   get:
+ *     summary: Obtener posts de usuarios seguidos (Feed)
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Cantidad por página
+ *     responses:
+ *       200:
+ *         description: Lista paginada de posts
+ *       401:
+ *         description: No autorizado
+ */
+router.get('/following', authenticateToken, controller.getFollowingPosts);
+
+/**
+ * @openapi
+ * /posts/discovery:
+ *   get:
+ *     summary: Obtener posts de usuarios NO seguidos (Discovery)
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista paginada de posts de desconocidos
+ */
+router.get('/discovery', authenticateToken, controller.getDiscoveryPosts);
+
+/**
+ * @openapi
  * /posts/user/{userId}:
  *   get:
  *     summary: Obtener todos los posts de un usuario
