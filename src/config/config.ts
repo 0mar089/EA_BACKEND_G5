@@ -19,7 +19,8 @@ export const config = {
         url: MONGO_URL
     },
     server: {
-        port: SERVER_PORT
+        port: SERVER_PORT,
+        baseUrl: process.env.BASE_URL || `http://localhost:${SERVER_PORT}`
     },
     jwt: {
         accessSecret: JWT_ACCESS_SECRET,

@@ -101,9 +101,9 @@ const StartServer = () => {
     initSocket(httpServer);
 
     httpServer.listen(config.server.port, () => {
-        Logging.info(`Server is running on port ${config.server.port}`);
+        Logging.info(`Server is running on ${config.server.baseUrl}`);
         Logging.info(`Accessible from emulator at http://10.0.2.2:${config.server.port}`);
-        Logging.info(`Swagger is running on http://localhost:${config.server.port}/api`);
+        Logging.info(`Swagger is running on ${config.server.baseUrl}/api`);
     });
 
 };
