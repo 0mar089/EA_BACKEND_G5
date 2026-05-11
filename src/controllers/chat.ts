@@ -43,6 +43,17 @@ export const getMessage = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: 'Mensaje no encontrado' });
         }
 
+        const requesterId = req.user?.id;
+        const isAdmin = req.user?.rol === 'admin';
+
+        // IDOR Protection: Only the sender, recipient or an admin can see the message
+        if (!isAdmin &&
+            message.remitente.toString() !== requesterId &&
+            message.destinatario.toString() !== requesterId) {
+            Logging.warning(`[403] [chat] Forbidden Message Access | requesterId=${requesterId} messageId=${messageId}`);
+            return res.status(403).json({ message: 'No tienes permiso para ver este mensaje' });
+        }
+
         return res.status(200).json(message);
     } catch (error) {
         Logging.error(`[500] [chat] Get Message Failed: ${error}`);
