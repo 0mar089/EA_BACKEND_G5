@@ -2,13 +2,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGO_URL = process.env.MONGO_URI || '';
+const MONGO_URL = process.env.MONGO_URI;
 const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1337;
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'secret_de_acceso_super_seguro';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'secret_de_refresh_super_seguro';
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || '2h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+
+if (!MONGO_URL) throw new Error('Missing MONGO_URI in .env file');
+if (!JWT_ACCESS_SECRET) throw new Error('Missing JWT_ACCESS_SECRET in .env file');
+if (!JWT_REFRESH_SECRET) throw new Error('Missing JWT_REFRESH_SECRET in .env file');
 
 export const config = {
     mongo: {
