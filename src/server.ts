@@ -21,6 +21,7 @@ import notificationRoutes from './routes/Notification';
 import uploadRoutes from './routes/Upload';
 import bugRoutes from './routes/BugReport';
 import unimatchRoutes from './routes/UniMatch';
+import auditRoutes from './routes/Audit';
 import { initSocket } from './socket';
 
 const router = express();
@@ -77,6 +78,7 @@ const StartServer = () => {
     router.use('/upload', uploadRoutes);
     router.use('/bugs', bugRoutes);
     router.use('/unimatch', unimatchRoutes);
+    router.use('/audit', auditRoutes);
 
 
     /** Healthcheck */
