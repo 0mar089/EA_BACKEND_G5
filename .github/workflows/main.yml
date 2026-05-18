@@ -36,7 +36,7 @@ jobs:
         context: ./
         file: ./Dockerfile
         push: true
-        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/eabackendg5:${{ github.event.head_commit.message }}
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/sem-ea-backend:${{ github.event.head_commit.message }}
 
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
