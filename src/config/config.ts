@@ -15,26 +15,26 @@ if (!JWT_ACCESS_SECRET) throw new Error('Missing JWT_ACCESS_SECRET in .env file'
 if (!JWT_REFRESH_SECRET) throw new Error('Missing JWT_REFRESH_SECRET in .env file');
 
 export const config = {
-    mongo: {
-        url: MONGO_URL
+  mongo: {
+    url: MONGO_URL,
+  },
+  server: {
+    port: SERVER_PORT,
+    baseUrl: process.env.BASE_URL || `http://localhost:${SERVER_PORT}`,
+  },
+  jwt: {
+    accessSecret: JWT_ACCESS_SECRET,
+    refreshSecret: JWT_REFRESH_SECRET,
+    accessExpiresIn: JWT_ACCESS_EXPIRES_IN,
+    refreshExpiresIn: JWT_REFRESH_EXPIRES_IN,
+  },
+  cookies: {
+    refreshName: 'refreshToken',
+    options: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict' as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
     },
-    server: {
-        port: SERVER_PORT,
-        baseUrl: process.env.BASE_URL || `http://localhost:${SERVER_PORT}`
-    },
-    jwt: {
-        accessSecret: JWT_ACCESS_SECRET,
-        refreshSecret: JWT_REFRESH_SECRET,
-        accessExpiresIn: JWT_ACCESS_EXPIRES_IN,
-        refreshExpiresIn: JWT_REFRESH_EXPIRES_IN
-    },
-    cookies: {
-        refreshName: 'refreshToken',
-        options: {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict' as const,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
-        }
-    }
+  },
 };

@@ -41,11 +41,11 @@ const router = express.Router();
  *         description: Creada
  */
 router.post(
-    '/',
-    authenticateToken,
-    checkRole(['admin']),
-    ValidateJoi(Schemas.asignatura.create),
-    controller.createAsignatura
+  '/',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.asignatura.create),
+  controller.createAsignatura,
 );
 
 /**
@@ -103,11 +103,11 @@ router.get('/:asignaturaId', controller.readAsignatura);
  *         description: Actualizada
  */
 router.patch(
-    '/:asignaturaId',
-    authenticateToken,
-    checkRole(['admin']),
-    ValidateJoi(Schemas.asignatura.update),
-    controller.updateAsignatura
+  '/:asignaturaId',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.asignatura.update),
+  controller.updateAsignatura,
 );
 
 /**
@@ -129,10 +129,10 @@ router.patch(
  *         description: Eliminada
  */
 router.delete(
-    '/:asignaturaId',
-    authenticateToken,
-    checkRole(['admin']),
-    controller.deleteAsignatura
+  '/:asignaturaId',
+  authenticateToken,
+  checkRole(['admin']),
+  controller.deleteAsignatura,
 );
 
 export default router;

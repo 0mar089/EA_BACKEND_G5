@@ -28,82 +28,80 @@ const router = express();
 
 /** Connect to Mongo */
 mongoose
-    .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
-    .then(() => {
-        Logging.info('Mongo connected successfully.');
-        Logging.info('Cloudinary service initialized successfully.');
-        StartServer();
-    })
-    .catch((error) => Logging.error(error));
+  .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
+  .then(() => {
+    Logging.info('Mongo connected successfully.');
+    Logging.info('Cloudinary service initialized successfully.');
+    StartServer();
+  })
+  .catch((error) => Logging.error(error));
 
 /** Only Start Server if Mongoose Connects */
 const StartServer = () => {
-    /** Log the request */
-    router.use((req, res, next) => {
-        Logging.info(
-            `Incomming - METHOD: [${req.method}] - URL: [${req.url}] - IP: [${req.socket.remoteAddress}]`
-        );
+  /** Log the request */
+  router.use((req, res, next) => {
+    Logging.info(
+      `Incomming - METHOD: [${req.method}] - URL: [${req.url}] - IP: [${req.socket.remoteAddress}]`,
+    );
 
-        res.on('finish', () => {
-            Logging.info(
-                `Result - METHOD: [${req.method}] - URL: [${req.url}] - IP: [${req.socket.remoteAddress}] - STATUS: [${res.statusCode}]`
-            );
-        });
-
-        next();
+    res.on('finish', () => {
+      Logging.info(
+        `Result - METHOD: [${req.method}] - URL: [${req.url}] - IP: [${req.socket.remoteAddress}] - STATUS: [${res.statusCode}]`,
+      );
     });
 
-    router.use(express.urlencoded({ extended: true }));
-    router.use(express.json());
+    next();
+  });
 
-    /** Rules of our API */
-    router.use(cookieParser());
-    router.use(cors());
+  router.use(express.urlencoded({ extended: true }));
+  router.use(express.json());
 
-    /** Swagger */
-    router.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  /** Rules of our API */
+  router.use(cookieParser());
+  router.use(cors());
 
-    /** Routes */
-    router.use('/usuarios', usuarioRoutes);
-    router.use('/universidades', universidadRoutes);
-    router.use('/auth', authRoutes);
-    router.use('/posts', postRoutes);
-    router.use('/comments', commentRoutes);
-    router.use('/stats', statsRoutes);
-    router.use('/reports', reportRoutes);
-    router.use('/grados', gradoRoutes);
-    router.use('/asignaturas', asignaturaRoutes);
-    router.use('/chat', chatRoutes);
-    router.use('/notifications', notificationRoutes);
-    router.use('/upload', uploadRoutes);
-    router.use('/bugs', bugRoutes);
-    router.use('/unimatch', unimatchRoutes);
-    router.use('/audit', auditRoutes);
+  /** Swagger */
+  router.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+  /** Routes */
+  router.use('/usuarios', usuarioRoutes);
+  router.use('/universidades', universidadRoutes);
+  router.use('/auth', authRoutes);
+  router.use('/posts', postRoutes);
+  router.use('/comments', commentRoutes);
+  router.use('/stats', statsRoutes);
+  router.use('/reports', reportRoutes);
+  router.use('/grados', gradoRoutes);
+  router.use('/asignaturas', asignaturaRoutes);
+  router.use('/chat', chatRoutes);
+  router.use('/notifications', notificationRoutes);
+  router.use('/upload', uploadRoutes);
+  router.use('/bugs', bugRoutes);
+  router.use('/unimatch', unimatchRoutes);
+  router.use('/audit', auditRoutes);
 
-    /** Healthcheck */
-    router.get('/ping', (req, res, next) => res.status(200).json({ hello: 'world' }));
+  /** Healthcheck */
+  router.get('/ping', (req, res, next) => res.status(200).json({ hello: 'world' }));
 
-    /** Error handling */
-    router.use((req, res, next) => {
-        const error = new Error('Not found');
+  /** Error handling */
+  router.use((req, res, next) => {
+    const error = new Error('Not found');
 
-        Logging.error(error);
+    Logging.error(error);
 
-        res.status(404).json({
-            message: error.message
-        });
+    res.status(404).json({
+      message: error.message,
     });
+  });
 
-    const httpServer = http.createServer(router);
+  const httpServer = http.createServer(router);
 
-    // Inicializar Socket.io sobre el mismo servidor HTTP
-    initSocket(httpServer);
+  // Inicializar Socket.io sobre el mismo servidor HTTP
+  initSocket(httpServer);
 
-    httpServer.listen(config.server.port, () => {
-        Logging.info(`Server is running on ${config.server.baseUrl}`);
-        Logging.info(`Accessible from emulator at http://10.0.2.2:${config.server.port}`);
-        Logging.info(`Swagger is running on ${config.server.baseUrl}/api`);
-    });
-
+  httpServer.listen(config.server.port, () => {
+    Logging.info(`Server is running on ${config.server.baseUrl}`);
+    Logging.info(`Accessible from emulator at http://10.0.2.2:${config.server.port}`);
+    Logging.info(`Swagger is running on ${config.server.baseUrl}/api`);
+  });
 };

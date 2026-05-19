@@ -33,7 +33,7 @@ const router = express.Router();
  *           type: boolean
  *           example: true
  *           description: Indica si la cuenta está activa (false = soft deleted)
-  *         universidad:
+ *         universidad:
  *           type: string
  *           description: ObjectId de la universidad
  *           example: "65f1c2a1b2c3d4e5f6789013"
@@ -136,7 +136,6 @@ const router = express.Router();
  *           - "65f1c2a1b2c3d4e5f6789011"
  *           - "65f1c2a1b2c3d4e5f6789012"
  */
- 
 
 /**
  * @openapi
@@ -162,7 +161,13 @@ const router = express.Router();
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.usuario.create), controller.createUsuario);
+router.post(
+  '/',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.usuario.create),
+  controller.createUsuario,
+);
 
 /**
  * @openapi
@@ -244,7 +249,13 @@ router.get('/', authenticateToken, controller.readAll);
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.patch('/:usuarioId', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.usuario.update), controller.updateUsuario);
+router.patch(
+  '/:usuarioId',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.usuario.update),
+  controller.updateUsuario,
+);
 
 /**
  * @openapi
@@ -272,7 +283,12 @@ router.patch('/:usuarioId', authenticateToken, checkRole(['admin']), ValidateJoi
  *       404:
  *         description: No encontrado
  */
-router.patch('/:usuarioId/soft-delete', authenticateToken, checkRole(['admin']), controller.softDeleteUsuario);
+router.patch(
+  '/:usuarioId/soft-delete',
+  authenticateToken,
+  checkRole(['admin']),
+  controller.softDeleteUsuario,
+);
 
 /**
  * @openapi
@@ -300,7 +316,12 @@ router.patch('/:usuarioId/soft-delete', authenticateToken, checkRole(['admin']),
  *       404:
  *         description: No encontrado
  */
-router.patch('/:usuarioId/recovery', authenticateToken, checkRole(['admin']), controller.recoveryUsuario);
+router.patch(
+  '/:usuarioId/recovery',
+  authenticateToken,
+  checkRole(['admin']),
+  controller.recoveryUsuario,
+);
 
 /**
  * @openapi
@@ -503,10 +524,10 @@ router.delete('/:usuarioId/following/:targetId', authenticateToken, controller.u
  *         description: OK
  */
 router.patch(
-    '/:usuarioId/grado',
-    authenticateToken,
-    checkRole(['admin', 'user']),
-    controller.assignGrado
+  '/:usuarioId/grado',
+  authenticateToken,
+  checkRole(['admin', 'user']),
+  controller.assignGrado,
 );
 
 /**
@@ -545,10 +566,10 @@ router.patch(
  *         description: OK
  */
 router.patch(
-    '/:usuarioId/asignaturas',
-    authenticateToken,
-    checkRole(['admin', 'user']),
-    controller.setAsignaturas
+  '/:usuarioId/asignaturas',
+  authenticateToken,
+  checkRole(['admin', 'user']),
+  controller.setAsignaturas,
 );
 
 export default router;

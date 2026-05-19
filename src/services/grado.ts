@@ -3,50 +3,60 @@ import Grado, { IGradoModel, IGrado } from '../models/Grado';
 import Universidad from '../models/Universidad';
 
 const createGrado = async (data: Partial<IGrado>): Promise<IGradoModel> => {
-    const grado = new Grado({
-        _id: new mongoose.Types.ObjectId(),
-        ...data
-    });
-    const savedGrado = await grado.save();
-    
-    // Al crear un grado, lo añadimos al array de la universidad correspondiente
-    await Universidad.findByIdAndUpdate(data.universidad, {
-        $push: { grados: savedGrado._id }
-    });
+  const grado = new Grado({
+    _id: new mongoose.Types.ObjectId(),
+    ...data,
+  });
+  const savedGrado = await grado.save();
 
-    return savedGrado;
+  // Al crear un grado, lo añadimos al array de la universidad correspondiente
+  await Universidad.findByIdAndUpdate(data.universidad, {
+    $push: { grados: savedGrado._id },
+  });
+
+  return savedGrado;
 };
 
 const getGrado = async (gradoId: string): Promise<IGradoModel | null> => {
-    return await Grado.findById(gradoId).populate('universidad', 'nombre').populate('asignaturas', 'nombre');
+  return await Grado.findById(gradoId)
+    .populate('universidad', 'nombre')
+    .populate('asignaturas', 'nombre');
 };
 
 const getAllGrados = async (): Promise<IGradoModel[]> => {
-    return await Grado.find().populate('universidad', 'nombre').populate('asignaturas', 'nombre');
-}
+  return await Grado.find().populate('universidad', 'nombre').populate('asignaturas', 'nombre');
+};
 
 const getGradosByUniversidad = async (universidadId: string): Promise<IGradoModel[]> => {
-    return await Grado.find({ universidad: universidadId });
+  return await Grado.find({ universidad: universidadId });
 };
 
 const updateGrado = async (gradoId: string, data: Partial<IGrado>): Promise<IGradoModel | null> => {
-    return await Grado.findByIdAndUpdate(gradoId, data, { new: true });
+  return await Grado.findByIdAndUpdate(gradoId, data, { new: true });
 };
 
 const deleteGrado = async (gradoId: string): Promise<IGradoModel | null> => {
-    const grado = await Grado.findById(gradoId);
-    if (grado) {
-        // Al eliminar un grado, lo quitamos del array de la universidad
-        await Universidad.findByIdAndUpdate(grado.universidad, {
-            $pull: { grados: grado._id }
-        });
-    }
-    return await Grado.findByIdAndDelete(gradoId);
+  const grado = await Grado.findById(gradoId);
+  if (grado) {
+    // Al eliminar un grado, lo quitamos del array de la universidad
+    await Universidad.findByIdAndUpdate(grado.universidad, {
+      $pull: { grados: grado._id },
+    });
+  }
+  return await Grado.findByIdAndDelete(gradoId);
 };
 
 const getAsignaturasByGrado = async (gradoId: string) => {
-    const grado = await Grado.findById(gradoId).populate('asignaturas', 'nombre');
-    return grado?.asignaturas || [];
+  const grado = await Grado.findById(gradoId).populate('asignaturas', 'nombre');
+  return grado?.asignaturas || [];
 };
 
-export default { createGrado, getGrado, getGradosByUniversidad, updateGrado, deleteGrado, getAsignaturasByGrado, getAllGrados };
+export default {
+  createGrado,
+  getGrado,
+  getGradosByUniversidad,
+  updateGrado,
+  deleteGrado,
+  getAsignaturasByGrado,
+  getAllGrados,
+};

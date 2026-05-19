@@ -4,52 +4,55 @@ import mongoosePaginate from 'mongoose-paginate-v2';
 export type ReportType = 'user' | 'post' | 'comment' | 'chat';
 
 export interface IReport {
-    usuarioReporta: Types.ObjectId; // Quién hace el reporte
-    tipo: ReportType; // Qué se está reportando
-    objetivoId: Types.ObjectId; // El ID de lo reportado (User, Post o Comment)
-    descripcion: string;
-    estado: 'pendiente' | 'revisado' | 'resuelto';
+  usuarioReporta: Types.ObjectId; // Quién hace el reporte
+  tipo: ReportType; // Qué se está reportando
+  objetivoId: Types.ObjectId; // El ID de lo reportado (User, Post o Comment)
+  descripcion: string;
+  estado: 'pendiente' | 'revisado' | 'resuelto';
 }
 
-export interface IReportModel extends IReport, Document { }
+export interface IReportModel extends IReport, Document {}
 
 const ReportSchema: Schema<IReportModel> = new Schema(
-    {
-        usuarioReporta: {
-            type: Schema.Types.ObjectId,
-            ref: 'Usuario',
-            required: [true, 'El usuario que reporta es obligatorio']
-        },
-        tipo: {
-            type: String,
-            enum: ['user', 'post', 'comment', 'chat'],
-            required: [true, 'El tipo de reporte es obligatorio']
-        },
-        objetivoId: {
-            type: Schema.Types.ObjectId,
-            required: [true, 'El ID del objetivo reportado es obligatorio'],
-            refPath: 'tipo' // Esto permite que Mongoose sepa a qué colección apuntar si hacemos populate dinámico (aunque 'user' != 'Usuario', 'post' != 'Post', etc., así que mejor manual o corregir nombres)
-        },
-        descripcion: {
-            type: String,
-            required: [true, 'La descripción del reporte es obligatoria'],
-            trim: true
-        },
-        estado: {
-            type: String,
-            enum: ['pendiente', 'revisado', 'resuelto'],
-            default: 'pendiente'
-        }
+  {
+    usuarioReporta: {
+      type: Schema.Types.ObjectId,
+      ref: 'Usuario',
+      required: [true, 'El usuario que reporta es obligatorio'],
     },
-    {
-        timestamps: true,
-        versionKey: false,
-        collection: 'reports'
-    }
+    tipo: {
+      type: String,
+      enum: ['user', 'post', 'comment', 'chat'],
+      required: [true, 'El tipo de reporte es obligatorio'],
+    },
+    objetivoId: {
+      type: Schema.Types.ObjectId,
+      required: [true, 'El ID del objetivo reportado es obligatorio'],
+      refPath: 'tipo', // Esto permite que Mongoose sepa a qué colección apuntar si hacemos populate dinámico (aunque 'user' != 'Usuario', 'post' != 'Post', etc., así que mejor manual o corregir nombres)
+    },
+    descripcion: {
+      type: String,
+      required: [true, 'La descripción del reporte es obligatoria'],
+      trim: true,
+    },
+    estado: {
+      type: String,
+      enum: ['pendiente', 'revisado', 'resuelto'],
+      default: 'pendiente',
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+    collection: 'reports',
+  },
 );
 
 ReportSchema.plugin(mongoosePaginate);
 
-const Report = mongoose.model<IReportModel, mongoose.PaginateModel<IReportModel>>('Report', ReportSchema);
+const Report = mongoose.model<IReportModel, mongoose.PaginateModel<IReportModel>>(
+  'Report',
+  ReportSchema,
+);
 
 export default Report;

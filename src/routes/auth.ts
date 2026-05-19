@@ -1,5 +1,13 @@
 import express from 'express';
-import { login, register, logout, refreshToken, getMe, updateMe, softDeleteMe } from '../controllers/auth';
+import {
+  login,
+  register,
+  logout,
+  refreshToken,
+  getMe,
+  updateMe,
+  softDeleteMe,
+} from '../controllers/auth';
 import Joi from 'joi';
 import { ValidateJoi, Schemas } from '../middleware/Joi';
 import { authenticateToken } from '../middleware/auth';

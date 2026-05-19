@@ -5,10 +5,10 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 export type SwipeType = 'like' | 'dislike';
 
 export interface ISwipe {
-    fromUser: Types.ObjectId;
-    toUser: Types.ObjectId;
-    type: SwipeType;
-    createdAt: Date;
+  fromUser: Types.ObjectId;
+  toUser: Types.ObjectId;
+  type: SwipeType;
+  createdAt: Date;
 }
 
 export interface ISwipeModel extends ISwipe, Document {}
@@ -16,30 +16,30 @@ export interface ISwipeModel extends ISwipe, Document {}
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const SwipeSchema: Schema<ISwipeModel> = new Schema(
-    {
-        fromUser: {
-            type: Schema.Types.ObjectId,
-            ref: 'Usuario',
-            required: true,
-            index: true
-        },
-        toUser: {
-            type: Schema.Types.ObjectId,
-            ref: 'Usuario',
-            required: true,
-            index: true
-        },
-        type: {
-            type: String,
-            enum: ['like', 'dislike'],
-            required: true
-        }
+  {
+    fromUser: {
+      type: Schema.Types.ObjectId,
+      ref: 'Usuario',
+      required: true,
+      index: true,
     },
-    {
-        timestamps: { createdAt: true, updatedAt: false },
-        versionKey: false,
-        collection: 'swipes'
-    }
+    toUser: {
+      type: Schema.Types.ObjectId,
+      ref: 'Usuario',
+      required: true,
+      index: true,
+    },
+    type: {
+      type: String,
+      enum: ['like', 'dislike'],
+      required: true,
+    },
+  },
+  {
+    timestamps: { createdAt: true, updatedAt: false },
+    versionKey: false,
+    collection: 'swipes',
+  },
 );
 
 // Índice compuesto: un usuario solo puede tener un swipe activo hacia otro

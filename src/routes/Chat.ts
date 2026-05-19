@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { getContacts, getHistory, getUnreadMessagesCount, getMessage, getConversationContext } from '../controllers/chat';
+import {
+  getContacts,
+  getHistory,
+  getUnreadMessagesCount,
+  getMessage,
+  getConversationContext,
+} from '../controllers/chat';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
