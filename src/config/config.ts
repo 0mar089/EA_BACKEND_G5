@@ -10,9 +10,14 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || '2h';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
 if (!MONGO_URL) throw new Error('Missing MONGO_URI in .env file');
 if (!JWT_ACCESS_SECRET) throw new Error('Missing JWT_ACCESS_SECRET in .env file');
 if (!JWT_REFRESH_SECRET) throw new Error('Missing JWT_REFRESH_SECRET in .env file');
+if (!GOOGLE_CLIENT_ID) throw new Error('Missing GOOGLE_CLIENT_ID in .env file');
+if (!GOOGLE_CLIENT_SECRET) throw new Error('Missing GOOGLE_CLIENT_SECRET in .env file');
 
 export const config = {
     mongo: {
@@ -27,6 +32,10 @@ export const config = {
         refreshSecret: JWT_REFRESH_SECRET,
         accessExpiresIn: JWT_ACCESS_EXPIRES_IN,
         refreshExpiresIn: JWT_REFRESH_EXPIRES_IN
+    },
+    google: {
+        clientId: GOOGLE_CLIENT_ID,
+        clientSecret: GOOGLE_CLIENT_SECRET
     },
     cookies: {
         refreshName: 'refreshToken',

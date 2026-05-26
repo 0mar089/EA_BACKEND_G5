@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 import { config } from '../config/config';
 import authService from '../services/auth';
 import usuarioService from '../services/usuario';
 import { AuthRequest } from '../middleware/auth';
 import Usuario from '../models/Usuario';
 import Logging from '../library/Logging';
+
+const client = new OAuth2Client(config.google.clientId);
 
 /**
  * POST /auth/register
@@ -306,6 +309,106 @@ export const softDeleteMe = async (req: AuthRequest, res: Response) => {
     }
 };
 
+/**
+ * POST /auth/google
+ */
+export const googleLogin = async (req: Request, res: Response, next: NextFunction) => {
+    const { token } = req.body;
+
+    if (!token) {
+        Logging.warning(`[400] [auth] Google Login Token Missing`);
+        return res.status(400).json({ message: 'Token de Google requerido' });
+    }
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: config.google.clientId
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            Logging.warning(`[400] [auth] Google Login Token Invalid`);
+            return res.status(400).json({ message: 'Token de Google inválido' });
+        }
+
+        const { email, name, picture } = payload;
+
+        // Buscar si existe el usuario
+        const usuarioExistente = await Usuario.findOne({ email: email.toLowerCase() });
+
+        if (!usuarioExistente) {
+            // Registrar nuevo usuario
+            const randomPassword = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            const nuevoUsuario = await usuarioService.createUsuario({
+                nombre: name || 'Google User',
+                email: email.toLowerCase(),
+                password: randomPassword,
+                avatarUrl: picture || 'https://api.dicebear.com/7.x/avataaars/png?seed=default-avatar',
+                rol: 'user',
+                activo: true
+            });
+
+            Logging.info(`[201] [auth] Google User Registered | userId=${nuevoUsuario._id} email=${nuevoUsuario.email}`);
+
+            const { accessToken, refreshToken } = authService.getTokens(nuevoUsuario);
+
+            res.cookie(
+                config.cookies.refreshName,
+                refreshToken,
+                config.cookies.options
+            );
+
+            return res.status(200).json({
+                message: 'Login exitoso con Google',
+                accessToken,
+                refreshToken,
+                usuario: {
+                    _id: nuevoUsuario._id,
+                    nombre: nuevoUsuario.nombre,
+                    email: nuevoUsuario.email,
+                    avatarUrl: nuevoUsuario.avatarUrl,
+                    universidad: nuevoUsuario.universidad,
+                    rol: nuevoUsuario.rol
+                }
+            });
+        }
+
+        if (!usuarioExistente.activo) {
+            Logging.warning(`[403] [auth] Google Login Attempt by Inactive User | email=${email}`);
+            return res.status(403).json({ message: 'Usuario inactivo. Contacte al administrador.' });
+        }
+
+        Logging.info(`[200] [auth] Google Login Success | userId=${usuarioExistente._id} email=${email}`);
+
+        const { accessToken, refreshToken } = authService.getTokens(usuarioExistente);
+
+        res.cookie(
+            config.cookies.refreshName,
+            refreshToken,
+            config.cookies.options
+        );
+
+        return res.status(200).json({
+            message: 'Login exitoso con Google',
+            accessToken,
+            refreshToken,
+            usuario: {
+                _id: usuarioExistente._id,
+                nombre: usuarioExistente.nombre,
+                email: usuarioExistente.email,
+                avatarUrl: usuarioExistente.avatarUrl,
+                universidad: usuarioExistente.universidad,
+                rol: usuarioExistente.rol
+            }
+        });
+
+    } catch (error) {
+        Logging.error(`[500] [auth] Google Login Failed | error=${error}`);
+        return res.status(500).json({ message: 'Error interno del servidor al verificar Google Token' });
+    }
+};
+
 export default {
     login,
     register,
@@ -313,5 +416,6 @@ export default {
     logout,
     getMe,
     updateMe,
-    softDeleteMe
+    softDeleteMe,
+    googleLogin
 };
