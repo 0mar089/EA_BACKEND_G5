@@ -123,7 +123,6 @@ const seedWeaviate = async () => {
         }
 
         Logging.info(`Creando colección "${collectionName}"...`);
-        // Creamos la colección sin vectorizador para que soporte búsquedas BM25/keyword out-of-the-box sin depender de APIs de terceros
         await client.collections.create({
             name: collectionName,
             properties: [

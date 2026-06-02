@@ -8,7 +8,6 @@ const askToni = async (preguntaUsuario: string): Promise<string> => {
         const client = await getWeaviateClient();
         const collection = client.collections.get('AcademicInfo');
 
-        // Expandir abreviaturas comunes para mejorar la coincidencia en BM25 de Weaviate
         let queryExpandida = preguntaUsuario;
         if (/2ndo|2nd|segundo/i.test(preguntaUsuario)) {
             queryExpandida += ' "2º" "segundo"';
@@ -23,12 +22,10 @@ const askToni = async (preguntaUsuario: string): Promise<string> => {
             queryExpandida += ' "4º" "cuarto"';
         }
 
-        // Búsqueda de palabras clave (BM25) en Weaviate con límite ampliado
         const result = await collection.query.bm25(queryExpandida, {
             limit: 10
         });
 
-        // Formatear el contexto recuperado
         const contextoWeaviate = result.objects.length > 0
             ? result.objects.map(obj => `- **${obj.properties.title}** (${obj.properties.category || 'General'}): ${obj.properties.content}`).join('\n\n')
             : 'No se ha encontrado contexto específico en Weaviate.';
