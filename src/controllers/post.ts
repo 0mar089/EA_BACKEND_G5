@@ -5,6 +5,7 @@ import AuditService from '../services/audit';
 import Usuario from '../models/Usuario';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
+import { matomoService } from '../services/matomo';
 
 const isValidObjectId = (id: string) =>
     mongoose.Types.ObjectId.isValid(id);
@@ -42,6 +43,7 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
             await PostService.createPost(postData);
 
         Logging.info(`[201] [post] Created | postId=${savedPost._id} userId=${authorId}`);
+        matomoService.trackEvent(req, 'Posts', 'Create', savedPost._id);
 
         return res.status(201).json(savedPost);
 

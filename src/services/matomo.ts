@@ -71,6 +71,7 @@ class MatomoService {
 
             const trackingEndpoint = `${this.matomoUrl}/matomo.php`;
             const fullTrackUrl = `${trackingEndpoint}?${queryParams.toString()}`;
+            Logging.info(`[Matomo] FULL URL: ${fullTrackUrl}`);
             Logging.info(`[Matomo] Sending tracking request... (action: ${params.action_name || params.e_a || 'Pageview'})`);
 
             fetch(fullTrackUrl, {

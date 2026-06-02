@@ -6,6 +6,7 @@ import NotificationService from '../services/notification';
 import Notification from '../models/Notification';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
+import { matomoService } from '../services/matomo';
 
 const isValidObjectId = (id: string) =>
     mongoose.Types.ObjectId.isValid(id);
@@ -36,6 +37,7 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
             await CommentService.createComment(commentData);
 
         Logging.info(`[201] [comment] Created | commentId=${savedComment._id} userId=${authorId}`);
+        matomoService.trackEvent(req, 'Comments', 'Create', savedComment._id);
 
         return res.status(201).json(savedComment);
 
