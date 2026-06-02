@@ -56,6 +56,50 @@ const createNotification = async (data: {
             Logging.warning(`[NotificationService] Could not emit socket: ${socketErr}`);
         }
 
+        // Send via FCM if recipient has a token
+        try {
+            const Usuario = require('../models/Usuario').default;
+            const recipientUser = await Usuario.findById(data.recipient).select('fcmToken');
+            if (recipientUser && recipientUser.fcmToken) {
+                const { sendPushNotification } = require('./firebase.service');
+                const senderName = (populatedNotification?.sender as any)?.nombre || 'Alguien';
+                
+                let title = 'Nueva notificación';
+                let body = 'Tienes una nueva interacción';
+                
+                if (data.type === 'like') {
+                    title = '¡Nuevo me gusta!';
+                    body = `@${senderName} le ha dado me gusta a tu publicación.`;
+                } else if (data.type === 'comment') {
+                    title = '¡Nuevo comentario!';
+                    body = `@${senderName} ha comentado en tu publicación.`;
+                } else if (data.type === 'follow') {
+                    title = '¡Nuevo seguidor!';
+                    body = `@${senderName} ha comenzado a seguirte.`;
+                } else if (data.type === 'follow_request') {
+                    title = 'Solicitud de seguimiento';
+                    body = `@${senderName} te ha enviado una solicitud de seguimiento.`;
+                } else if (data.type === 'follow_accepted') {
+                    title = 'Solicitud de seguimiento aceptada';
+                    body = `@${senderName} ha aceptado tu solicitud de seguimiento.`;
+                }
+
+                await sendPushNotification(
+                    recipientUser.fcmToken,
+                    title,
+                    body,
+                    {
+                        notificationId: String(notification._id),
+                        type: data.type,
+                        senderId: String(data.sender),
+                        postId: data.post ? String(data.post) : ''
+                    }
+                ).catch((err: any) => Logging.error(`[NotificationService] Failed to send push: ${err}`));
+            }
+        } catch (fcmErr) {
+            Logging.error(`[NotificationService] FCM error: ${fcmErr}`);
+        }
+
         return populatedNotification;
     } catch (error) {
         Logging.error(`[NotificationService] Error creating notification: ${error}`);

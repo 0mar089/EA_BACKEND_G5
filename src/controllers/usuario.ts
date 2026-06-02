@@ -502,6 +502,30 @@ const setAsignaturas = async (req: AuthRequest, res: Response) => {
     }
 };
 
+const updateFcmToken = async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    const { fcmToken } = req.body;
+
+    if (!userId) {
+        Logging.warning(`[401] [usuario] Unauthorized updateFcmToken`);
+        return res.status(401).json({ message: 'No autenticado' });
+    }
+
+    try {
+        const usuario = await UsuarioService.updateUsuario(userId, { fcmToken });
+        if (!usuario) {
+            Logging.warning(`[404] [usuario] updateFcmToken User Not Found | userId=${userId}`);
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        Logging.info(`[200] [usuario] FCM Token Updated | userId=${userId}`);
+        return res.status(200).json(usuario);
+    } catch (error) {
+        Logging.error(`[500] [usuario] updateFcmToken Failed | userId=${userId} error=${error}`);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export default {
     createUsuario,
     readUsuario,
@@ -518,5 +542,6 @@ export default {
     assignGrado,
     setAsignaturas,
     acceptFollowRequest,
-    rejectFollowRequest
+    rejectFollowRequest,
+    updateFcmToken
 };
