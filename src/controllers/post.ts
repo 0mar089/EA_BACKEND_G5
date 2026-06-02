@@ -516,6 +516,83 @@ const getDiscoveryPosts = async (req: AuthRequest, res: Response) => {
     }
 };
 
+const toggleSavePost = async (req: AuthRequest, res: Response) => {
+
+    try {
+        if (!req.user) {
+            Logging.warning(`[401] [post] Unauthorized Save Toggle`);
+            return res.status(401).json({ message: 'No autenticado' });
+        }
+
+        const userId = req.user.id;
+        const { postId } = req.params;
+
+        const result = await PostService.toggleSavePost(userId, postId);
+
+        Logging.info(
+            `[200] [post] Toggle Save | userId=${userId} postId=${postId} saved=${result.saved}`
+        );
+
+        return res.status(200).json(result);
+
+    } catch (error: any) {
+
+        if (error.message === 'ID de post inválido') {
+            return res.status(400).json({ message: error.message });
+        }
+
+        Logging.error(`[500] [post] Toggle Save Failed`);
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
+    }
+};
+
+const getSavedPosts = async (req: AuthRequest, res: Response) => {
+
+    try {
+
+        if (!req.user) {
+            Logging.warning(`[401] [post] Unauthorized Saved Posts`);
+            return res.status(401).json({
+                message: 'No autenticado'
+            });
+        }
+
+        const page = req.query.page
+            ? parseInt(req.query.page as string)
+            : 1;
+
+        const limit = req.query.limit
+            ? parseInt(req.query.limit as string)
+            : 10;
+
+        if (page < 1 || limit < 1) {
+            Logging.warning(`[400] [post] Invalid Pagination (saved)`);
+            return res.status(400).json({
+                message: 'Valores de paginación inválidos'
+            });
+        }
+
+        const posts =
+            await PostService.getSavedPosts(
+                req.user.id,
+                page,
+                limit
+            );
+
+        Logging.info(`[200] [post] Saved Posts | userId=${req.user?.id}`);
+        return res.status(200).json(posts);
+
+    } catch (error) {
+
+        Logging.error(`[500] [post] Saved Posts Failed`);
+        return res.status(500).json({
+            message: 'Internal server error'
+        });
+    }
+};
+
 export default {
     createPost,
     getPost,
@@ -526,5 +603,7 @@ export default {
     deleteAllPostsFromUser,
     darleLike,
     getFollowingPosts,
-    getDiscoveryPosts
+    getDiscoveryPosts,
+    toggleSavePost,
+    getSavedPosts
 };
