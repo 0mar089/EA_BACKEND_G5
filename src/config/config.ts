@@ -13,6 +13,11 @@ const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
+const MATOMO_ENABLED = process.env.MATOMO_ENABLED === 'true';
+const MATOMO_URL = process.env.MATOMO_URL || '';
+const MATOMO_SITE_ID = process.env.MATOMO_SITE_ID || '';
+const MATOMO_AUTH_TOKEN = process.env.MATOMO_AUTH_TOKEN || '';
+
 if (!MONGO_URL) throw new Error('Missing MONGO_URI in .env file');
 if (!JWT_ACCESS_SECRET) throw new Error('Missing JWT_ACCESS_SECRET in .env file');
 if (!JWT_REFRESH_SECRET) throw new Error('Missing JWT_REFRESH_SECRET in .env file');
@@ -22,6 +27,12 @@ if (!GOOGLE_CLIENT_SECRET) throw new Error('Missing GOOGLE_CLIENT_SECRET in .env
 export const config = {
     mongo: {
         url: MONGO_URL
+    },
+    matomo: {
+        enabled: MATOMO_ENABLED,
+        url: MATOMO_URL,
+        siteId: MATOMO_SITE_ID,
+        authToken: MATOMO_AUTH_TOKEN
     },
     server: {
         port: SERVER_PORT,

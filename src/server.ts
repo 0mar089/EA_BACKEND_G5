@@ -23,6 +23,7 @@ import bugRoutes from './routes/BugReport';
 import unimatchRoutes from './routes/UniMatch';
 import auditRoutes from './routes/Audit';
 import { initSocket } from './socket';
+import { matomoMiddleware } from './middleware/matomo';
 
 const router = express();
 
@@ -52,6 +53,8 @@ const StartServer = () => {
 
         next();
     });
+
+    router.use(matomoMiddleware);
 
     router.use(express.urlencoded({ extended: true }));
     router.use(express.json());

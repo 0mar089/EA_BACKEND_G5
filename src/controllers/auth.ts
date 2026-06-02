@@ -6,6 +6,7 @@ import usuarioService from '../services/usuario';
 import { AuthRequest } from '../middleware/auth';
 import Usuario from '../models/Usuario';
 import Logging from '../library/Logging';
+import { matomoService } from '../services/matomo';
 
 const client = new OAuth2Client(config.google.clientId);
 
@@ -22,6 +23,8 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
             authService.getTokens(savedUsuario);
 
         Logging.info(`[201] [auth] User Registered | userId=${savedUsuario._id} email=${savedUsuario.email}`);
+        // se añade la llamada a los servicios de matomo porque queremos rastrear el evento
+        matomoService.trackEvent(req, 'Authentication', 'Register', savedUsuario.email);
 
         res.cookie(
             config.cookies.refreshName,
@@ -86,6 +89,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             authService.getTokens(usuario);
 
         Logging.info(`[200] [auth] Login Success | userId=${usuario._id} email=${email}`);
+         // se añade la llamada a los servicios de matomo porque queremos rastrear el evento
+        matomoService.trackEvent(req, 'Authentication', 'Login', email);
 
         res.cookie(
             config.cookies.refreshName,
@@ -350,6 +355,8 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
             });
 
             Logging.info(`[201] [auth] Google User Registered | userId=${nuevoUsuario._id} email=${nuevoUsuario.email}`);
+             // se añade la llamada a los servicios de matomo porque queremos rastrear el evento
+            matomoService.trackEvent(req, 'Authentication', 'Google Register', nuevoUsuario.email);
 
             const { accessToken, refreshToken } = authService.getTokens(nuevoUsuario);
 
@@ -380,6 +387,8 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
         }
 
         Logging.info(`[200] [auth] Google Login Success | userId=${usuarioExistente._id} email=${email}`);
+         // se añade la llamada a los servicios de matomo porque queremos rastrear el evento
+        matomoService.trackEvent(req, 'Authentication', 'Google Login', email);
 
         const { accessToken, refreshToken } = authService.getTokens(usuarioExistente);
 
