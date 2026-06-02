@@ -3,6 +3,8 @@ import { Server as SocketServer } from 'socket.io';
 import { verifyAccessToken } from './utils/jwt';
 import { saveMessage, deleteMessages, reactToMessage, filterMessageForUser } from './services/chat';
 import Logging from './library/Logging';
+import { sendPushNotification } from './services/firebase.service';
+import Usuario from './models/Usuario';
 
 let io: SocketServer;
 
@@ -49,6 +51,26 @@ export const initSocket = (httpServer: HttpServer) => {
                 // Filtrar para el remitente
                 const filteredForSender = filterMessageForUser(msg, userId);
                 socket.emit('message_sent', filteredForSender);
+
+                // --- FIREBASE PUSH NOTIFICATION ---
+                const destinatario = await Usuario.findById(destinatarioId);
+                if (destinatario && destinatario.fcmToken) {
+                    const remitente = await Usuario.findById(userId);
+                    const remitenteNombre = remitente ? remitente.nombre : 'Alguien';
+                    
+                    await sendPushNotification(
+                        destinatario.fcmToken,
+                        `Nuevo mensaje de ${remitenteNombre}`,
+                        contenido?.trim() || 'Te ha enviado un archivo o post',
+                        {
+                            type: 'chat_message',
+                            senderId: userId,
+                            messageId: msg._id.toString()
+                        }
+                    );
+                    console.log('[Firebase] Notificación push enviada con éxito');
+                }
+                // -----------------------------------
             } catch (err) {
                 Logging.error(`[Socket] Error guardando mensaje: ${err}`);
                 socket.emit('message_error', { message: 'Error enviando el mensaje' });
