@@ -24,6 +24,11 @@ Actúa como interceptor global para registrar todas las interacciones con la API
 * **Cronometraje:** Al recibir una petición, el middleware inicia un cronómetro y usa `next()` para dejar pasar la petición al controlador. Al finalizar, captura el tiempo total de respuesta.
 * **Gestión de Autenticación:** Depende del middleware de autenticación previo. Si la petición no lleva token, `req.user` es `undefined`. Al enviar esta información a Matomo, el usuario queda registrado correctamente como visitante **anónimo**.
 
+## Estado de la funcionalidad
+
+En el proyecto actualmente no hay errores y funciona el matomo a la perfección capturando todas las peticiones. Falta aplicar el tracking de eventos a unos cuandos endoints, porque solo estan en 3. 
+
+
 ## AI Log (Registro de Prompts)
 
 IA usada --> Gemini 3.5 Flash para codigo + ChatGPT para conceptos y teoria
