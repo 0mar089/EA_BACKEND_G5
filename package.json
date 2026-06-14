@@ -12,7 +12,9 @@
     "postinstall": "tsc",
     "prepare": "husky",
     "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint:fix": "eslint --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "author": "",
   "license": "MIT",
