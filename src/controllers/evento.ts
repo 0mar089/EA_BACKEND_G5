@@ -49,8 +49,9 @@ const getAllEventos = async (req: AuthRequest, res: Response, next: NextFunction
     try {
         const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
         const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
+        const distancia = req.query.distancia ? parseFloat(req.query.distancia as string) : undefined;
 
-        const eventos = await EventoService.getAllEventos(lat, lng);
+        const eventos = await EventoService.getAllEventos(lat, lng, distancia);
         Logging.info(`[200] [evento] List All | count=${eventos.length}`);
         return res.status(200).json(eventos);
     } catch (error: any) {

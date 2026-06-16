@@ -43,14 +43,17 @@ const getAllEventos = async (lat?: number, lng?: number, maxDistance?: number): 
     const query: any = { activo: true };
 
     if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
-        query.location = {
-            $nearSphere: {
-                $geometry: {
-                    type: 'Point',
-                    coordinates: [lng, lat] // [longitud, latitud]
-                },
-                $maxDistance: maxDistance || 50000 // EL DEFAULT LO HE PUESTO A 50km
+        const nearSphereQuery: any = {
+            $geometry: {
+                type: 'Point',
+                coordinates: [lng, lat] // [longitud, latitud]
             }
+        };
+        if (maxDistance !== undefined && maxDistance > 0) {
+            nearSphereQuery.$maxDistance = maxDistance;
+        }
+        query.location = {
+            $nearSphere: nearSphereQuery
         };
     }
 
