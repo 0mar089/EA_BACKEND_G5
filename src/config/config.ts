@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URI;
-const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1337;
+const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1338;
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
