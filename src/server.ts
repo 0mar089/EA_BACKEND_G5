@@ -23,6 +23,8 @@ import bugRoutes from './routes/BugReport';
 import unimatchRoutes from './routes/UniMatch';
 import auditRoutes from './routes/Audit';
 import eventoRoutes from './routes/Evento';
+import assistantRoutes from './routes/Assistant';
+import { getWeaviateClient } from './config/weaviate';
 import { initSocket } from './socket';
 
 const router = express();
@@ -30,9 +32,17 @@ const router = express();
 /** Connect to Mongo */
 mongoose
     .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
-    .then(() => {
+    .then(async () => {
         Logging.info('Mongo connected successfully.');
         Logging.info('Cloudinary service initialized successfully.');
+        
+        try {
+            await getWeaviateClient();
+            Logging.info('Weaviate connected successfully.');
+        } catch (error) {
+            Logging.error(`Weaviate connection failed on startup: ${error}`);
+        }
+
         StartServer();
     })
     .catch((error) => Logging.error(error));
@@ -81,6 +91,7 @@ const StartServer = () => {
     router.use('/unimatch', unimatchRoutes);
     router.use('/audit', auditRoutes);
     router.use('/eventos', eventoRoutes);
+    router.use('/assistant', assistantRoutes);
 
 
     /** Healthcheck */
