@@ -158,6 +158,41 @@ router.get('/following', authenticateToken, controller.getFollowingPosts);
  */
 router.get('/discovery', authenticateToken, controller.getDiscoveryPosts);
 
+
+/**
+ * @openapi
+ * /posts/saved:
+ *   get:
+ *     summary: Obtener posts guardados del usuario autenticado
+ *     description: Devuelve los posts que el usuario ha guardado con paginación
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Elementos por página
+ *     responses:
+ *       200:
+ *         description: Lista paginada de posts guardados
+ *       401:
+ *         description: No autorizado
+ */
+router.get(
+    '/saved',
+    authenticateToken,
+    controller.getSavedPosts
+);
+
 /**
  * @openapi
  * /posts/user/{userId}:
@@ -183,6 +218,48 @@ router.get(
     '/user/:userId',
     authenticateToken,
     controller.getAllPostsFromUser
+);
+
+/**
+ * @openapi
+ * /posts/{postId}/save:
+ *   patch:
+ *     summary: Guardar o quitar un post (toggle)
+ *     description: Añade o elimina un post de la lista de guardados del usuario autenticado
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del post
+ *     responses:
+ *       200:
+ *         description: Estado actualizado del guardado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 saved:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         description: ID de post inválido
+ *       401:
+ *         description: No autenticado
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.patch(
+    '/:postId/save',
+    authenticateToken,
+    controller.toggleSavePost
 );
 
 /**
