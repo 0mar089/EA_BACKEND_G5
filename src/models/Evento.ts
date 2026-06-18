@@ -14,6 +14,7 @@ export interface IEvento {
     asistentes: Types.ObjectId[];
     maxAsistentes?: number | null;
     activo: boolean;
+    fechaLimite?: Date | null;
 }
 
 export interface IEventoModel extends IEvento, Document {}
@@ -33,6 +34,10 @@ const EventoSchema: Schema<IEventoModel> = new Schema(
         fecha: {
             type: Date,
             required: [true, 'La fecha es obligatoria']
+        },
+        fechaLimite: {
+            type: Date,
+            default: null
         },
         ubicacionNombre: {
             type: String,

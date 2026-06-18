@@ -179,7 +179,8 @@ export const Schemas = {
             ubicacionNombre: Joi.string().required(),
             lat: Joi.number().min(-90).max(90).required(),
             lng: Joi.number().min(-180).max(180).required(),
-            maxAsistentes: Joi.number().integer().min(1).allow(null, '')
+            maxAsistentes: Joi.number().integer().min(1).allow(null, ''),
+            fechaLimite: Joi.date().allow(null, '')
         }),
         update: Joi.object({
             titulo: Joi.string(),
@@ -188,7 +189,8 @@ export const Schemas = {
             ubicacionNombre: Joi.string(),
             lat: Joi.number().min(-90).max(90),
             lng: Joi.number().min(-180).max(180),
-            maxAsistentes: Joi.number().integer().min(1).allow(null, '')
+            maxAsistentes: Joi.number().integer().min(1).allow(null, ''),
+            fechaLimite: Joi.date().allow(null, '')
         })
     }
 };
