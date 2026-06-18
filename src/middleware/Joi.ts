@@ -127,6 +127,15 @@ export const Schemas = {
             comments: Joi.array()
                 .items(Joi.string().regex(/^[0-9a-fA-F]{24}$/))
         }),
+        toggleSavePost: Joi.object({
+            postId: Joi.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
+                .required()
+        }),
+        saved: Joi.object({
+            page: Joi.number().integer().min(1).default(1),
+            limit: Joi.number().integer().min(1).max(100).default(10)
+        })
     },
 
     comment: {

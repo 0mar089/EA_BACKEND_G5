@@ -342,6 +342,10 @@ const getFollowingPosts = async (
 
     const seguidos = usuario.seguidos || [];
 
+    const savedSet = new Set(
+      (usuario.postsGuardados || []).map((id: any) => id.toString())
+    );
+
     // Incluir al propio usuario en su feed
     const authors = [...seguidos, userId];
 
@@ -354,10 +358,18 @@ const getFollowingPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: postPopulate,
+        lean: true
     };
 
-    return await Post.paginate(filter, options);
+    const result = await Post.paginate(filter, options);
+
+    result.docs = result.docs.map((post: any) => ({
+        ...post,
+        isSaved: savedSet.has(post._id.toString())
+    }));
+
+    return result;
 };
 
 const getDiscoveryPosts = async (
@@ -371,6 +383,10 @@ const getDiscoveryPosts = async (
     if (!usuario) {
         throw new Error('Usuario no encontrado');
     }
+
+    const savedSet = new Set(
+      (usuario.postsGuardados || []).map((id: any) => id.toString())
+    );
 
     const seguidos = usuario.seguidos || [];
 
@@ -402,10 +418,98 @@ const getDiscoveryPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: postPopulate,
+        lean: true
     };
 
-    return await Post.paginate(filter, options);
+    const result = await Post.paginate(filter, options);
+
+    result.docs = result.docs.map((post: any) => ({
+        ...post,
+        isSaved: savedSet.has(post._id.toString())
+    }));
+
+    return result;
+};
+
+const toggleSavePost = async (userId: string, postId: string) => {
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+        throw new Error('ID de post inválido');
+    }
+
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+        throw new Error('Usuario no encontrado');
+    }
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+        throw new Error('Post no encontrado');
+    }
+
+    if (!post.activo) {
+        throw new Error('Post no activo');
+    }
+
+    const postObjectId = new mongoose.Types.ObjectId(postId);
+
+    if (!usuario.postsGuardados) {
+        usuario.postsGuardados = [];
+    }
+
+    const index = usuario.postsGuardados.findIndex(id =>
+        id.equals(postObjectId)
+    );
+
+    let saved: boolean;
+
+    if (index !== -1) {
+        usuario.postsGuardados.splice(index, 1);
+        saved = false;
+    } else {
+        usuario.postsGuardados.push(postObjectId);
+        saved = true;
+    }
+
+    await usuario.save();
+
+    return { saved };
+};
+
+const getSavedPosts = async (userId: string, page = 1, limit = 10) => {
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+        throw new Error('Usuario no encontrado');
+    }
+
+    const savedSet = new Set(
+        (usuario.postsGuardados || []).map(id => id.toString())
+    );
+
+    const result = await Post.paginate(
+        {
+            _id: { $in: usuario.postsGuardados || [] },
+            activo: true
+        },
+        {
+            page,
+            limit,
+            sort: { createdAt: -1 },
+            populate: postPopulate,
+            lean: true
+        }
+    );
+
+    result.docs = result.docs.map((post: any) => ({
+        ...post,
+        isSaved: savedSet.has(post._id.toString())
+    }));
+
+    return result;
 };
 
 export default {
@@ -418,5 +522,7 @@ export default {
     deleteAllPostsFromUser,
     darleLike,
     getFollowingPosts,
-    getDiscoveryPosts
+    getDiscoveryPosts,
+    toggleSavePost,
+    getSavedPosts
 };
