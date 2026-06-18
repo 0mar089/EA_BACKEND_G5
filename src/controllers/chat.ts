@@ -117,7 +117,11 @@ export const createGroupChat = async (req: AuthRequest, res: Response) => {
 
         Logging.info(`[201] [chat] Group Chat Created | groupId=${group._id} creator=${req.user.id}`);
 
-        return res.status(201).json(group);
+        return res.status(201).json({
+            ...group.toObject(),
+            isGroup: true,
+            unreadCount: 0
+        });
     } catch (error: any) {
         Logging.error(`[500] [chat] Create Group Chat Failed | error=${error}`);
         return res.status(400).json({ message: error.message || 'Error al crear el grupo' });
