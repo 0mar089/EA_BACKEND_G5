@@ -166,6 +166,16 @@ const softDeleteUsuario = async (req: AuthRequest, res: Response, next: NextFunc
     const usuarioId = req.params.usuarioId;
     const admin = req.user;
 
+    if (!admin) {
+        return res.status(401).json({ message: 'No autenticado' });
+    }
+
+    // IDOR Protection: Only the user themselves or an admin can delete the account
+    if (usuarioId !== admin.id && admin.rol !== 'admin') {
+        Logging.warning(`[403] [usuario] Forbidden Soft Delete | requesterId=${admin.id} targetId=${usuarioId}`);
+        return res.status(403).json({ message: 'No tienes permiso para desactivar esta cuenta' });
+    }
+
     try {
         const usuario = await UsuarioService.softDeleteUsuario(usuarioId);
 

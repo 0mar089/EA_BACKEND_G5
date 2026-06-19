@@ -272,7 +272,7 @@ router.patch('/:usuarioId', authenticateToken, checkRole(['admin']), ValidateJoi
  *       404:
  *         description: No encontrado
  */
-router.patch('/:usuarioId/soft-delete', authenticateToken, checkRole(['admin']), controller.softDeleteUsuario);
+router.patch('/:usuarioId/soft-delete', authenticateToken, controller.softDeleteUsuario);
 
 /**
  * @openapi

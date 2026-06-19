@@ -33,6 +33,9 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
     const dislikedIds = allSwipes
         .filter(s => s.type === 'dislike')
         .map(s => s.toUser.toString());
+    const likedIds = allSwipes
+        .filter(s => s.type === 'like')
+        .map(s => s.toUser.toString());
 
     // Usuarios que tienen al menos una foto en UnimatchPhoto
     const usersWithPhotos = await UnimatchPhoto.distinct('userId');
@@ -40,9 +43,10 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
 
     // Base filter: activos, no yo, tienen fotos, aceptaron terms
     const excludeIds = [
-        ...todaySwipedIds.map(id => new mongoose.Types.ObjectId(id)),
-        new mongoose.Types.ObjectId(userId)
-    ];
+        ...todaySwipedIds,
+        ...likedIds,
+        userId
+    ].map(id => new mongoose.Types.ObjectId(id));
 
     // Solo usuarios con fotos
     if (usersWithPhotosIds.length === 0) {
