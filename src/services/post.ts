@@ -6,22 +6,30 @@ import NotificationService from './notification';
 import { NotificationType } from '../models/Notification';
 import Logging from '../library/Logging';
 
-const postPopulate = [
+const getPostPopulate = (isAdmin: boolean = false) => [
     {
         path: 'usuario',
-        select: 'nombre avatarUrl privado seguidores'
+        select: 'nombre avatarUrl privado seguidores activo'
     },
     {
         path: 'comments',
-        match: { activo: true },
-        select: 'texto usuario createdAt likes',
-        populate: {
-            path: 'usuario',
-            select: 'nombre avatarUrl'
-        }
+        match: isAdmin ? {} : { activo: true },
+        select: 'texto usuario createdAt likes activo',
+        populate: [
+            {
+                path: 'usuario',
+                select: 'nombre avatarUrl activo'
+            },
+            {
+                path: 'likes',
+                match: isAdmin ? {} : { activo: true },
+                select: 'nombre avatarUrl'
+            }
+        ]
     },
     {
         path: 'likes',
+        match: isAdmin ? {} : { activo: true },
         select: 'nombre avatarUrl'
     }
 ];
@@ -42,7 +50,7 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel | any> => {
     }
 
     return await Post.findById(savedPost._id)
-        .populate(postPopulate);
+        .populate(getPostPopulate(false));
 };
 
 const getPost = async (
@@ -56,7 +64,7 @@ const getPost = async (
         : { _id: postId, activo: true };
 
     const post = await Post.findOne(filter)
-        .populate(postPopulate);
+        .populate(getPostPopulate(isAdmin));
 
     if (!post) return null;
 
@@ -121,7 +129,7 @@ const getAllPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: getPostPopulate(isAdmin)
     };
 
     return await Post.paginate(filter, options);
@@ -150,7 +158,7 @@ const updatePost = async (
         postId,
         data,
         { new: true }
-    ).populate(postPopulate);
+    ).populate(getPostPopulate(userRole === 'admin'));
 };
 
 const deletePost = async (
@@ -215,7 +223,7 @@ const getAllPostsFromUser = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: getPostPopulate(isAdmin)
     };
 
     return await Post.paginate(filter, options);
@@ -325,7 +333,7 @@ const darleLike = async (
     await post.save();
 
     return await Post.findById(postId)
-        .populate(postPopulate);
+        .populate(getPostPopulate(false));
 };
 
 const getFollowingPosts = async (
@@ -358,7 +366,7 @@ const getFollowingPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate,
+        populate: getPostPopulate(false),
         lean: true
     };
 
@@ -418,7 +426,7 @@ const getDiscoveryPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate,
+        populate: getPostPopulate(false),
         lean: true
     };
 
@@ -499,7 +507,7 @@ const getSavedPosts = async (userId: string, page = 1, limit = 10) => {
             page,
             limit,
             sort: { createdAt: -1 },
-            populate: postPopulate,
+            populate: getPostPopulate(false),
             lean: true
         }
     );
