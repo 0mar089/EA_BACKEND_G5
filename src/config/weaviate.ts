@@ -16,7 +16,7 @@ export const getWeaviateClient = async (): Promise<WeaviateClient> => {
                     authCredentials: new weaviate.ApiKey(config.weaviate.apiKey)
                 }
             );
-            console.log('Conexión establecida con Weaviate Cloud.');
+
         } catch (error) {
             console.error('Error al conectar a Weaviate:', error);
             throw error;

@@ -29,6 +29,7 @@ import { initSocket } from './socket';
 const router = express();
 
 /** Connect to Mongo */
+mongoose.set('strictQuery', false);
 mongoose
     .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
     .then(async () => {
