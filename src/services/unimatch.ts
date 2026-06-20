@@ -33,16 +33,20 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
     const dislikedIds = allSwipes
         .filter(s => s.type === 'dislike')
         .map(s => s.toUser.toString());
+    const likedIds = allSwipes
+        .filter(s => s.type === 'like')
+        .map(s => s.toUser.toString());
 
-    // Usuarios que tienen al menos una foto en UnimatchPhoto
-    const usersWithPhotos = await UnimatchPhoto.distinct('userId');
+    // Usuarios que tienen al menos una foto activa en UnimatchPhoto
+    const usersWithPhotos = await UnimatchPhoto.distinct('userId', { activo: true });
     const usersWithPhotosIds = usersWithPhotos.map(id => id.toString());
 
     // Base filter: activos, no yo, tienen fotos, aceptaron terms
     const excludeIds = [
-        ...todaySwipedIds.map(id => new mongoose.Types.ObjectId(id)),
-        new mongoose.Types.ObjectId(userId)
-    ];
+        ...todaySwipedIds,
+        ...likedIds,
+        userId
+    ].map(id => new mongoose.Types.ObjectId(id));
 
     // Solo usuarios con fotos
     if (usersWithPhotosIds.length === 0) {
@@ -142,7 +146,7 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
 
     // Adjuntar fotos a cada perfil
     const profileIds = profiles.map((p: any) => p._id);
-    const photos = await UnimatchPhoto.find({ userId: { $in: profileIds } })
+    const photos = await UnimatchPhoto.find({ userId: { $in: profileIds }, activo: true })
         .sort({ order: 1 })
         .lean();
 
@@ -220,8 +224,8 @@ const handleMatch = async (userAId: string, userBId: string) => {
         const userA = await Usuario.findById(userAId).select('nombre avatarUrl').lean();
         const userB = await Usuario.findById(userBId).select('nombre avatarUrl').lean();
 
-        const userAPhotos = await UnimatchPhoto.find({ userId: userAId }).sort({ order: 1 }).limit(1).lean();
-        const userBPhotos = await UnimatchPhoto.find({ userId: userBId }).sort({ order: 1 }).limit(1).lean();
+        const userAPhotos = await UnimatchPhoto.find({ userId: userAId, activo: true }).sort({ order: 1 }).limit(1).lean();
+        const userBPhotos = await UnimatchPhoto.find({ userId: userBId, activo: true }).sort({ order: 1 }).limit(1).lean();
 
         io.to(`user_${userAId}`).emit('unimatch_match', {
             matchedUser: {
@@ -277,7 +281,7 @@ const performAutoFollow = async (followerId: string, followingId: string) => {
 
 const addPhoto = async (userId: string, imageUrl: string) => {
     // Obtener el mayor order actual
-    const lastPhoto = await UnimatchPhoto.findOne({ userId })
+    const lastPhoto = await UnimatchPhoto.findOne({ userId, activo: true })
         .sort({ order: -1 })
         .lean();
 
@@ -293,7 +297,7 @@ const addPhoto = async (userId: string, imageUrl: string) => {
 };
 
 const getUserPhotos = async (userId: string) => {
-    return await UnimatchPhoto.find({ userId }).sort({ order: 1 }).lean();
+    return await UnimatchPhoto.find({ userId, activo: true }).sort({ order: 1 }).lean();
 };
 
 const deletePhoto = async (photoId: string, userId: string) => {
@@ -351,9 +355,9 @@ const getMatches = async (userId: string) => {
         .select('nombre avatarUrl descripcion')
         .lean();
 
-    // Adjuntar primera foto
     const photos = await UnimatchPhoto.find({
-        userId: { $in: matchedUserIds.map(id => new mongoose.Types.ObjectId(id)) }
+        userId: { $in: matchedUserIds.map(id => new mongoose.Types.ObjectId(id)) },
+        activo: true
     }).sort({ order: 1 }).lean();
 
     const photoMap: Record<string, string> = {};

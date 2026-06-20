@@ -272,7 +272,7 @@ router.patch('/:usuarioId', authenticateToken, checkRole(['admin']), ValidateJoi
  *       404:
  *         description: No encontrado
  */
-router.patch('/:usuarioId/soft-delete', authenticateToken, checkRole(['admin']), controller.softDeleteUsuario);
+router.patch('/:usuarioId/soft-delete', authenticateToken, controller.softDeleteUsuario);
 
 /**
  * @openapi
@@ -550,5 +550,33 @@ router.patch(
     checkRole(['admin', 'user']),
     controller.setAsignaturas
 );
+
+/**
+ * @openapi
+ * /usuarios/fcm-token:
+ *   put:
+ *     summary: Actualiza el token FCM del usuario autenticado
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fcmToken
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *                 example: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+ *     responses:
+ *       200:
+ *         description: OK
+ *       401:
+ *         description: No autorizado
+ */
+router.put('/fcm-token', authenticateToken, controller.updateFcmToken);
 
 export default router;

@@ -6,6 +6,7 @@ export interface IUnimatchPhoto {
     userId: Types.ObjectId;
     imageUrl: string;
     order: number;
+    activo: boolean;
 }
 
 export interface IUnimatchPhotoModel extends IUnimatchPhoto, Document {}
@@ -28,6 +29,10 @@ const UnimatchPhotoSchema: Schema<IUnimatchPhotoModel> = new Schema(
         order: {
             type: Number,
             default: 0
+        },
+        activo: {
+            type: Boolean,
+            default: true
         }
     },
     {

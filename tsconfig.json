@@ -3,6 +3,7 @@
         "target": "es2016",
         "module": "commonjs",
         "outDir": "./build",
+        "rootDir": "./src",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
@@ -10,5 +11,9 @@
     },
     "include": [
         "src/**/*"
+    ],
+    "exclude": [
+        "src/**/*.spec.ts",
+        "src/**/*.test.ts"
     ]
 }

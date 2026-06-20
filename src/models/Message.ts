@@ -2,12 +2,14 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IMessage {
     remitente: Types.ObjectId;
-    destinatario: Types.ObjectId;
+    destinatario?: Types.ObjectId;
+    grupo?: Types.ObjectId;
     contenido: string;
     post?: Types.ObjectId; // Nueva referencia a post
     parentMessage?: Types.ObjectId; // Referencia al mensaje citado
     reactions?: { usuario: Types.ObjectId; emoji: string }[];
     leido: boolean;
+    leidoPor?: Types.ObjectId[];
     eliminadoPara: Types.ObjectId[];
     eliminadoParaTodos: boolean;
 }
@@ -24,7 +26,12 @@ const MessageSchema: Schema<IMessageModel> = new Schema(
         destinatario: {
             type: Schema.Types.ObjectId,
             ref: 'Usuario',
-            required: true
+            required: false
+        },
+        grupo: {
+            type: Schema.Types.ObjectId,
+            ref: 'GroupChat',
+            default: null
         },
         contenido: {
             type: String,
@@ -49,6 +56,12 @@ const MessageSchema: Schema<IMessageModel> = new Schema(
             type: Boolean,
             default: false
         },
+        leidoPor: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Usuario'
+            }
+        ],
         eliminadoPara: [
             {
                 type: Schema.Types.ObjectId,
@@ -69,6 +82,7 @@ const MessageSchema: Schema<IMessageModel> = new Schema(
 
 // Índice para cargar conversaciones rápido
 MessageSchema.index({ remitente: 1, destinatario: 1 });
+MessageSchema.index({ grupo: 1 });
 
 const Message = mongoose.model<IMessageModel>('Message', MessageSchema);
 export default Message;

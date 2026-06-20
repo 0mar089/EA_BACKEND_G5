@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const MONGO_URL = process.env.MONGO_URI;
-const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1337;
+const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1338;
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
@@ -17,6 +17,14 @@ const MATOMO_ENABLED = process.env.MATOMO_ENABLED === 'true';
 const MATOMO_URL = process.env.MATOMO_URL || '';
 const MATOMO_SITE_ID = process.env.MATOMO_SITE_ID || '';
 const MATOMO_AUTH_TOKEN = process.env.MATOMO_AUTH_TOKEN || '';
+const WEAVIATE_URL_ENV = process.env.WEAVIATE_URL ? process.env.WEAVIATE_URL.replace(/['"]/g, '').trim() : '';
+const WEAVIATE_API_KEY = process.env.WEAVIATE_API_KEY ? process.env.WEAVIATE_API_KEY.replace(/['"]/g, '').trim() : '';
+const UPC_LLM_URL = process.env.UPC_LLM ? process.env.UPC_LLM.replace(/['"]/g, '').trim() : 'http://10.4.119.50:8080/api/generate';
+
+// Asegurar que la URL de Weaviate tiene el esquema correcto
+const WEAVIATE_URL = WEAVIATE_URL_ENV && !WEAVIATE_URL_ENV.startsWith('http://') && !WEAVIATE_URL_ENV.startsWith('https://')
+    ? `https://${WEAVIATE_URL_ENV}`
+    : WEAVIATE_URL_ENV;
 
 if (!MONGO_URL) throw new Error('Missing MONGO_URI in .env file');
 if (!JWT_ACCESS_SECRET) throw new Error('Missing JWT_ACCESS_SECRET in .env file');
@@ -56,5 +64,14 @@ export const config = {
             sameSite: 'strict' as const,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
         }
+    },
+    weaviate: {
+        url: WEAVIATE_URL,
+        apiKey: WEAVIATE_API_KEY
+    },
+    llm: {
+        url: UPC_LLM_URL,
+        model: 'qwen2.5:14b'
     }
 };
+

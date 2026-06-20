@@ -3,6 +3,7 @@ import Usuario, { IUsuarioModel, IUsuario } from '../models/Usuario';
 import Universidad from '../models/Universidad';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
+import UnimatchPhoto from '../models/UnimatchPhoto';
 import Follow, { FollowStatus } from '../models/Follow';
 import Notification from '../models/Notification';
 import notificationService from './notification';
@@ -13,11 +14,28 @@ const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> =>
     // Normalizamos "" a null para evitar errores de validación de ObjectId
     if (!data.universidad || data.universidad === ('' as any)) data.universidad = undefined;
 
+    if (data.email) {
+        const emailLower = data.email.toLowerCase();
+        const existingInactiveUser = await Usuario.findOne({ email: emailLower, activo: false });
+        if (existingInactiveUser) {
+            if (data.nombre) existingInactiveUser.nombre = data.nombre;
+            if (data.password) existingInactiveUser.password = data.password;
+            if ('universidad' in data) existingInactiveUser.universidad = data.universidad;
+            
+            existingInactiveUser.activo = true;
+            await existingInactiveUser.save();
+            await recoveryUsuario(existingInactiveUser._id.toString());
+            
+            return existingInactiveUser;
+        }
+    }
+
     const usuario = new Usuario({
         _id: new mongoose.Types.ObjectId(),
         ...data
     });
     await usuario.save();
+
 
     if (usuario.universidad) {
         await Universidad.findByIdAndUpdate(
@@ -191,6 +209,8 @@ const softDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     await Post.updateMany({ usuario: usuarioId }, { activo: false });
     // Desactivar comentarios del usuario
     await Comment.updateMany({ usuario: usuarioId }, { activo: false });
+    // Desactivar fotos de unimatch del usuario
+    await UnimatchPhoto.updateMany({ userId: usuarioId }, { activo: false });
 
     return await Usuario.findByIdAndUpdate(
         usuarioId,
@@ -205,6 +225,8 @@ const recoveryUsuario = async (usuarioId: string): Promise<IUsuarioModel | null>
     await Post.updateMany({ usuario: usuarioId }, { activo: true });
     // Reactivar comentarios del usuario
     await Comment.updateMany({ usuario: usuarioId }, { activo: true });
+    // Reactivar fotos de unimatch del usuario
+    await UnimatchPhoto.updateMany({ userId: usuarioId }, { activo: true });
 
     return await Usuario.findByIdAndUpdate(
         usuarioId,

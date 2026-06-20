@@ -6,22 +6,30 @@ import NotificationService from './notification';
 import { NotificationType } from '../models/Notification';
 import Logging from '../library/Logging';
 
-const postPopulate = [
+const getPostPopulate = (isAdmin: boolean = false) => [
     {
         path: 'usuario',
-        select: 'nombre avatarUrl privado seguidores'
+        select: 'nombre avatarUrl privado seguidores activo'
     },
     {
         path: 'comments',
-        match: { activo: true },
-        select: 'texto usuario createdAt likes',
-        populate: {
-            path: 'usuario',
-            select: 'nombre avatarUrl'
-        }
+        match: isAdmin ? {} : { activo: true },
+        select: 'texto usuario createdAt likes activo',
+        populate: [
+            {
+                path: 'usuario',
+                select: 'nombre avatarUrl activo'
+            },
+            {
+                path: 'likes',
+                match: isAdmin ? {} : { activo: true },
+                select: 'nombre avatarUrl'
+            }
+        ]
     },
     {
         path: 'likes',
+        match: isAdmin ? {} : { activo: true },
         select: 'nombre avatarUrl'
     }
 ];
@@ -42,7 +50,7 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel | any> => {
     }
 
     return await Post.findById(savedPost._id)
-        .populate(postPopulate);
+        .populate(getPostPopulate(false));
 };
 
 const getPost = async (
@@ -56,7 +64,7 @@ const getPost = async (
         : { _id: postId, activo: true };
 
     const post = await Post.findOne(filter)
-        .populate(postPopulate);
+        .populate(getPostPopulate(isAdmin));
 
     if (!post) return null;
 
@@ -121,7 +129,7 @@ const getAllPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: getPostPopulate(isAdmin)
     };
 
     return await Post.paginate(filter, options);
@@ -150,7 +158,7 @@ const updatePost = async (
         postId,
         data,
         { new: true }
-    ).populate(postPopulate);
+    ).populate(getPostPopulate(userRole === 'admin'));
 };
 
 const deletePost = async (
@@ -215,7 +223,7 @@ const getAllPostsFromUser = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: getPostPopulate(isAdmin)
     };
 
     return await Post.paginate(filter, options);
@@ -325,7 +333,7 @@ const darleLike = async (
     await post.save();
 
     return await Post.findById(postId)
-        .populate(postPopulate);
+        .populate(getPostPopulate(false));
 };
 
 const getFollowingPosts = async (
@@ -342,6 +350,10 @@ const getFollowingPosts = async (
 
     const seguidos = usuario.seguidos || [];
 
+    const savedSet = new Set(
+      (usuario.postsGuardados || []).map((id: any) => id.toString())
+    );
+
     // Incluir al propio usuario en su feed
     const authors = [...seguidos, userId];
 
@@ -354,10 +366,18 @@ const getFollowingPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: getPostPopulate(false),
+        lean: true
     };
 
-    return await Post.paginate(filter, options);
+    const result = await Post.paginate(filter, options);
+
+    result.docs = result.docs.map((post: any) => ({
+        ...post,
+        isSaved: savedSet.has(post._id.toString())
+    }));
+
+    return result;
 };
 
 const getDiscoveryPosts = async (
@@ -371,6 +391,10 @@ const getDiscoveryPosts = async (
     if (!usuario) {
         throw new Error('Usuario no encontrado');
     }
+
+    const savedSet = new Set(
+      (usuario.postsGuardados || []).map((id: any) => id.toString())
+    );
 
     const seguidos = usuario.seguidos || [];
 
@@ -402,10 +426,98 @@ const getDiscoveryPosts = async (
         page,
         limit,
         sort: { createdAt: -1 },
-        populate: postPopulate
+        populate: getPostPopulate(false),
+        lean: true
     };
 
-    return await Post.paginate(filter, options);
+    const result = await Post.paginate(filter, options);
+
+    result.docs = result.docs.map((post: any) => ({
+        ...post,
+        isSaved: savedSet.has(post._id.toString())
+    }));
+
+    return result;
+};
+
+const toggleSavePost = async (userId: string, postId: string) => {
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+        throw new Error('ID de post inválido');
+    }
+
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+        throw new Error('Usuario no encontrado');
+    }
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+        throw new Error('Post no encontrado');
+    }
+
+    if (!post.activo) {
+        throw new Error('Post no activo');
+    }
+
+    const postObjectId = new mongoose.Types.ObjectId(postId);
+
+    if (!usuario.postsGuardados) {
+        usuario.postsGuardados = [];
+    }
+
+    const index = usuario.postsGuardados.findIndex(id =>
+        id.equals(postObjectId)
+    );
+
+    let saved: boolean;
+
+    if (index !== -1) {
+        usuario.postsGuardados.splice(index, 1);
+        saved = false;
+    } else {
+        usuario.postsGuardados.push(postObjectId);
+        saved = true;
+    }
+
+    await usuario.save();
+
+    return { saved };
+};
+
+const getSavedPosts = async (userId: string, page = 1, limit = 10) => {
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+        throw new Error('Usuario no encontrado');
+    }
+
+    const savedSet = new Set(
+        (usuario.postsGuardados || []).map(id => id.toString())
+    );
+
+    const result = await Post.paginate(
+        {
+            _id: { $in: usuario.postsGuardados || [] },
+            activo: true
+        },
+        {
+            page,
+            limit,
+            sort: { createdAt: -1 },
+            populate: getPostPopulate(false),
+            lean: true
+        }
+    );
+
+    result.docs = result.docs.map((post: any) => ({
+        ...post,
+        isSaved: savedSet.has(post._id.toString())
+    }));
+
+    return result;
 };
 
 export default {
@@ -418,5 +530,7 @@ export default {
     deleteAllPostsFromUser,
     darleLike,
     getFollowingPosts,
-    getDiscoveryPosts
+    getDiscoveryPosts,
+    toggleSavePost,
+    getSavedPosts
 };

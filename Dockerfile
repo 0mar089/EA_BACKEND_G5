@@ -16,7 +16,7 @@ RUN npm install
 RUN npm run build
 
 # 6. Exponemos el puerto que configuraste en tu .env
-EXPOSE 1337
+EXPOSE 1338
 
 # 7. Arrancamos el servidor usando el código ya compilado
 CMD ["npm", "start"]
