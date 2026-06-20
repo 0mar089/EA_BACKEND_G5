@@ -4,7 +4,7 @@ FROM node:20-alpine
 # 2. Creamos la carpeta donde vivirá el código en el contenedor
 WORKDIR /app
 
-# 3. Copiamos los archivos de dependencias y el código fuente a la vez
+# 3. Copiamos los archivos de dependencias y el código fuente a la vez!
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY . .
