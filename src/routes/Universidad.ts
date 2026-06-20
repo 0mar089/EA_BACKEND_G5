@@ -95,6 +95,7 @@ router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.un
  *         description: No encontrado
  */
 router.get('/:universidadId', authenticateToken, controller.readUniversidad);
+router.get('/:universidadId/chat', authenticateToken, controller.getOrCreateUniversityChat);
 
 /**
  * @openapi

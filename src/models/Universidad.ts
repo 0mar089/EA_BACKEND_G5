@@ -8,6 +8,7 @@ export interface IUniversidad {
     ubicacion: string;
     usuarios: Types.ObjectId[];
     grados?: Types.ObjectId[];
+    chatGeneral?: Types.ObjectId;
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -39,7 +40,11 @@ const UniversidadSchema: Schema<IUniversidadModel> = new Schema(
                 type: Schema.Types.ObjectId,
                 ref: 'Grado'
             }
-        ]
+        ],
+        chatGeneral: {
+            type: Schema.Types.ObjectId,
+            ref: 'GroupChat'
+        }
     },
     {
         timestamps: true,
