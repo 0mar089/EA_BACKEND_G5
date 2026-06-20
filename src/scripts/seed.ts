@@ -9,6 +9,7 @@ import Logging from '../library/Logging';
 const seed = async () => {
     try {
         Logging.info('Conectando a MongoDB...');
+        mongoose.set('strictQuery', false);
         await mongoose.connect(config.mongo.url);
         Logging.info('Conectado con éxito.');
 
