@@ -27,16 +27,22 @@ const getAllUniversidades = async (page: number = 1, limit: number = 10, search:
         page,
         limit,
         select: 'nombre ubicacion usuarios chatGeneral',
+        populate: { path: 'chatGeneral', select: 'miembros' },
         lean: true
     };
     const paginated: any = await Universidad.paginate(filter, options);
-    paginated.docs = paginated.docs.map((uni: any) => ({
-        _id: uni._id,
-        nombre: uni.nombre,
-        ubicacion: uni.ubicacion,
-        numIntegrantes: uni.usuarios ? uni.usuarios.length : 0,
-        chatGeneral: uni.chatGeneral
-    }));
+    paginated.docs = paginated.docs.map((uni: any) => {
+        const chatGeneralObj = uni.chatGeneral;
+        const chatGeneralId = chatGeneralObj && typeof chatGeneralObj === 'object' ? chatGeneralObj._id : chatGeneralObj;
+        const membersCount = chatGeneralObj && chatGeneralObj.miembros ? chatGeneralObj.miembros.length : 0;
+        return {
+            _id: uni._id,
+            nombre: uni.nombre,
+            ubicacion: uni.ubicacion,
+            numIntegrantes: membersCount,
+            chatGeneral: chatGeneralId
+        };
+    });
     return paginated;
 };
 
