@@ -96,6 +96,8 @@ router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.un
  */
 router.get('/:universidadId', authenticateToken, controller.readUniversidad);
 router.get('/:universidadId/chat', authenticateToken, controller.getOrCreateUniversityChat);
+router.post('/:universidadId/join', authenticateToken, controller.joinUniversityChat);
+router.post('/:universidadId/leave', authenticateToken, controller.leaveUniversityChat);
 
 /**
  * @openapi

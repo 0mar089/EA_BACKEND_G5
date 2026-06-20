@@ -26,7 +26,7 @@ const getAllUniversidades = async (page: number = 1, limit: number = 10, search:
     const options = {
         page,
         limit,
-        select: 'nombre ubicacion usuarios',
+        select: 'nombre ubicacion usuarios chatGeneral',
         lean: true
     };
     const paginated: any = await Universidad.paginate(filter, options);
@@ -34,7 +34,8 @@ const getAllUniversidades = async (page: number = 1, limit: number = 10, search:
         _id: uni._id,
         nombre: uni.nombre,
         ubicacion: uni.ubicacion,
-        numIntegrantes: uni.usuarios ? uni.usuarios.length : 0
+        numIntegrantes: uni.usuarios ? uni.usuarios.length : 0,
+        chatGeneral: uni.chatGeneral
     }));
     return paginated;
 };
