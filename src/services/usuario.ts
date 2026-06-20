@@ -14,11 +14,28 @@ const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> =>
     // Normalizamos "" a null para evitar errores de validación de ObjectId
     if (!data.universidad || data.universidad === ('' as any)) data.universidad = undefined;
 
+    if (data.email) {
+        const emailLower = data.email.toLowerCase();
+        const existingInactiveUser = await Usuario.findOne({ email: emailLower, activo: false });
+        if (existingInactiveUser) {
+            if (data.nombre) existingInactiveUser.nombre = data.nombre;
+            if (data.password) existingInactiveUser.password = data.password;
+            if ('universidad' in data) existingInactiveUser.universidad = data.universidad;
+            
+            existingInactiveUser.activo = true;
+            await existingInactiveUser.save();
+            await recoveryUsuario(existingInactiveUser._id.toString());
+            
+            return existingInactiveUser;
+        }
+    }
+
     const usuario = new Usuario({
         _id: new mongoose.Types.ObjectId(),
         ...data
     });
     await usuario.save();
+
 
     if (usuario.universidad) {
         await Universidad.findByIdAndUpdate(
