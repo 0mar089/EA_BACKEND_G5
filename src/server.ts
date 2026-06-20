@@ -22,6 +22,7 @@ import uploadRoutes from './routes/Upload';
 import bugRoutes from './routes/BugReport';
 import unimatchRoutes from './routes/UniMatch';
 import auditRoutes from './routes/Audit';
+import eventoRoutes from './routes/Evento';
 import assistantRoutes from './routes/Assistant';
 import { getWeaviateClient } from './config/weaviate';
 import { initSocket } from './socket';
@@ -90,6 +91,7 @@ const StartServer = () => {
     router.use('/bugs', bugRoutes);
     router.use('/unimatch', unimatchRoutes);
     router.use('/audit', auditRoutes);
+    router.use('/eventos', eventoRoutes);
     router.use('/assistant', assistantRoutes);
 
 
