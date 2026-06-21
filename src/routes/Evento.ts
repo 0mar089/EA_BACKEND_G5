@@ -64,12 +64,7 @@ const router = express.Router();
  *       422:
  *         description: Error de validación (Joi)
  */
-router.post(
-    '/',
-    authenticateToken,
-    ValidateJoi(Schemas.evento.create),
-    controller.createEvento
-);
+router.post('/', authenticateToken, ValidateJoi(Schemas.evento.create), controller.createEvento);
 
 /**
  * @openapi

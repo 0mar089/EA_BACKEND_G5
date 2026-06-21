@@ -69,12 +69,7 @@ const router = express.Router();
  *       422:
  *         description: Error de validación
  */
-router.post(
-    '/',
-    authenticateToken,
-    ValidateJoi(Schemas.comment.create),
-    controller.createComment
-);
+router.post('/', authenticateToken, ValidateJoi(Schemas.comment.create), controller.createComment);
 
 /**
  * @openapi
@@ -119,11 +114,7 @@ router.get('/', authenticateToken, controller.getAllComments);
  *       401:
  *         description: No autorizado
  */
-router.get(
-    '/post/:postId',
-    authenticateToken,
-    controller.getAllCommentsFromPost
-);
+router.get('/post/:postId', authenticateToken, controller.getAllCommentsFromPost);
 
 /**
  * @openapi
@@ -169,11 +160,7 @@ router.get('/:commentId', authenticateToken, controller.getComment);
  *       401:
  *         description: No autorizado
  */
-router.get(
-    '/user/:userId',
-    authenticateToken,
-    controller.getAllCommentsFromUser
-);
+router.get('/user/:userId', authenticateToken, controller.getAllCommentsFromUser);
 
 /**
  * @openapi
@@ -204,10 +191,10 @@ router.get(
  *         description: Error de validación
  */
 router.patch(
-    '/:commentId',
-    authenticateToken,
-    ValidateJoi(Schemas.comment.update),
-    controller.updateComment
+  '/:commentId',
+  authenticateToken,
+  ValidateJoi(Schemas.comment.update),
+  controller.updateComment,
 );
 
 /**
@@ -232,12 +219,7 @@ router.patch(
  *       403:
  *         description: Prohibido
  */
-router.delete(
-    '/:commentId',
-    authenticateToken,
-    checkRole(['admin']),
-    controller.deleteComment
-);
+router.delete('/:commentId', authenticateToken, checkRole(['admin']), controller.deleteComment);
 /**
  * @openapi
  * /comments/{commentId}/like:
@@ -263,10 +245,6 @@ router.delete(
  *       400:
  *         description: ID inválido
  */
-router.patch(
-    '/:commentId/like',
-    authenticateToken,
-    controller.darleLike
-);
+router.patch('/:commentId/like', authenticateToken, controller.darleLike);
 
 export default router;

@@ -3,35 +3,41 @@ import { config } from '../config/config';
 import Logging from '../library/Logging';
 
 const askToni = async (preguntaUsuario: string): Promise<string> => {
-    try {
-        Logging.info(`Consultando Weaviate por: "${preguntaUsuario}"`);
-        const client = await getWeaviateClient();
-        const collection = client.collections.get('AcademicInfo');
+  try {
+    Logging.info(`Consultando Weaviate por: "${preguntaUsuario}"`);
+    const client = await getWeaviateClient();
+    const collection = client.collections.get('AcademicInfo');
 
-        let queryExpandida = preguntaUsuario;
-        if (/2ndo|2nd|segundo/i.test(preguntaUsuario)) {
-            queryExpandida += ' "2º" "segundo"';
-        }
-        if (/1ero|1er|1ro|primero/i.test(preguntaUsuario)) {
-            queryExpandida += ' "1º" "primero"';
-        }
-        if (/3ero|3er|3ro|tercero/i.test(preguntaUsuario)) {
-            queryExpandida += ' "3º" "tercero"';
-        }
-        if (/4to|4rto|cuarto/i.test(preguntaUsuario)) {
-            queryExpandida += ' "4º" "cuarto"';
-        }
+    let queryExpandida = preguntaUsuario;
+    if (/2ndo|2nd|segundo/i.test(preguntaUsuario)) {
+      queryExpandida += ' "2º" "segundo"';
+    }
+    if (/1ero|1er|1ro|primero/i.test(preguntaUsuario)) {
+      queryExpandida += ' "1º" "primero"';
+    }
+    if (/3ero|3er|3ro|tercero/i.test(preguntaUsuario)) {
+      queryExpandida += ' "3º" "tercero"';
+    }
+    if (/4to|4rto|cuarto/i.test(preguntaUsuario)) {
+      queryExpandida += ' "4º" "cuarto"';
+    }
 
-        const result = await collection.query.bm25(queryExpandida, {
-            limit: 10
-        });
+    const result = await collection.query.bm25(queryExpandida, {
+      limit: 10,
+    });
 
-        const contextoWeaviate = result.objects.length > 0
-            ? result.objects.map(obj => `- **${obj.properties.title}** (${obj.properties.category || 'General'}): ${obj.properties.content}`).join('\n\n')
-            : 'No se ha encontrado contexto específico en Weaviate.';
+    const contextoWeaviate =
+      result.objects.length > 0
+        ? result.objects
+            .map(
+              (obj) =>
+                `- **${obj.properties.title}** (${obj.properties.category || 'General'}): ${obj.properties.content}`,
+            )
+            .join('\n\n')
+        : 'No se ha encontrado contexto específico en Weaviate.';
 
-        Logging.info('Construyendo prompt para Toni...');
-        const promptCompleto = `Eres "Toni", un asistente virtual e ingeniero académico experto de la EETAC (Escola d'Enginyeria de Telecomunicació i Aeroespacial de Castelldefels). Tu único propósito es guiar de forma clara, rigurosa y extremadamente directa a los estudiantes sobre la oferta académica de grado del campus, el desglose de asignaturas por cursos y los detalles específicos de las asignaturas.
+    Logging.info('Construyendo prompt para Toni...');
+    const promptCompleto = `Eres "Toni", un asistente virtual e ingeniero académico experto de la EETAC (Escola d'Enginyeria de Telecomunicació i Aeroespacial de Castelldefels). Tu único propósito es guiar de forma clara, rigurosa y extremadamente directa a los estudiantes sobre la oferta académica de grado del campus, el desglose de asignaturas por cursos y los detalles específicos de las asignaturas.
 
 ÁMBITO ACADÉMICO EXCLUSIVO:
 Solo estás autorizado a dar información sobre estos 4 grados oficiales:
@@ -61,30 +67,30 @@ ${contextoWeaviate}
 PREGUNTA DEL ESTUDIANTE:
 ${preguntaUsuario}`;
 
-        Logging.info(`Llamando al LLM de la UPC en: ${config.llm.url}`);
-        const response = await fetch(config.llm.url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: config.llm.model,
-                prompt: promptCompleto,
-                stream: false
-            })
-        });
+    Logging.info(`Llamando al LLM de la UPC en: ${config.llm.url}`);
+    const response = await fetch(config.llm.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: config.llm.model,
+        prompt: promptCompleto,
+        stream: false,
+      }),
+    });
 
-        if (!response.ok) {
-            throw new Error(`Ollama/LLM API returned status: ${response.status} ${response.statusText}`);
-        }
-
-        const responseData = (await response.json()) as { response: string };
-        Logging.info('Respuesta recibida del LLM exitosamente.');
-        return responseData.response;
-    } catch (error) {
-        Logging.error(`Error en askToni: ${error}`);
-        throw error;
+    if (!response.ok) {
+      throw new Error(`Ollama/LLM API returned status: ${response.status} ${response.statusText}`);
     }
+
+    const responseData = (await response.json()) as { response: string };
+    Logging.info('Respuesta recibida del LLM exitosamente.');
+    return responseData.response;
+  } catch (error) {
+    Logging.error(`Error en askToni: ${error}`);
+    throw error;
+  }
 };
 
 export default { askToni };

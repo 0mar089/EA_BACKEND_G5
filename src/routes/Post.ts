@@ -79,12 +79,7 @@ const router = express.Router();
  *       422:
  *         description: Error de validación
  */
-router.post(
-    '/',
-    authenticateToken,
-    ValidateJoi(Schemas.post.create),
-    controller.createPost
-);
+router.post('/', authenticateToken, ValidateJoi(Schemas.post.create), controller.createPost);
 
 /**
  * @openapi
@@ -158,7 +153,6 @@ router.get('/following', authenticateToken, controller.getFollowingPosts);
  */
 router.get('/discovery', authenticateToken, controller.getDiscoveryPosts);
 
-
 /**
  * @openapi
  * /posts/saved:
@@ -187,11 +181,7 @@ router.get('/discovery', authenticateToken, controller.getDiscoveryPosts);
  *       401:
  *         description: No autorizado
  */
-router.get(
-    '/saved',
-    authenticateToken,
-    controller.getSavedPosts
-);
+router.get('/saved', authenticateToken, controller.getSavedPosts);
 
 /**
  * @openapi
@@ -214,11 +204,7 @@ router.get(
  *       401:
  *         description: No autorizado
  */
-router.get(
-    '/user/:userId',
-    authenticateToken,
-    controller.getAllPostsFromUser
-);
+router.get('/user/:userId', authenticateToken, controller.getAllPostsFromUser);
 
 /**
  * @openapi
@@ -256,11 +242,7 @@ router.get(
  *       500:
  *         description: Error interno del servidor
  */
-router.patch(
-    '/:postId/save',
-    authenticateToken,
-    controller.toggleSavePost
-);
+router.patch('/:postId/save', authenticateToken, controller.toggleSavePost);
 
 /**
  * @openapi
@@ -314,10 +296,10 @@ router.get('/:postId', authenticateToken, controller.getPost);
  *         description: Error de validación
  */
 router.patch(
-    '/:postId',
-    authenticateToken,
-    ValidateJoi(Schemas.post.update),
-    controller.updatePost
+  '/:postId',
+  authenticateToken,
+  ValidateJoi(Schemas.post.update),
+  controller.updatePost,
 );
 
 /**
@@ -342,11 +324,7 @@ router.patch(
  *       403:
  *         description: Prohibido
  */
-router.delete(
-    '/:postId',
-    authenticateToken,
-    controller.deletePost
-);
+router.delete('/:postId', authenticateToken, controller.deletePost);
 /**
  * @openapi
  * /posts/{postId}/like:
@@ -370,10 +348,6 @@ router.delete(
  *       404:
  *         description: Post no encontrado
  */
-router.patch(
-    '/:postId/like',
-    authenticateToken,
-    controller.darleLike
-);
+router.patch('/:postId/like', authenticateToken, controller.darleLike);
 
 export default router;

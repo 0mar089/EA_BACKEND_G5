@@ -6,168 +6,195 @@ import NotificationService from './notification';
 import { NotificationType } from '../models/Notification';
 
 const createComment = async (data: Partial<IComment>): Promise<ICommentModel> => {
-    const comment = new Comment({
-        _id: new mongoose.Types.ObjectId(),
-        ...data
+  const comment = new Comment({
+    _id: new mongoose.Types.ObjectId(),
+    ...data,
+  });
+
+  const savedComment = await comment.save();
+
+  // Vincular comentario al usuario
+  if (savedComment.usuario) {
+    await Usuario.findByIdAndUpdate(savedComment.usuario, {
+      $addToSet: { comments: savedComment._id },
+    });
+  }
+
+  // Vincular comentario al post
+  if (savedComment.post) {
+    const post = await Post.findByIdAndUpdate(savedComment.post, {
+      $addToSet: { comments: savedComment._id },
     });
 
-    const savedComment = await comment.save();
-
-    // Vincular comentario al usuario
-    if (savedComment.usuario) {
-        await Usuario.findByIdAndUpdate(
-            savedComment.usuario,
-            { $addToSet: { comments: savedComment._id } }
-        );
+    // Crear notificación de comentario
+    if (post) {
+      await NotificationService.createNotification({
+        sender: savedComment.usuario.toString(),
+        recipient: post.usuario.toString(),
+        type: NotificationType.COMMENT,
+        post: post._id.toString(),
+        comment: savedComment._id.toString(),
+      });
     }
+  }
 
-    // Vincular comentario al post
-    if (savedComment.post) {
-        const post = await Post.findByIdAndUpdate(
-            savedComment.post,
-            { $addToSet: { comments: savedComment._id } }
-        );
-
-        // Crear notificación de comentario
-        if (post) {
-            await NotificationService.createNotification({
-                sender: savedComment.usuario.toString(),
-                recipient: post.usuario.toString(),
-                type: NotificationType.COMMENT,
-                post: post._id.toString(),
-                comment: savedComment._id.toString()
-            });
-        }
-    }
-
-    return (await savedComment.populate('usuario', 'nombre avatarUrl'));
+  return await savedComment.populate('usuario', 'nombre avatarUrl');
 };
 
-const getComment = async (commentId: string, isAdmin: boolean = false): Promise<ICommentModel | null> => {
-    const filter = isAdmin ? { _id: commentId } : { _id: commentId, activo: true };
-    return await Comment.findOne(filter).populate('usuario', 'nombre avatarUrl');
+const getComment = async (
+  commentId: string,
+  isAdmin: boolean = false,
+): Promise<ICommentModel | null> => {
+  const filter = isAdmin ? { _id: commentId } : { _id: commentId, activo: true };
+  return await Comment.findOne(filter).populate('usuario', 'nombre avatarUrl');
 };
 
-const getAllComments = async (page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
-    const filter = isAdmin ? {} : { activo: true };
-    const options = {
-        page,
-        limit,
-        populate: { path: 'usuario', select: 'nombre avatarUrl' }
-    };
-    return await Comment.paginate(filter, options);
+const getAllComments = async (
+  page: number = 1,
+  limit: number = 10,
+  isAdmin: boolean = false,
+): Promise<any> => {
+  const filter = isAdmin ? {} : { activo: true };
+  const options = {
+    page,
+    limit,
+    populate: { path: 'usuario', select: 'nombre avatarUrl' },
+  };
+  return await Comment.paginate(filter, options);
 };
 
-const updateComment = async (commentId: string, data: Partial<IComment>, userId: string, userRole: string): Promise<ICommentModel | null> => {
-    const comment = await Comment.findById(commentId);
-    if (!comment) return null;
+const updateComment = async (
+  commentId: string,
+  data: Partial<IComment>,
+  userId: string,
+  userRole: string,
+): Promise<ICommentModel | null> => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) return null;
 
-    // Validar que el usuario sea el dueño del comentario o un admin
+  // Validar que el usuario sea el dueño del comentario o un admin
+  if (comment.usuario.toString() !== userId && userRole !== 'admin') {
+    throw new Error('Forbidden');
+  }
+
+  return await Comment.findByIdAndUpdate(commentId, data, { new: true }).populate(
+    'usuario',
+    'nombre avatarUrl',
+  );
+};
+
+const deleteComment = async (
+  commentId: string,
+  userId?: string,
+  userRole?: string,
+): Promise<ICommentModel | null> => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) return null;
+
+  // Validar permisos si se proporcionan userId y userRole (petición desde controlador)
+  if (userId && userRole) {
     if (comment.usuario.toString() !== userId && userRole !== 'admin') {
-        throw new Error('Forbidden');
+      throw new Error('Forbidden');
     }
+  }
 
-    return await Comment.findByIdAndUpdate(commentId, data, { new: true }).populate('usuario', 'nombre avatarUrl');
+  // 1. Desvincular del Usuario
+  if (comment.usuario) {
+    await Usuario.findByIdAndUpdate(comment.usuario, { $pull: { comments: commentId } });
+  }
+
+  // 2. Desvincular del Post
+  if (comment.post) {
+    await Post.findByIdAndUpdate(comment.post, { $pull: { comments: commentId } });
+  }
+
+  // 3. Eliminar el comentario
+  return await Comment.findByIdAndDelete(commentId);
 };
 
-const deleteComment = async (commentId: string, userId?: string, userRole?: string): Promise<ICommentModel | null> => {
-    const comment = await Comment.findById(commentId);
-    if (!comment) return null;
-
-    // Validar permisos si se proporcionan userId y userRole (petición desde controlador)
-    if (userId && userRole) {
-        if (comment.usuario.toString() !== userId && userRole !== 'admin') {
-            throw new Error('Forbidden');
-        }
-    }
-
-    // 1. Desvincular del Usuario
-    if (comment.usuario) {
-        await Usuario.findByIdAndUpdate(comment.usuario, { $pull: { comments: commentId } });
-    }
-
-    // 2. Desvincular del Post
-    if (comment.post) {
-        await Post.findByIdAndUpdate(comment.post, { $pull: { comments: commentId } });
-    }
-
-    // 3. Eliminar el comentario
-    return await Comment.findByIdAndDelete(commentId);
-};
-
-const getAllCommentsFromPost = async (postId: string, isAdmin: boolean = false): Promise<ICommentModel[]> => {
-    const filter = isAdmin ? { post: postId } : { post: postId, activo: true };
-    return await Comment.find(filter).populate('usuario', 'nombre avatarUrl');
+const getAllCommentsFromPost = async (
+  postId: string,
+  isAdmin: boolean = false,
+): Promise<ICommentModel[]> => {
+  const filter = isAdmin ? { post: postId } : { post: postId, activo: true };
+  return await Comment.find(filter).populate('usuario', 'nombre avatarUrl');
 };
 
 const deleteAllCommentsFromPost = async (postId: string): Promise<void> => {
-    // 1. Encontrar todos los comments del post
-    const comments = await Comment.find({ post: postId });
+  // 1. Encontrar todos los comments del post
+  const comments = await Comment.find({ post: postId });
 
-    // 2. Eliminar cada comment y desvincular (sin pasar userId para saltar el check de permisos)
-    for (const comment of comments) {
-        await deleteComment(comment._id.toString());
-    }
+  // 2. Eliminar cada comment y desvincular (sin pasar userId para saltar el check de permisos)
+  for (const comment of comments) {
+    await deleteComment(comment._id.toString());
+  }
 };
 
-
-const getAllCommentsFromUser = async (userId: string, page: number = 1, limit: number = 10, isAdmin: boolean = false): Promise<any> => {
-    const filter = isAdmin ? { usuario: userId } : { usuario: userId, activo: true };
-    const options = {
-        page,
-        limit,
-        sort: { createdAt: -1 },
-        populate: { path: 'usuario', select: 'nombre avatarUrl' }
-    };
-    return await Comment.paginate(filter, options);
+const getAllCommentsFromUser = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+  isAdmin: boolean = false,
+): Promise<any> => {
+  const filter = isAdmin ? { usuario: userId } : { usuario: userId, activo: true };
+  const options = {
+    page,
+    limit,
+    sort: { createdAt: -1 },
+    populate: { path: 'usuario', select: 'nombre avatarUrl' },
+  };
+  return await Comment.paginate(filter, options);
 };
 
-const darleLike = async (
-    commentId: string,
-    userId: string
-) => {
-    if (!mongoose.Types.ObjectId.isValid(commentId)) {
-        throw new Error('Invalid commentId');
-    }
+const darleLike = async (commentId: string, userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(commentId)) {
+    throw new Error('Invalid commentId');
+  }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new Error('Invalid userId');
-    }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid userId');
+  }
 
-    const comment = await Comment.findById(commentId);
+  const comment = await Comment.findById(commentId);
 
-    if (!comment) return null;
+  if (!comment) return null;
 
-    const alreadyLiked = comment.likes?.some(
-        (id) => id.toString() === userId
-    );
+  const alreadyLiked = comment.likes?.some((id) => id.toString() === userId);
 
-    if (alreadyLiked) {
-        comment.likes = comment.likes.filter(
-            (id) => id.toString() !== userId
-        );
+  if (alreadyLiked) {
+    comment.likes = comment.likes.filter((id) => id.toString() !== userId);
 
-        // Eliminar notificación de like en comentario
-        await NotificationService.deleteNotificationByCriteria({
-            sender: userId,
-            recipient: comment.usuario.toString(),
-            type: NotificationType.LIKE_COMMENT,
-            comment: comment._id.toString()
-        });
-    } else {
-        if (!comment.likes) comment.likes = [];
-        comment.likes.push(new mongoose.Types.ObjectId(userId));
+    // Eliminar notificación de like en comentario
+    await NotificationService.deleteNotificationByCriteria({
+      sender: userId,
+      recipient: comment.usuario.toString(),
+      type: NotificationType.LIKE_COMMENT,
+      comment: comment._id.toString(),
+    });
+  } else {
+    if (!comment.likes) comment.likes = [];
+    comment.likes.push(new mongoose.Types.ObjectId(userId));
 
-        // Crear notificación de like en comentario
-        await NotificationService.createNotification({
-            sender: userId,
-            recipient: comment.usuario.toString(),
-            type: NotificationType.LIKE_COMMENT,
-            comment: comment._id.toString()
-        });
-    }
+    // Crear notificación de like en comentario
+    await NotificationService.createNotification({
+      sender: userId,
+      recipient: comment.usuario.toString(),
+      type: NotificationType.LIKE_COMMENT,
+      comment: comment._id.toString(),
+    });
+  }
 
-    return await comment.save();
+  return await comment.save();
 };
 
-export default { createComment, getComment, getAllComments, updateComment, deleteComment, getAllCommentsFromPost, deleteAllCommentsFromPost, getAllCommentsFromUser, darleLike };
+export default {
+  createComment,
+  getComment,
+  getAllComments,
+  updateComment,
+  deleteComment,
+  getAllCommentsFromPost,
+  deleteAllCommentsFromPost,
+  getAllCommentsFromUser,
+  darleLike,
+};

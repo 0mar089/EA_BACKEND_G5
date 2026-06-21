@@ -26,7 +26,12 @@ describe('Auth Middleware', () => {
     });
 
     it('should call next and set req.user on valid token', () => {
-      const mockUser = { id: '1', nombre: 'Laura', email: 'laura@example.com', rol: 'user' as const };
+      const mockUser = {
+        id: '1',
+        nombre: 'Laura',
+        email: 'laura@example.com',
+        rol: 'user' as const,
+      };
       vi.mocked(jwtUtils.verifyAccessToken).mockReturnValue(mockUser);
 
       const req = {

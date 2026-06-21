@@ -3,161 +3,165 @@ import { getIO } from '../socket';
 import Logging from '../library/Logging';
 
 export interface Notification {
+  _id: string;
+  recipient: string;
+  sender: {
     _id: string;
-    recipient: string;
-    sender: {
-        _id: string;
-        nombre: string;
-        avatarUrl?: string;
-        foto?: string;
-    };
-    type: "like" | "comment" | "follow" | "follow_request" | "follow_accepted";
-    post?: {
-        _id: string;
-        imageUrl: string;
-        caption?: string;
-    };
-    isRead: boolean;
-    createdAt: string;
+    nombre: string;
+    avatarUrl?: string;
+    foto?: string;
+  };
+  type: 'like' | 'comment' | 'follow' | 'follow_request' | 'follow_accepted';
+  post?: {
+    _id: string;
+    imageUrl: string;
+    caption?: string;
+  };
+  isRead: boolean;
+  createdAt: string;
 }
 
 const createNotification = async (data: {
-    recipient: string;
-    sender: string;
-    type: NotificationType;
-    post?: string;
-    comment?: string;
+  recipient: string;
+  sender: string;
+  type: NotificationType;
+  post?: string;
+  comment?: string;
 }) => {
-    try {
-        // Don't notify if sender is the recipient
-        if (data.sender.toString() === data.recipient.toString()) {
-            Logging.info(`[NotificationService] Skipping notification: sender is recipient (${data.sender})`);
-            return;
-        }
-
-        // Save to Database
-        const notification = new Notification(data);
-        await notification.save();
-
-        // Populate sender info for the client
-        const populatedNotification = await Notification.findById(notification._id)
-            .populate('sender', 'nombre avatarUrl')
-            .populate({
-                path: 'post',
-                select: 'imageUrl caption usuario'
-            });
-
-        // Emit via Socket.io
-        try {
-            const io = getIO();
-            io.to(`user_${data.recipient}`).emit('new_notification', populatedNotification);
-        } catch (socketErr) {
-            // Socket might not be initialized in some contexts, or user not connected
-            Logging.warning(`[NotificationService] Could not emit socket: ${socketErr}`);
-        }
-
-        // Send via FCM if recipient has a token
-        try {
-            const Usuario = require('../models/Usuario').default;
-            const recipientUser = await Usuario.findById(data.recipient).select('fcmToken');
-            if (recipientUser && recipientUser.fcmToken) {
-                const { sendPushNotification } = require('./firebase.service');
-                const senderName = (populatedNotification?.sender as unknown as { nombre?: string } | null)?.nombre || 'Alguien';
-                
-                let title = 'Nueva notificación';
-                let body = 'Tienes una nueva interacción';
-                
-                if (data.type === 'like') {
-                    title = '¡Nuevo me gusta!';
-                    body = `@${senderName} le ha dado me gusta a tu publicación.`;
-                } else if (data.type === 'comment') {
-                    title = '¡Nuevo comentario!';
-                    body = `@${senderName} ha comentado en tu publicación.`;
-                } else if (data.type === 'follow') {
-                    title = '¡Nuevo seguidor!';
-                    body = `@${senderName} ha comenzado a seguirte.`;
-                } else if (data.type === 'follow_request') {
-                    title = 'Solicitud de seguimiento';
-                    body = `@${senderName} te ha enviado una solicitud de seguimiento.`;
-                } else if (data.type === 'follow_accepted') {
-                    title = 'Solicitud de seguimiento aceptada';
-                    body = `@${senderName} ha aceptado tu solicitud de seguimiento.`;
-                }
-
-                await sendPushNotification(
-                    recipientUser.fcmToken,
-                    title,
-                    body,
-                    {
-                        notificationId: String(notification._id),
-                        type: data.type,
-                        senderId: String(data.sender),
-                        postId: data.post ? String(data.post) : ''
-                    }
-                ).catch((err: unknown) => Logging.error(`[NotificationService] Failed to send push: ${err}`));
-            }
-        } catch (fcmErr) {
-            Logging.error(`[NotificationService] FCM error: ${fcmErr}`);
-        }
-
-        return populatedNotification;
-    } catch (error) {
-        Logging.error(`[NotificationService] Error creating notification: ${error}`);
-        throw error;
+  try {
+    // Don't notify if sender is the recipient
+    if (data.sender.toString() === data.recipient.toString()) {
+      Logging.info(
+        `[NotificationService] Skipping notification: sender is recipient (${data.sender})`,
+      );
+      return;
     }
+
+    // Save to Database
+    const notification = new Notification(data);
+    await notification.save();
+
+    // Populate sender info for the client
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('sender', 'nombre avatarUrl')
+      .populate({
+        path: 'post',
+        select: 'imageUrl caption usuario',
+      });
+
+    // Emit via Socket.io
+    try {
+      const io = getIO();
+      io.to(`user_${data.recipient}`).emit('new_notification', populatedNotification);
+    } catch (socketErr) {
+      // Socket might not be initialized in some contexts, or user not connected
+      Logging.warning(`[NotificationService] Could not emit socket: ${socketErr}`);
+    }
+
+    // Send via FCM if recipient has a token
+    try {
+      const Usuario = require('../models/Usuario').default;
+      const recipientUser = await Usuario.findById(data.recipient).select('fcmToken');
+      if (recipientUser && recipientUser.fcmToken) {
+        const { sendPushNotification } = require('./firebase.service');
+        const senderName =
+          (populatedNotification?.sender as unknown as { nombre?: string } | null)?.nombre ||
+          'Alguien';
+
+        let title = 'Nueva notificación';
+        let body = 'Tienes una nueva interacción';
+
+        if (data.type === 'like') {
+          title = '¡Nuevo me gusta!';
+          body = `@${senderName} le ha dado me gusta a tu publicación.`;
+        } else if (data.type === 'comment') {
+          title = '¡Nuevo comentario!';
+          body = `@${senderName} ha comentado en tu publicación.`;
+        } else if (data.type === 'follow') {
+          title = '¡Nuevo seguidor!';
+          body = `@${senderName} ha comenzado a seguirte.`;
+        } else if (data.type === 'follow_request') {
+          title = 'Solicitud de seguimiento';
+          body = `@${senderName} te ha enviado una solicitud de seguimiento.`;
+        } else if (data.type === 'follow_accepted') {
+          title = 'Solicitud de seguimiento aceptada';
+          body = `@${senderName} ha aceptado tu solicitud de seguimiento.`;
+        }
+
+        await sendPushNotification(recipientUser.fcmToken, title, body, {
+          notificationId: String(notification._id),
+          type: data.type,
+          senderId: String(data.sender),
+          postId: data.post ? String(data.post) : '',
+        }).catch((err: unknown) =>
+          Logging.error(`[NotificationService] Failed to send push: ${err}`),
+        );
+      }
+    } catch (fcmErr) {
+      Logging.error(`[NotificationService] FCM error: ${fcmErr}`);
+    }
+
+    return populatedNotification;
+  } catch (error) {
+    Logging.error(`[NotificationService] Error creating notification: ${error}`);
+    throw error;
+  }
 };
 
 const getNotificationsForUser = async (userId: string, page: number = 1, limit: number = 20) => {
-    return await Notification.paginate(
-        { recipient: userId },
+  return await Notification.paginate(
+    { recipient: userId },
+    {
+      page,
+      limit,
+      sort: { createdAt: -1 },
+      populate: [
+        { path: 'sender', select: 'nombre avatarUrl' },
         {
-            page,
-            limit,
-            sort: { createdAt: -1 },
-            populate: [
-                { path: 'sender', select: 'nombre avatarUrl' },
-                { 
-                    path: 'post', 
-                    select: 'imageUrl caption usuario' 
-                }
-            ]
-        }
-    );
+          path: 'post',
+          select: 'imageUrl caption usuario',
+        },
+      ],
+    },
+  );
 };
 
 const markAsRead = async (notificationId: string, userId: string) => {
-    return await Notification.findOneAndUpdate(
-        { _id: notificationId, recipient: userId },
-        { isRead: true },
-        { new: true }
-    );
+  return await Notification.findOneAndUpdate(
+    { _id: notificationId, recipient: userId },
+    { isRead: true },
+    { new: true },
+  );
 };
 
 const markAllAsRead = async (userId: string) => {
-    return await Notification.updateMany(
-        { recipient: userId, isRead: false },
-        { isRead: true }
-    );
+  return await Notification.updateMany({ recipient: userId, isRead: false }, { isRead: true });
 };
 
 const deleteNotification = async (notificationId: string, userId: string) => {
-    return await Notification.findOneAndDelete({ _id: notificationId, recipient: userId });
+  return await Notification.findOneAndDelete({ _id: notificationId, recipient: userId });
 };
 
 const deleteNotificationsByPost = async (postId: string) => {
-    return await Notification.deleteMany({ post: postId });
+  return await Notification.deleteMany({ post: postId });
 };
 
-const deleteNotificationByCriteria = async (criteria: { sender: string; recipient: string; type: NotificationType; post?: string; comment?: string }) => {
-    return await Notification.findOneAndDelete(criteria);
+const deleteNotificationByCriteria = async (criteria: {
+  sender: string;
+  recipient: string;
+  type: NotificationType;
+  post?: string;
+  comment?: string;
+}) => {
+  return await Notification.findOneAndDelete(criteria);
 };
 
 export default {
-    createNotification,
-    getNotifications: getNotificationsForUser,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    deleteNotificationsByPost,
-    deleteNotificationByCriteria
+  createNotification,
+  getNotifications: getNotificationsForUser,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  deleteNotificationsByPost,
+  deleteNotificationByCriteria,
 };

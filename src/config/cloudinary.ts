@@ -5,7 +5,7 @@ dotenv.config();
 
 // El SDK de Cloudinary detecta automáticamente la variable de entorno CLOUDINARY_URL
 if (process.env.CLOUDINARY_URL) {
-    cloudinary.config(true);
+  cloudinary.config(true);
 }
 
 export default cloudinary;
