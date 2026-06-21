@@ -178,8 +178,7 @@ const seedWeaviate = async () => {
     Logging.info('¡Ingesta en Weaviate finalizada con éxito!');
     process.exit(0);
   } catch (error) {
-    Logging.error('Error durante la ingesta en Weaviate:');
-    console.error(error);
+    Logging.error('Error durante la ingesta en Weaviate: ' + error);
     process.exit(1);
   }
 };

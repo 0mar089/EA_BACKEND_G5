@@ -1,5 +1,6 @@
 import weaviate, { WeaviateClient } from 'weaviate-client';
 import { config } from './config';
+import Logging from '../library/Logging';
 
 let weaviateClient: WeaviateClient | null = null;
 
@@ -13,8 +14,9 @@ export const getWeaviateClient = async (): Promise<WeaviateClient> => {
       weaviateClient = await weaviate.connectToWeaviateCloud(config.weaviate.url, {
         authCredentials: new weaviate.ApiKey(config.weaviate.apiKey),
       });
+      Logging.info('Conexión a Weaviate establecida correctamente.');
     } catch (error) {
-      console.error('Error al conectar a Weaviate:', error);
+      Logging.error('Error al conectar a Weaviate: ' + error);
       throw error;
     }
   }

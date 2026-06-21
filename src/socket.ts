@@ -93,7 +93,7 @@ export const initSocket = (httpServer: HttpServer) => {
                       messageId: msg._id.toString(),
                       groupId: destinatarioId,
                     },
-                  ).catch((err) => console.error('[Firebase] Error en push de grupo:', err));
+                  ).catch((err) => Logging.error('[Firebase] Error en push de grupo: ' + err));
                 }
               }
             }
@@ -130,7 +130,7 @@ export const initSocket = (httpServer: HttpServer) => {
                   messageId: msg._id.toString(),
                 },
               );
-              console.log('[Firebase] Notificación push enviada con éxito');
+              Logging.info('[Firebase] Notificación push enviada con éxito');
             }
             // -----------------------------------
           }

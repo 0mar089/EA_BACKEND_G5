@@ -1,11 +1,12 @@
 import AdminLog, { AdminAction, IAdminLog } from '../models/AdminLog';
+import Logging from '../library/Logging';
 
 const recordLog = async (data: IAdminLog): Promise<void> => {
   try {
     const log = new AdminLog(data);
     await log.save();
   } catch (error) {
-    console.error('Error recording admin log:', error);
+    Logging.error('Error recording admin log: ' + error);
     // No lanzamos error para no interrumpir la ejecución principal
   }
 };
