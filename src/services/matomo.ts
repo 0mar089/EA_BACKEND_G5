@@ -125,7 +125,6 @@ class MatomoService {
       cleanIp === 'localhost' ||
       cleanIp.includes('127.0.0.1') ||
       cleanIp.startsWith('192.168.') ||
-      cleanIp.startsWith('10.') ||
       cleanIp.startsWith('fe80:') ||
       cleanIp.startsWith('::ffff:127.') ||
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(cleanIp)
