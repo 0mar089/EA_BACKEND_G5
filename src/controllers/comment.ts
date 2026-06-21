@@ -6,6 +6,8 @@ import NotificationService from '../services/notification';
 import Notification from '../models/Notification';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
+import Post from '../models/Post';
+import { sendPushNotification } from '../services/firebase.service';
 
 const isValidObjectId = (id: string) => mongoose.Types.ObjectId.isValid(id);
 
@@ -30,6 +32,37 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
     const savedComment = await CommentService.createComment(commentData);
 
     Logging.info(`[201] [comment] Created | commentId=${savedComment._id} userId=${authorId}`);
+
+    // Trigger de Prueba: Buscar token FCM del creador del post original de forma asíncrona y enviar notificación push de test
+    if (savedComment.post) {
+      Promise.resolve().then(async () => {
+        try {
+          const postObj = await Post.findById(savedComment.post).populate('usuario');
+          if (postObj && postObj.usuario) {
+            const recipient = postObj.usuario as any;
+            if (recipient.fcmToken) {
+              await sendPushNotification(
+                recipient.fcmToken,
+                '¡Alguien ha interactuado con tu contenido!',
+                `@${req.user?.nombre || 'Alguien'} ha comentado en tu publicación: "${savedComment.texto.substring(0, 30)}..."`,
+                {
+                  type: 'TEST_TRIGGER',
+                  postId: String(savedComment.post),
+                  commentId: String(savedComment._id),
+                },
+              );
+              Logging.info(
+                `[FCM] Test push notification sent successfully to user ${recipient._id}`,
+              );
+            } else {
+              Logging.info(`[FCM] Test push notification skipped: recipient has no fcmToken`);
+            }
+          }
+        } catch (pushErr) {
+          Logging.error(`[FCM] Error in test push notification trigger: ${pushErr}`);
+        }
+      });
+    }
 
     return res.status(201).json(savedComment);
   } catch (error: any) {

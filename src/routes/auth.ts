@@ -7,6 +7,7 @@ import {
   getMe,
   updateMe,
   softDeleteMe,
+  googleLogin,
 } from '../controllers/auth';
 import Joi from 'joi';
 import { ValidateJoi, Schemas } from '../middleware/Joi';
@@ -70,6 +71,33 @@ router.post('/register', ValidateJoi(Schemas.usuario.register), register);
  *         description: Credenciales incorrectas
  */
 router.post('/login', ValidateJoi(Schemas.auth.login), login);
+
+/**
+ * @openapi
+ * /auth/google:
+ *   post:
+ *     summary: Inicia sesión o registra un usuario con Google OAuth
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: El ID Token devuelto por Google en el frontend
+ *     responses:
+ *       200:
+ *         description: Login exitoso, devuelve token
+ *       400:
+ *         description: Token de Google inválido o faltante
+ *       403:
+ *         description: Usuario inactivo
+ */
+router.post('/google', googleLogin);
 
 /**
  * @openapi

@@ -5,6 +5,7 @@ import {
   getUnreadMessagesCount,
   getMessage,
   getConversationContext,
+  createGroupChat,
 } from '../controllers/chat';
 import { authenticateToken } from '../middleware/auth';
 
@@ -26,5 +27,8 @@ router.get('/unread-count', getUnreadMessagesCount);
 
 /** GET /chat/conversation/:userId */
 router.get('/conversation/:userId', getHistory);
+
+/** POST /chat/groups */
+router.post('/groups', createGroupChat);
 
 export default router;

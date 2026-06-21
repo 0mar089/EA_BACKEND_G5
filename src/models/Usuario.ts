@@ -21,6 +21,8 @@ export interface IUsuario {
   asignaturas?: Types.ObjectId[];
   privado: boolean;
   hasAcceptedUnimatchTerms: boolean;
+  fcmToken?: string | null;
+  postsGuardados?: Types.ObjectId[];
 }
 
 // Extiende Document para que sea compatible con los helpers de Mongoose (save, populate, etc.)
@@ -117,6 +119,15 @@ const UsuarioSchema: Schema<IUsuarioModel> = new Schema(
     hasAcceptedUnimatchTerms: {
       type: Boolean,
       default: false,
+    },
+    fcmToken: {
+      type: String,
+      default: null,
+    },
+    postsGuardados: {
+      type: [Schema.Types.ObjectId],
+      ref: 'Post',
+      default: [],
     },
   },
   {

@@ -3,6 +3,7 @@ import Usuario, { IUsuarioModel, IUsuario } from '../models/Usuario';
 import Universidad from '../models/Universidad';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
+import UnimatchPhoto from '../models/UnimatchPhoto';
 import Follow, { FollowStatus } from '../models/Follow';
 import Notification from '../models/Notification';
 import notificationService from './notification';
@@ -214,6 +215,8 @@ const softDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
   await Post.updateMany({ usuario: usuarioId }, { activo: false });
   // Desactivar comentarios del usuario
   await Comment.updateMany({ usuario: usuarioId }, { activo: false });
+  // Desactivar fotos de unimatch del usuario
+  await UnimatchPhoto.updateMany({ userId: usuarioId }, { activo: false });
 
   return await Usuario.findByIdAndUpdate(usuarioId, { activo: false }, { new: true });
 };
@@ -224,6 +227,8 @@ const recoveryUsuario = async (usuarioId: string): Promise<IUsuarioModel | null>
   await Post.updateMany({ usuario: usuarioId }, { activo: true });
   // Reactivar comentarios del usuario
   await Comment.updateMany({ usuario: usuarioId }, { activo: true });
+  // Reactivar fotos de unimatch del usuario
+  await UnimatchPhoto.updateMany({ userId: usuarioId }, { activo: true });
 
   return await Usuario.findByIdAndUpdate(usuarioId, { activo: true }, { new: true });
 };

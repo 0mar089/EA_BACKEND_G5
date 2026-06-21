@@ -1,6 +1,7 @@
 import Message from '../models/Message';
 import Usuario from '../models/Usuario';
 import mongoose from 'mongoose';
+import GroupChat from '../models/GroupChat';
 
 /**
  * Devuelve los usuarios con los que el usuario dado tiene seguimiento mutuo
@@ -293,4 +294,159 @@ export const getConversationForAdmin = async (userAId: string, userBId: string, 
     });
 
   return messages.reverse();
+};
+
+export const createGroup = async (creadorId: string, nombre: string, miembrosIds: string[]) => {
+  // 1. Un chat grupal debe tener:
+  // - mínimo 3 usuarios
+  // - máximo 8 usuarios
+  // El creador SIEMPRE forma parte del grupo (lo unimos a la lista si no está ya)
+  const uniqueMiembros = Array.from(new Set([creadorId, ...miembrosIds]));
+
+  if (uniqueMiembros.length < 3 || uniqueMiembros.length > 8) {
+    throw new Error('Un chat grupal debe tener mínimo 3 y máximo 8 usuarios');
+  }
+
+  // 2. El creador del grupo:
+  // - SIEMPRE forma parte del grupo
+  // - SOLO puede invitar a usuarios que él sigue (following)
+  const creator = await Usuario.findById(creadorId).select('seguidos');
+  if (!creator) {
+    throw new Error('Creador no encontrado');
+  }
+
+  const seguidosSet = new Set(creator.seguidos?.map((id: any) => id.toString()) ?? []);
+
+  const invitedIds = uniqueMiembros.filter((id) => id !== creadorId);
+  for (const invitedId of invitedIds) {
+    if (!seguidosSet.has(invitedId)) {
+      throw new Error('Solo puedes invitar a usuarios que sigues');
+    }
+  }
+
+  const newGroup = await GroupChat.create({
+    nombre,
+    creador: creadorId,
+    miembros: uniqueMiembros,
+  });
+
+  return await newGroup.populate('miembros', '_id nombre avatarUrl');
+};
+
+export const getGroupsForUser = async (userId: string) => {
+  const groups = await GroupChat.find({ miembros: userId }).populate(
+    'miembros',
+    '_id nombre avatarUrl',
+  );
+
+  const groupsWithUnread = await Promise.all(
+    groups.map(async (group) => {
+      const unreadCount = await Message.countDocuments({
+        grupo: group._id,
+        remitente: { $ne: new mongoose.Types.ObjectId(userId) },
+        leidoPor: { $ne: new mongoose.Types.ObjectId(userId) },
+      });
+
+      // Buscar el último mensaje del grupo
+      const lastMessage = await Message.findOne({ grupo: group._id }).sort({ createdAt: -1 });
+
+      let lastMessageText = null;
+      if (lastMessage) {
+        if (lastMessage.eliminadoParaTodos) {
+          lastMessageText = 'El mensaje ha sido eliminado';
+        } else if (lastMessage.post) {
+          lastMessageText = 'Envió una publicación';
+        } else {
+          lastMessageText = lastMessage.contenido;
+        }
+      }
+
+      return {
+        _id: group._id.toString(),
+        nombre: group.nombre,
+        avatarUrl: group.avatarUrl,
+        isGroup: true,
+        creador: group.creador,
+        miembros: group.miembros,
+        unreadCount,
+        lastMessage: lastMessageText,
+      };
+    }),
+  );
+
+  return groupsWithUnread;
+};
+
+export const getGroupConversation = async (
+  groupId: string,
+  viewerId: string,
+  page = 1,
+  limit = 40,
+) => {
+  const gId = new mongoose.Types.ObjectId(groupId);
+  const vId = new mongoose.Types.ObjectId(viewerId);
+
+  const messages = await Message.find({
+    grupo: gId,
+    eliminadoPara: { $ne: vId },
+  })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate('remitente', '_id nombre avatarUrl')
+    .populate({
+      path: 'post',
+      populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores seguidos' },
+    })
+    .populate({
+      path: 'parentMessage',
+      select: '_id contenido remitente post',
+      populate: { path: 'remitente', select: '_id nombre' },
+    });
+
+  const result = messages.map((m) => filterMessageForUser(m, viewerId));
+
+  return result.reverse();
+};
+
+export const markGroupAsRead = async (groupId: string, userId: string) => {
+  const gId = new mongoose.Types.ObjectId(groupId);
+  const uId = new mongoose.Types.ObjectId(userId);
+
+  await Message.updateMany(
+    { grupo: gId, remitente: { $ne: uId }, leidoPor: { $ne: uId } },
+    { $addToSet: { leidoPor: uId } },
+  );
+};
+
+export const saveGroupMessage = async (
+  remitenteId: string,
+  groupId: string,
+  contenido: string,
+  postId?: string,
+  parentMessageId?: string,
+) => {
+  const msg = await Message.create({
+    remitente: remitenteId,
+    grupo: groupId,
+    contenido,
+    post: postId || undefined,
+    parentMessage: parentMessageId || undefined,
+    leidoPor: [new mongoose.Types.ObjectId(remitenteId)],
+  });
+
+  const populated = await msg.populate([
+    { path: 'remitente', select: '_id nombre avatarUrl' },
+    {
+      path: 'post',
+      populate: { path: 'usuario', select: '_id nombre avatarUrl privado seguidores seguidos' },
+    },
+    {
+      path: 'parentMessage',
+      select: '_id contenido remitente post',
+      populate: { path: 'remitente', select: '_id nombre' },
+    },
+  ]);
+
+  return populated;
 };

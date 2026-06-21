@@ -159,6 +159,18 @@ const softDeleteUsuario = async (req: AuthRequest, res: Response, next: NextFunc
   const usuarioId = req.params.usuarioId;
   const admin = req.user;
 
+  if (!admin) {
+    return res.status(401).json({ message: 'No autenticado' });
+  }
+
+  // IDOR Protection: Only the user themselves or an admin can delete the account
+  if (usuarioId !== admin.id && admin.rol !== 'admin') {
+    Logging.warning(
+      `[403] [usuario] Forbidden Soft Delete | requesterId=${admin.id} targetId=${usuarioId}`,
+    );
+    return res.status(403).json({ message: 'No tienes permiso para desactivar esta cuenta' });
+  }
+
   try {
     const usuario = await UsuarioService.softDeleteUsuario(usuarioId);
 
@@ -462,6 +474,30 @@ const setAsignaturas = async (req: AuthRequest, res: Response) => {
   }
 };
 
+const updateFcmToken = async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  const { fcmToken } = req.body;
+
+  if (!userId) {
+    Logging.warning(`[401] [usuario] Unauthorized updateFcmToken`);
+    return res.status(401).json({ message: 'No autenticado' });
+  }
+
+  try {
+    const usuario = await UsuarioService.updateUsuario(userId, { fcmToken });
+    if (!usuario) {
+      Logging.warning(`[404] [usuario] updateFcmToken User Not Found | userId=${userId}`);
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    Logging.info(`[200] [usuario] FCM Token Updated | userId=${userId}`);
+    return res.status(200).json(usuario);
+  } catch (error) {
+    Logging.error(`[500] [usuario] updateFcmToken Failed | userId=${userId} error=${error}`);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export default {
   createUsuario,
   readUsuario,
@@ -479,4 +515,5 @@ export default {
   setAsignaturas,
   acceptFollowRequest,
   rejectFollowRequest,
+  updateFcmToken,
 };

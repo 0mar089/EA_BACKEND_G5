@@ -9,6 +9,10 @@ import {
   getUnreadCount,
   getMessageById,
   getConversationForAdmin,
+  createGroup,
+  getGroupsForUser,
+  getGroupConversation,
+  markGroupAsRead,
 } from '../services/chat';
 
 const isValidObjectId = (id: string) => mongoose.Types.ObjectId.isValid(id);
@@ -52,12 +56,20 @@ export const getMessage = async (req: AuthRequest, res: Response) => {
     const requesterId = req.user?.id;
     const isAdmin = req.user?.rol === 'admin';
 
-    // IDOR Protection: Only the sender, recipient or an admin can see the message
-    if (
-      !isAdmin &&
-      message.remitente.toString() !== requesterId &&
-      message.destinatario.toString() !== requesterId
-    ) {
+    // IDOR Protection: Only the sender, recipient, group members or an admin can see the message
+    let hasAccess = isAdmin || message.remitente.toString() === requesterId;
+    if (!hasAccess && message.destinatario) {
+      hasAccess = message.destinatario.toString() === requesterId;
+    }
+    if (!hasAccess && message.grupo) {
+      const GroupChat = require('../models/GroupChat').default;
+      const group = await GroupChat.findById(message.grupo);
+      if (group) {
+        hasAccess = group.miembros.map((m: any) => m.toString()).includes(requesterId);
+      }
+    }
+
+    if (!hasAccess) {
       Logging.warning(
         `[403] [chat] Forbidden Message Access | requesterId=${requesterId} messageId=${messageId}`,
       );
@@ -71,7 +83,7 @@ export const getMessage = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/** GET /chat/contacts → Seguidores mutuos (con quién puedes chatear) */
+/** GET /chat/contacts → Seguidores mutuos (con quién puedes chatear) y grupos */
 export const getContacts = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -84,18 +96,50 @@ export const getContacts = async (req: AuthRequest, res: Response) => {
     const userId = req.user.id;
 
     const contacts = await getMutualFollows(userId);
+    const groups = await getGroupsForUser(userId);
 
     Logging.info(
-      `[200] [chat] Contacts Retrieved | userId=${userId} count=${contacts?.length ?? 0}`,
+      `[200] [chat] Contacts & Groups Retrieved | userId=${userId} contactsCount=${contacts?.length ?? 0} groupsCount=${groups?.length ?? 0}`,
     );
 
-    return res.status(200).json(contacts);
+    return res.status(200).json([...contacts, ...groups]);
   } catch (error) {
     Logging.error(`[500] [chat] Get Contacts Failed | userId=${req.user?.id} error=${error}`);
-
     return res.status(500).json({
       message: 'Internal server error',
     });
+  }
+};
+
+/** POST /chat/groups → Crear un chat grupal */
+export const createGroupChat = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+
+    const { nombre, miembros } = req.body;
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ message: 'El nombre del grupo es obligatorio' });
+    }
+    if (!miembros || !Array.isArray(miembros)) {
+      return res
+        .status(400)
+        .json({ message: 'Los miembros del grupo son obligatorios y deben ser una lista' });
+    }
+
+    const group = await createGroup(req.user.id, nombre.trim(), miembros);
+
+    Logging.info(`[201] [chat] Group Chat Created | groupId=${group._id} creator=${req.user.id}`);
+
+    return res.status(201).json({
+      ...group.toObject(),
+      isGroup: true,
+      unreadCount: 0,
+    });
+  } catch (error: any) {
+    Logging.error(`[500] [chat] Create Group Chat Failed | error=${error}`);
+    return res.status(400).json({ message: error.message || 'Error al crear el grupo' });
   }
 };
 
@@ -111,7 +155,7 @@ export const getUnreadMessagesCount = async (req: AuthRequest, res: Response) =>
   }
 };
 
-/** GET /chat/conversation/:userId → Historial con ese usuario */
+/** GET /chat/conversation/:userId → Historial con ese usuario o grupo */
 export const getHistory = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -136,12 +180,33 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
 
     // Validación de ObjectId
     if (!isValidObjectId(userId)) {
-      Logging.warning(`[400] [chat] Invalid UserId | userId=${userId}`);
+      Logging.warning(`[400] [chat] Invalid ID | userId=${userId}`);
       return res.status(400).json({
-        message: 'ID de usuario inválido',
+        message: 'ID de usuario o grupo inválido',
       });
     }
 
+    // Comprobar si el ID es de un chat grupal
+    const GroupChat = require('../models/GroupChat').default;
+    const group = await GroupChat.findById(userId);
+
+    if (group) {
+      const isMember = group.miembros.map((m: any) => m.toString()).includes(myId);
+      if (!isMember) {
+        Logging.warning(
+          `[403] [chat] Unauthorized Group Access | userId=${myId} groupId=${userId}`,
+        );
+        return res.status(403).json({
+          message: 'No tienes acceso a este grupo',
+        });
+      }
+
+      await markGroupAsRead(userId, myId);
+      const messages = await getGroupConversation(userId, myId, page);
+      return res.status(200).json(messages);
+    }
+
+    // De lo contrario, tratar como conversación individual
     const contacts = await getMutualFollows(myId);
 
     const isContact = contacts.some((c: any) => c._id.toString() === userId);
@@ -161,7 +226,6 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
     return res.status(200).json(messages);
   } catch (error) {
     Logging.error(`[500] [chat] Get History Failed | userId=${req.user?.id} error=${error}`);
-
     return res.status(500).json({
       message: 'Internal server error',
     });

@@ -131,6 +131,15 @@ export const Schemas = {
       caption: Joi.string().max(500).allow('', null),
       comments: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
     }),
+    toggleSavePost: Joi.object({
+      postId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    }),
+    saved: Joi.object({
+      page: Joi.number().integer().min(1).default(1),
+      limit: Joi.number().integer().min(1).max(100).default(10),
+    }),
   },
 
   comment: {
@@ -172,6 +181,28 @@ export const Schemas = {
     update: Joi.object({
       nombre: Joi.string(),
       usuarios: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+    }),
+  },
+  evento: {
+    create: Joi.object({
+      titulo: Joi.string().required(),
+      descripcion: Joi.string().required(),
+      fecha: Joi.date().required(),
+      ubicacionNombre: Joi.string().required(),
+      lat: Joi.number().min(-90).max(90).required(),
+      lng: Joi.number().min(-180).max(180).required(),
+      maxAsistentes: Joi.number().integer().min(1).allow(null, ''),
+      fechaLimite: Joi.date().allow(null, ''),
+    }),
+    update: Joi.object({
+      titulo: Joi.string(),
+      descripcion: Joi.string(),
+      fecha: Joi.date(),
+      ubicacionNombre: Joi.string(),
+      lat: Joi.number().min(-90).max(90),
+      lng: Joi.number().min(-180).max(180),
+      maxAsistentes: Joi.number().integer().min(1).allow(null, ''),
+      fechaLimite: Joi.date().allow(null, ''),
     }),
   },
 };
