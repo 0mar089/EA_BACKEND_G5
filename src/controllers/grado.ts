@@ -1,18 +1,31 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, NextFunction, Response } from 'express';
 import mongoose from 'mongoose';
 import GradoService from '../services/grado';
+import AuditService from '../services/audit';
 import Logging from '../library/Logging';
+import { AuthRequest } from '../middleware/auth';
 
 const isValidObjectId = (id: string) =>
     mongoose.Types.ObjectId.isValid(id);
 
-const createGrado = async (req: Request, res: Response, next: NextFunction) => {
+const createGrado = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
 
         const savedGrado =
             await GradoService.createGrado(req.body);
 
         Logging.info(`[201] [grado] Created | gradoId=${savedGrado._id}`);
+
+        if (req.user && req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.CREATE_GRADO,
+                tipoObjetivo: 'system',
+                objetivoId: savedGrado._id.toString(),
+                detalles: `Grado creado: ${savedGrado.nombre}`,
+                ip: req.ip
+            });
+        }
 
         return res.status(201).json(savedGrado);
 
@@ -125,7 +138,7 @@ const readGradosByUniversidad = async (req: Request, res: Response, next: NextFu
     }
 };
 
-const updateGrado = async (req: Request, res: Response, next: NextFunction) => {
+const updateGrado = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const gradoId = req.params.gradoId;
 
@@ -153,6 +166,17 @@ const updateGrado = async (req: Request, res: Response, next: NextFunction) => {
 
         Logging.info(`[200] [grado] Updated | gradoId=${gradoId}`);
 
+        if (req.user && req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.UPDATE_GRADO,
+                tipoObjetivo: 'system',
+                objetivoId: gradoId,
+                detalles: `Grado actualizado: ${grado.nombre}`,
+                ip: req.ip
+            });
+        }
+
         return res.status(200).json(grado);
 
     } catch (error: unknown) {
@@ -178,7 +202,7 @@ const updateGrado = async (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-const deleteGrado = async (req: Request, res: Response, next: NextFunction) => {
+const deleteGrado = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const gradoId = req.params.gradoId;
 
@@ -202,6 +226,17 @@ const deleteGrado = async (req: Request, res: Response, next: NextFunction) => {
         }
 
         Logging.info(`[200] [grado] Deleted | gradoId=${gradoId}`);
+
+        if (req.user && req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.DELETE_GRADO,
+                tipoObjetivo: 'system',
+                objetivoId: gradoId,
+                detalles: `Grado eliminado: ${grado.nombre}`,
+                ip: req.ip
+            });
+        }
 
         return res.status(200).json({
             message: 'deleted'

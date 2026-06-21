@@ -300,8 +300,9 @@ const getUserPhotos = async (userId: string) => {
     return await UnimatchPhoto.find({ userId, activo: true }).sort({ order: 1 }).lean();
 };
 
-const deletePhoto = async (photoId: string, userId: string) => {
-    const photo = await UnimatchPhoto.findOneAndDelete({ _id: photoId, userId });
+const deletePhoto = async (photoId: string, userId?: string) => {
+    const query = userId ? { _id: photoId, userId } : { _id: photoId };
+    const photo = await UnimatchPhoto.findOneAndDelete(query);
     if (!photo) throw new Error('Foto no encontrada');
     return photo;
 };
@@ -366,7 +367,7 @@ const getMatches = async (userId: string) => {
         if (!photoMap[key]) photoMap[key] = photo.imageUrl;
     }
 
-    return users.map((u: { _id: mongoose.Types.ObjectId; avatarUrl?: string; [key: string]: unknown }) => ({
+    return users.map((u: { _id: mongoose.Types.ObjectId; avatarUrl?: string;[key: string]: unknown }) => ({
         ...u,
         unimatchPhoto: photoMap[u._id.toString()] || u.avatarUrl
     }));

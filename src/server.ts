@@ -37,7 +37,7 @@ mongoose
     .then(async () => {
         Logging.info('Mongo connected successfully.');
         Logging.info('Cloudinary service initialized successfully.');
-        
+
         try {
             await getWeaviateClient();
             Logging.info('Weaviate connected successfully.');

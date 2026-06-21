@@ -10,6 +10,15 @@ export enum AdminAction {
     DELETE_POST = 'DELETE_POST',
     UPDATE_POST = 'UPDATE_POST',
     DELETE_COMMENT = 'DELETE_COMMENT',
+    DELETE_EVENT = 'DELETE_EVENT',
+    
+    // Grados y Asignaturas
+    CREATE_GRADO = 'CREATE_GRADO',
+    UPDATE_GRADO = 'UPDATE_GRADO',
+    DELETE_GRADO = 'DELETE_GRADO',
+    CREATE_ASIGNATURA = 'CREATE_ASIGNATURA',
+    UPDATE_ASIGNATURA = 'UPDATE_ASIGNATURA',
+    DELETE_ASIGNATURA = 'DELETE_ASIGNATURA',
     
     // Usuarios
     BAN_USER = 'BAN_USER',
@@ -24,7 +33,7 @@ export enum AdminAction {
 export interface IAdminLog {
     admin: Types.ObjectId;
     accion: AdminAction;
-    tipoObjetivo: 'report' | 'post' | 'comment' | 'user' | 'system';
+    tipoObjetivo: 'report' | 'post' | 'comment' | 'user' | 'system' | 'event';
     objetivoId?: string; // ID del recurso afectado
     detalles: string;    // Descripción legible
     metadata?: Record<string, unknown>;      // Datos técnicos extra (ej: valores antes/después)
@@ -47,7 +56,7 @@ const AdminLogSchema: Schema<IAdminLogModel> = new Schema(
         },
         tipoObjetivo: {
             type: String,
-            enum: ['report', 'post', 'comment', 'user', 'system'],
+            enum: ['report', 'post', 'comment', 'user', 'system', 'event'],
             required: true
         },
         objetivoId: {

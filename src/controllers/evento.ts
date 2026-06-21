@@ -1,6 +1,7 @@
 import { NextFunction, Response } from 'express';
 import mongoose from 'mongoose';
 import EventoService from '../services/evento';
+import AuditService from '../services/audit';
 import Logging from '../library/Logging';
 import { AuthRequest } from '../middleware/auth';
 
@@ -113,6 +114,18 @@ const deleteEvento = async (req: AuthRequest, res: Response, next: NextFunction)
         }
 
         Logging.info(`[200] [evento] Deleted | eventoId=${eventoId}`);
+
+        if (req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.DELETE_EVENT,
+                tipoObjetivo: 'event',
+                objetivoId: eventoId,
+                detalles: `Evento eliminado por moderación (Admin)`,
+                ip: req.ip
+            });
+        }
+
         return res.status(200).json(eventoEliminado);
     } catch (error: unknown) {
         if ((error as Error).message === 'Forbidden') {

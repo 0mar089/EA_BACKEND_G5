@@ -1,18 +1,31 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, NextFunction, Response } from 'express';
 import mongoose from 'mongoose';
 import AsignaturaService from '../services/asignatura';
+import AuditService from '../services/audit';
 import Logging from '../library/Logging';
+import { AuthRequest } from '../middleware/auth';
 
 const isValidObjectId = (id: string) =>
     mongoose.Types.ObjectId.isValid(id);
 
-const createAsignatura = async (req: Request, res: Response, next: NextFunction) => {
+const createAsignatura = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
 
         const savedAsignatura =
             await AsignaturaService.createAsignatura(req.body);
 
         Logging.info(`[201] [asignatura] Created | asignaturaId=${savedAsignatura._id}`);
+
+        if (req.user && req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.CREATE_ASIGNATURA,
+                tipoObjetivo: 'system',
+                objetivoId: savedAsignatura._id.toString(),
+                detalles: `Asignatura creada: ${savedAsignatura.nombre}`,
+                ip: req.ip
+            });
+        }
 
         return res.status(201).json(savedAsignatura);
 
@@ -105,7 +118,7 @@ const readAsignaturasByGrado = async (req: Request, res: Response, next: NextFun
     }
 };
 
-const updateAsignatura = async (req: Request, res: Response, next: NextFunction) => {
+const updateAsignatura = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const asignaturaId = req.params.asignaturaId;
 
@@ -129,6 +142,17 @@ const updateAsignatura = async (req: Request, res: Response, next: NextFunction)
 
         Logging.info(`[200] [asignatura] Updated | asignaturaId=${asignaturaId}`);
 
+        if (req.user && req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.UPDATE_ASIGNATURA,
+                tipoObjetivo: 'system',
+                objetivoId: asignaturaId,
+                detalles: `Asignatura actualizada: ${asignatura.nombre}`,
+                ip: req.ip
+            });
+        }
+
         return res.status(200).json(asignatura);
 
     } catch (error: unknown) {
@@ -148,7 +172,7 @@ const updateAsignatura = async (req: Request, res: Response, next: NextFunction)
     }
 };
 
-const deleteAsignatura = async (req: Request, res: Response, next: NextFunction) => {
+const deleteAsignatura = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const asignaturaId = req.params.asignaturaId;
 
@@ -168,6 +192,17 @@ const deleteAsignatura = async (req: Request, res: Response, next: NextFunction)
         }
 
         Logging.info(`[200] [asignatura] Deleted | asignaturaId=${asignaturaId}`);
+
+        if (req.user && req.user.rol === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(req.user.id),
+                accion: AuditService.AdminAction.DELETE_ASIGNATURA,
+                tipoObjetivo: 'system',
+                objetivoId: asignaturaId,
+                detalles: `Asignatura eliminada: ${asignatura.nombre}`,
+                ip: req.ip
+            });
+        }
 
         return res.status(200).json({ message: 'deleted' });
 

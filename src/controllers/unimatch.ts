@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import UniMatchService from '../services/unimatch';
 import UploadService from '../services/upload';
 import Logging from '../library/Logging';
+import AuditService from '../services/audit';
+import mongoose from 'mongoose';
 
 // ─── Discover ─────────────────────────────────────────────────────────────────
 
@@ -108,12 +110,28 @@ const getUserPhotos = async (req: AuthRequest, res: Response) => {
 
 const deletePhoto = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user!.id;
+        const requesterId = req.user!.id;
+        const requesterRole = req.user!.rol;
         const { photoId } = req.params;
 
-        await UniMatchService.deletePhoto(photoId, userId);
+        // Si es admin, borramos sin userId (cualquier foto). Si no, pasamos su userId.
+        const photo = await UniMatchService.deletePhoto(photoId, requesterRole === 'admin' ? undefined : requesterId);
 
-        Logging.info(`[200] [unimatch/photos] Photo deleted | userId=${userId} photoId=${photoId}`);
+        // Si el que lo borra es admin, registrar en auditoría
+        if (requesterRole === 'admin') {
+            await AuditService.recordLog({
+                admin: new mongoose.Types.ObjectId(requesterId) as any,
+                accion: AuditService.AdminAction.DELETE_POST, // Reusamos DELETE_POST para eliminación de contenido general
+                tipoObjetivo: 'user',
+                objetivoId: photo.userId.toString(),
+                detalles: `Eliminó foto de UniMatch (ID de Foto: ${photoId}) del usuario ${photo.userId}`,
+                metadata: { photoId, targetUserId: photo.userId }
+            });
+            Logging.info(`[200] [unimatch/photos] Admin deleted photo | adminId=${requesterId} photoId=${photoId} ownerId=${photo.userId}`);
+        } else {
+            Logging.info(`[200] [unimatch/photos] User deleted photo | userId=${requesterId} photoId=${photoId}`);
+        }
+
         return res.status(200).json({ message: 'Foto eliminada' });
     } catch (error: unknown) {
         const message = error instanceof Error ? (error as Error).message : String(error);
