@@ -35,6 +35,8 @@ jobs:
           MONGO_URI: mongodb://localhost:27017/test
           JWT_ACCESS_SECRET: test_jwt_access_secret_key_12345
           JWT_REFRESH_SECRET: test_jwt_refresh_secret_key_12345
+          GOOGLE_CLIENT_ID: mock_google_client_id_12345
+          GOOGLE_CLIENT_SECRET: mock_google_client_secret_67890
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
