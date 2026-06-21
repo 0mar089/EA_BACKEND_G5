@@ -26,6 +26,7 @@ import eventoRoutes from './routes/Evento';
 import assistantRoutes from './routes/Assistant';
 import { getWeaviateClient } from './config/weaviate';
 import { initSocket } from './socket';
+import { matomoMiddleware } from './middleware/matomo';
 
 const router = express();
 
@@ -64,6 +65,8 @@ const StartServer = () => {
 
     next();
   });
+
+  router.use(matomoMiddleware);
 
   router.use(express.urlencoded({ extended: true }));
   router.use(express.json());
@@ -104,7 +107,7 @@ const StartServer = () => {
     Logging.error(error);
 
     res.status(404).json({
-      message: error.message,
+      message: (error as Error).message,
     });
   });
 

@@ -27,10 +27,10 @@ const createBugReport = async (req: AuthRequest, res: Response) => {
     Logging.info(`[201] [bug] Created | bugId=${savedBug._id} userId=${usuarioReporta}`);
 
     return res.status(201).json(savedBug);
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      Logging.warning(`[422] [bug] Validation Error | message=${error.message}`);
-      return res.status(422).json({ message: error.message });
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
+      Logging.warning(`[422] [bug] Validation Error | message=${(error as Error).message}`);
+      return res.status(422).json({ message: (error as Error).message });
     }
 
     Logging.error(`[500] [bug] Create Failed | error=${error}`);
@@ -122,10 +122,10 @@ const updateStatus = async (req: Request, res: Response) => {
     Logging.info(`[200] [bug] Status Updated | bugId=${bugId} estado=${estado}`);
 
     return res.status(200).json(updated);
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
       Logging.warning(`[422] [bug] Update Validation Error | bugId=${bugId}`);
-      return res.status(422).json({ message: error.message });
+      return res.status(422).json({ message: (error as Error).message });
     }
 
     Logging.error(`[500] [bug] Update Failed | bugId=${bugId}`);

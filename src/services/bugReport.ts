@@ -20,7 +20,7 @@ const getAllBugReports = async (
   plataforma: string = 'all',
   activeOnly: string = 'false',
 ): Promise<any> => {
-  const query: any = {};
+  const query: Record<string, any> = {};
   if (estado !== 'all') {
     query.estado = estado;
   } else if (activeOnly === 'true') {

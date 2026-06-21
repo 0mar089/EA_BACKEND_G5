@@ -12,13 +12,13 @@ const createAsignatura = async (req: Request, res: Response, next: NextFunction)
     Logging.info(`[201] [asignatura] Created | asignaturaId=${savedAsignatura._id}`);
 
     return res.status(201).json(savedAsignatura);
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      Logging.warning(`[422] [asignatura] Validation Error | message=${error.message}`);
-      return res.status(422).json({ message: error.message });
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
+      Logging.warning(`[422] [asignatura] Validation Error | message=${(error as Error).message}`);
+      return res.status(422).json({ message: (error as Error).message });
     }
 
-    if (error.code === 11000) {
+    if ((error as { code?: number }).code === 11000) {
       Logging.warning(`[409] [asignatura] Duplicate Entry | name=${req.body?.nombre}`);
       return res.status(409).json({ message: 'La asignatura ya existe' });
     }
@@ -105,13 +105,13 @@ const updateAsignatura = async (req: Request, res: Response, next: NextFunction)
     Logging.info(`[200] [asignatura] Updated | asignaturaId=${asignaturaId}`);
 
     return res.status(200).json(asignatura);
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
       Logging.warning(`[422] [asignatura] Update Validation Error | asignaturaId=${asignaturaId}`);
-      return res.status(422).json({ message: error.message });
+      return res.status(422).json({ message: (error as Error).message });
     }
 
-    if (error.code === 11000) {
+    if ((error as { code?: number }).code === 11000) {
       Logging.warning(`[409] [asignatura] Duplicate Update | asignaturaId=${asignaturaId}`);
       return res.status(409).json({ message: 'La asignatura ya existe' });
     }

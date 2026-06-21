@@ -15,8 +15,9 @@ const discover = async (req: AuthRequest, res: Response) => {
 
     Logging.info(`[200] [unimatch/discover] Found ${profiles.length} profiles | userId=${userId}`);
     return res.status(200).json(profiles);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/discover] ${error.message} | userId=${req.user?.id}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [unimatch/discover] ${message} | userId=${req.user?.id}`);
     return res.status(500).json({ message: 'Error al descubrir perfiles' });
   }
 };
@@ -42,11 +43,12 @@ const swipe = async (req: AuthRequest, res: Response) => {
       `[200] [unimatch/swipe] ${type} | from=${userId} to=${toUserId} matched=${result.matched}`,
     );
     return res.status(200).json(result);
-  } catch (error: any) {
-    if (error.message === 'No puedes swipearte a ti mismo') {
-      return res.status(400).json({ message: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    if (message === 'No puedes swipearte a ti mismo') {
+      return res.status(400).json({ message });
     }
-    Logging.error(`[500] [unimatch/swipe] ${error.message} | userId=${req.user?.id}`);
+    Logging.error(`[500] [unimatch/swipe] ${message} | userId=${req.user?.id}`);
     return res.status(500).json({ message: 'Error al registrar el swipe' });
   }
 };
@@ -62,13 +64,19 @@ const uploadPhoto = async (req: AuthRequest, res: Response) => {
     }
 
     // Reutilizar la subida a Cloudinary existente
-    const cloudResult: any = await UploadService.uploadImage(req.file.buffer);
+    const cloudResult = (await UploadService.uploadImage(req.file.buffer)) as {
+      secure_url: string;
+      [key: string]: unknown;
+    };
     const photo = await UniMatchService.addPhoto(userId, cloudResult.secure_url);
 
     Logging.info(`[201] [unimatch/photos] Photo uploaded | userId=${userId} photoId=${photo._id}`);
     return res.status(201).json(photo);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/photos] Upload failed | userId=${req.user?.id} error=${error}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(
+      `[500] [unimatch/photos] Upload failed | userId=${req.user?.id} error=${message}`,
+    );
     return res.status(500).json({ message: 'Error al subir la foto' });
   }
 };
@@ -81,8 +89,9 @@ const getMyPhotos = async (req: AuthRequest, res: Response) => {
     const photos = await UniMatchService.getUserPhotos(userId);
 
     return res.status(200).json(photos);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/photos] Get failed | userId=${req.user?.id} error=${error}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [unimatch/photos] Get failed | userId=${req.user?.id} error=${message}`);
     return res.status(500).json({ message: 'Error al obtener las fotos' });
   }
 };
@@ -95,8 +104,9 @@ const getUserPhotos = async (req: AuthRequest, res: Response) => {
     const photos = await UniMatchService.getUserPhotos(userId);
 
     return res.status(200).json(photos);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/photos/:userId] Get failed | error=${error}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [unimatch/photos/:userId] Get failed | error=${message}`);
     return res.status(500).json({ message: 'Error al obtener las fotos' });
   }
 };
@@ -112,11 +122,14 @@ const deletePhoto = async (req: AuthRequest, res: Response) => {
 
     Logging.info(`[200] [unimatch/photos] Photo deleted | userId=${userId} photoId=${photoId}`);
     return res.status(200).json({ message: 'Foto eliminada' });
-  } catch (error: any) {
-    if (error.message === 'Foto no encontrada') {
-      return res.status(404).json({ message: error.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    if (message === 'Foto no encontrada') {
+      return res.status(404).json({ message });
     }
-    Logging.error(`[500] [unimatch/photos] Delete failed | userId=${req.user?.id} error=${error}`);
+    Logging.error(
+      `[500] [unimatch/photos] Delete failed | userId=${req.user?.id} error=${message}`,
+    );
     return res.status(500).json({ message: 'Error al eliminar la foto' });
   }
 };
@@ -136,8 +149,9 @@ const reorderPhotos = async (req: AuthRequest, res: Response) => {
 
     Logging.info(`[200] [unimatch/photos/reorder] Reordered | userId=${userId}`);
     return res.status(200).json(photos);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/photos/reorder] ${error.message} | userId=${req.user?.id}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [unimatch/photos/reorder] ${message} | userId=${req.user?.id}`);
     return res.status(500).json({ message: 'Error al reordenar las fotos' });
   }
 };
@@ -151,8 +165,9 @@ const acceptTerms = async (req: AuthRequest, res: Response) => {
 
     Logging.info(`[200] [unimatch/accept-terms] Terms accepted | userId=${userId}`);
     return res.status(200).json(user);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/accept-terms] ${error.message} | userId=${req.user?.id}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [unimatch/accept-terms] ${message} | userId=${req.user?.id}`);
     return res.status(500).json({ message: 'Error al aceptar los términos' });
   }
 };
@@ -165,8 +180,9 @@ const getMatches = async (req: AuthRequest, res: Response) => {
     const matches = await UniMatchService.getMatches(userId);
 
     return res.status(200).json(matches);
-  } catch (error: any) {
-    Logging.error(`[500] [unimatch/matches] ${error.message} | userId=${req.user?.id}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [unimatch/matches] ${message} | userId=${req.user?.id}`);
     return res.status(500).json({ message: 'Error al obtener los matches' });
   }
 };

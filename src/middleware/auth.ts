@@ -19,7 +19,7 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
     const decoded = verifyAccessToken(token); // Verifica el access token
     req.user = decoded;
     next(); // Si todo está bien, pasa a la siguiente ruta
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ message: 'Access token expirado' });
     }

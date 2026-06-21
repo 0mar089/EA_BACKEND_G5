@@ -65,7 +65,9 @@ export const getMessage = async (req: AuthRequest, res: Response) => {
       const GroupChat = require('../models/GroupChat').default;
       const group = await GroupChat.findById(message.grupo);
       if (group) {
-        hasAccess = group.miembros.map((m: any) => m.toString()).includes(requesterId);
+        hasAccess = group.miembros
+          .map((m: mongoose.Types.ObjectId) => m.toString())
+          .includes(requesterId);
       }
     }
 
@@ -137,9 +139,10 @@ export const createGroupChat = async (req: AuthRequest, res: Response) => {
       isGroup: true,
       unreadCount: 0,
     });
-  } catch (error: any) {
-    Logging.error(`[500] [chat] Create Group Chat Failed | error=${error}`);
-    return res.status(400).json({ message: error.message || 'Error al crear el grupo' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? (error as Error).message : String(error);
+    Logging.error(`[500] [chat] Create Group Chat Failed | error=${message}`);
+    return res.status(400).json({ message: message || 'Error al crear el grupo' });
   }
 };
 
@@ -182,7 +185,7 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
     if (!isValidObjectId(userId)) {
       Logging.warning(`[400] [chat] Invalid ID | userId=${userId}`);
       return res.status(400).json({
-        message: 'ID de usuario o grupo inválido',
+        message: 'ID inválido',
       });
     }
 
@@ -191,7 +194,9 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
     const group = await GroupChat.findById(userId);
 
     if (group) {
-      const isMember = group.miembros.map((m: any) => m.toString()).includes(myId);
+      const isMember = group.miembros
+        .map((m: mongoose.Types.ObjectId) => m.toString())
+        .includes(myId);
       if (!isMember) {
         Logging.warning(
           `[403] [chat] Unauthorized Group Access | userId=${myId} groupId=${userId}`,
@@ -209,7 +214,7 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
     // De lo contrario, tratar como conversación individual
     const contacts = await getMutualFollows(myId);
 
-    const isContact = contacts.some((c: any) => c._id.toString() === userId);
+    const isContact = contacts.some((c: { _id: unknown }) => String(c._id) === userId);
 
     if (!isContact) {
       Logging.warning(

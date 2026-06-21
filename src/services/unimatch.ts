@@ -47,7 +47,7 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
     return []; // No hay nadie con fotos
   }
 
-  const baseFilter: any = {
+  const baseFilter: mongoose.FilterQuery<IUsuarioModel> = {
     _id: {
       $in: usersWithPhotosIds.map((id) => new mongoose.Types.ObjectId(id)),
       $nin: excludeIds,
@@ -57,8 +57,8 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
   };
 
   // ─── Prioridad 1: Similitud (misma universidad, grado o asignatura) ─────
-  const similarityFilter: any = { ...baseFilter };
-  const orConditions: any[] = [];
+  const similarityFilter: mongoose.FilterQuery<IUsuarioModel> = { ...baseFilter };
+  const orConditions: mongoose.FilterQuery<IUsuarioModel>[] = [];
 
   if (currentUser.universidad) {
     orConditions.push({ universidad: currentUser.universidad });
@@ -70,7 +70,7 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
     orConditions.push({ asignaturas: { $in: currentUser.asignaturas } });
   }
 
-  let profiles: any[] = [];
+  let profiles: (Record<string, unknown> & { _id: mongoose.Types.ObjectId })[] = [];
 
   if (orConditions.length > 0) {
     similarityFilter.$or = orConditions;
@@ -85,10 +85,10 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
 
   // ─── Prioridad 2: Descubrimiento (0 cosas en común, no vistos) ──────────
   if (profiles.length < limit) {
-    const alreadyFoundIds = profiles.map((p: any) => p._id.toString());
+    const alreadyFoundIds = profiles.map((p) => p._id.toString());
     const discoveryExclude = [...todaySwipedIds, ...alreadyFoundIds, userId];
 
-    const discoveryFilter: any = {
+    const discoveryFilter: mongoose.FilterQuery<IUsuarioModel> = {
       _id: {
         $in: usersWithPhotosIds.map((id) => new mongoose.Types.ObjectId(id)),
         $nin: discoveryExclude.map((id) => new mongoose.Types.ObjectId(id)),
@@ -115,10 +115,10 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
 
   // ─── Prioridad 3: Bucle (usuarios con dislike previo, segunda oportunidad)
   if (profiles.length < limit && dislikedIds.length > 0) {
-    const alreadyFoundIds = profiles.map((p: any) => p._id.toString());
+    const alreadyFoundIds = profiles.map((p) => p._id.toString());
     const loopExclude = [...todaySwipedIds, ...alreadyFoundIds, userId];
 
-    const loopFilter: any = {
+    const loopFilter: mongoose.FilterQuery<IUsuarioModel> = {
       _id: {
         $in: dislikedIds
           .filter((id) => !loopExclude.includes(id))
@@ -140,19 +140,19 @@ const discoverProfiles = async (userId: string, limit: number = 10) => {
   }
 
   // Adjuntar fotos a cada perfil
-  const profileIds = profiles.map((p: any) => p._id);
+  const profileIds = profiles.map((p) => p._id);
   const photos = await UnimatchPhoto.find({ userId: { $in: profileIds }, activo: true })
     .sort({ order: 1 })
     .lean();
 
-  const photoMap: Record<string, any[]> = {};
+  const photoMap: Record<string, unknown[]> = {};
   for (const photo of photos) {
     const key = photo.userId.toString();
     if (!photoMap[key]) photoMap[key] = [];
     photoMap[key].push(photo);
   }
 
-  return profiles.map((p: any) => ({
+  return profiles.map((p) => ({
     ...p,
     unimatchPhotos: photoMap[p._id.toString()] || [],
   }));
@@ -367,10 +367,12 @@ const getMatches = async (userId: string) => {
     if (!photoMap[key]) photoMap[key] = photo.imageUrl;
   }
 
-  return users.map((u: any) => ({
-    ...u,
-    unimatchPhoto: photoMap[u._id.toString()] || u.avatarUrl,
-  }));
+  return users.map(
+    (u: { _id: mongoose.Types.ObjectId; avatarUrl?: string; [key: string]: unknown }) => ({
+      ...u,
+      unimatchPhoto: photoMap[u._id.toString()] || u.avatarUrl,
+    }),
+  );
 };
 
 export default {

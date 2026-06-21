@@ -11,8 +11,12 @@ export const getMutualFollows = async (userId: string) => {
   const user = await Usuario.findById(userId).select('seguidores seguidos');
   if (!user) return [];
 
-  const seguidoresSet = new Set(user.seguidores?.map((id: any) => id.toString()) ?? []);
-  const seguidosSet = new Set(user.seguidos?.map((id: any) => id.toString()) ?? []);
+  const seguidoresSet = new Set(
+    user.seguidores?.map((id: mongoose.Types.ObjectId) => id.toString()) ?? [],
+  );
+  const seguidosSet = new Set(
+    user.seguidos?.map((id: mongoose.Types.ObjectId) => id.toString()) ?? [],
+  );
 
   // Mutuo = aparece en ambos sets, pero no puede ser uno mismo
   const mutualIds = [...seguidoresSet].filter((id) => seguidosSet.has(id) && id !== userId);
@@ -61,8 +65,39 @@ export const getMutualFollows = async (userId: string) => {
 /**
  * Filtra el contenido de un mensaje (como posts privados) según los permisos del usuario que lo ve.
  */
-export const filterMessageForUser = (message: any, viewerId: string) => {
-  const doc = message.toObject ? message.toObject() : { ...message };
+export const filterMessageForUser = (
+  message: {
+    remitente: { _id?: unknown } | unknown;
+    destinatario?: { _id?: unknown } | unknown;
+    grupo?: unknown;
+    contenido: string;
+    eliminadoParaTodos?: boolean;
+    eliminadoPara?: unknown[];
+  },
+  viewerId: string,
+) => {
+  const messageObj = message as Record<string, unknown> & {
+    toObject?: () => Record<string, unknown>;
+  };
+  const doc = (messageObj.toObject ? messageObj.toObject() : { ...messageObj }) as Record<
+    string,
+    unknown
+  > & {
+    contenido?: string;
+    post?: {
+      usuario: { privado?: boolean; seguidores?: unknown[] } | unknown;
+      contenido: string;
+      archivoUrl?: string;
+    } | null;
+    parentMessage?: {
+      post?: {
+        usuario: { privado?: boolean; seguidores?: unknown[] } | unknown;
+        contenido: string;
+        archivoUrl?: string;
+      } | null;
+      contenido?: string;
+    };
+  };
 
   if (doc.eliminadoParaTodos) {
     doc.contenido = 'El mensaje ha sido eliminado';
@@ -90,9 +125,20 @@ export const filterMessageForUser = (message: any, viewerId: string) => {
 };
 
 /** Helper para filtrar el contenido del post según privacidad */
-const filterPostContent = (post: any, viewerId: string) => {
+const filterPostContent = (
+  post: {
+    usuario: { _id?: unknown; privado?: boolean; seguidores?: unknown[] } | null | unknown;
+    contenido: string;
+    archivoUrl?: string;
+  },
+  viewerId: string,
+) => {
   if (!post) return undefined;
-  const postOwner = post.usuario;
+  const postOwner = post.usuario as {
+    _id?: unknown;
+    privado?: boolean;
+    seguidores?: unknown[];
+  } | null;
   if (!postOwner || !postOwner.privado) return post;
 
   const viewerIdStr = String(viewerId).toLowerCase();
@@ -101,7 +147,8 @@ const filterPostContent = (post: any, viewerId: string) => {
 
   const seguidoresOwner = postOwner.seguidores || [];
   const viewerFollowsOwner = seguidoresOwner.some(
-    (s: any) => String(s._id || s).toLowerCase() === viewerIdStr,
+    (s: { _id?: unknown } | unknown) =>
+      String((s as { _id?: unknown })?._id || s).toLowerCase() === viewerIdStr,
   );
 
   if (!viewerFollowsOwner) return undefined;
@@ -315,7 +362,9 @@ export const createGroup = async (creadorId: string, nombre: string, miembrosIds
     throw new Error('Creador no encontrado');
   }
 
-  const seguidosSet = new Set(creator.seguidos?.map((id: any) => id.toString()) ?? []);
+  const seguidosSet = new Set(
+    creator.seguidos?.map((id: mongoose.Types.ObjectId) => id.toString()) ?? [],
+  );
 
   const invitedIds = uniqueMiembros.filter((id) => id !== creadorId);
   for (const invitedId of invitedIds) {

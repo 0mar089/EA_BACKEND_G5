@@ -12,13 +12,13 @@ const createUsuario = async (req: Request, res: Response, next: NextFunction) =>
     Logging.info(`[201] [usuario] User Registered | userId=${savedUsuario._id}`);
 
     return res.status(201).json(savedUsuario);
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      Logging.warning(`[422] [usuario] Validation Error | message=${error.message}`);
-      return res.status(422).json({ message: error.message });
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
+      Logging.warning(`[422] [usuario] Validation Error | message=${(error as Error).message}`);
+      return res.status(422).json({ message: (error as Error).message });
     }
 
-    if (error.code === 11000) {
+    if ((error as { code?: number }).code === 11000) {
       Logging.warning(`[409] [usuario] Duplicate User | message=Usuario ya existe`);
       return res.status(409).json({ message: 'Usuario ya existe' });
     }
@@ -128,7 +128,7 @@ const updateUsuario = async (req: AuthRequest, res: Response, next: NextFunction
         if (req.body.rol) detalles = `Rol cambiado a: ${req.body.rol}`;
 
         await AuditService.recordLog({
-          admin: new mongoose.Types.ObjectId(admin.id) as any,
+          admin: new mongoose.Types.ObjectId(admin.id),
           accion: req.body.rol
             ? AuditService.AdminAction.CHANGE_ROLE
             : AuditService.AdminAction.UPDATE_USER,
@@ -144,10 +144,10 @@ const updateUsuario = async (req: AuthRequest, res: Response, next: NextFunction
 
     Logging.warning(`[404] [usuario] Update User Not Found | userId=${usuarioId}`);
     return res.status(404).json({ message: 'not found' });
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
       Logging.warning(`[422] [usuario] Update Validation Error | userId=${usuarioId}`);
-      return res.status(422).json({ message: error.message });
+      return res.status(422).json({ message: (error as Error).message });
     }
 
     Logging.error(`[500] [usuario] Update User Failed | userId=${usuarioId} error=${error}`);
@@ -180,7 +180,7 @@ const softDeleteUsuario = async (req: AuthRequest, res: Response, next: NextFunc
       // Log Auditoría si es un admin desactivando la cuenta
       if (admin && admin.rol === 'admin' && admin.id !== usuarioId) {
         await AuditService.recordLog({
-          admin: new mongoose.Types.ObjectId(admin.id) as any,
+          admin: new mongoose.Types.ObjectId(admin.id),
           accion: AuditService.AdminAction.BAN_USER,
           tipoObjetivo: 'user',
           objetivoId: usuarioId,
@@ -258,14 +258,16 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
     Logging.info(`[200] [follow] Toggle Follow | userId=${userId} targetId=${targetId}`);
 
     return res.status(200).json(result);
-  } catch (error: any) {
-    if (error.message === 'Forbidden') {
+  } catch (error: unknown) {
+    if ((error as Error).message === 'Forbidden') {
       Logging.warning(`[403] [follow] Forbidden Toggle Follow | userId=${userId}`);
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: (error as Error).message });
     }
 
-    Logging.error(`[400] [follow] Toggle Follow Failed | userId=${userId} error=${error.message}`);
-    return res.status(400).json({ message: error.message || 'Error' });
+    Logging.error(
+      `[400] [follow] Toggle Follow Failed | userId=${userId} error=${(error as Error).message}`,
+    );
+    return res.status(400).json({ message: (error as Error).message || 'Error' });
   }
 };
 
@@ -284,14 +286,14 @@ const acceptFollowRequest = async (req: AuthRequest, res: Response) => {
     Logging.info(`[200] [follow] Accept Request | userId=${userId} followerId=${followerId}`);
 
     return res.status(200).json(result);
-  } catch (error: any) {
-    if (error.message === 'Forbidden') {
+  } catch (error: unknown) {
+    if ((error as Error).message === 'Forbidden') {
       Logging.warning(`[403] [follow] Forbidden Accept Request | userId=${userId}`);
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: (error as Error).message });
     }
 
     Logging.error(`[400] [follow] Accept Request Failed | userId=${userId}`);
-    return res.status(400).json({ message: error.message || 'Error' });
+    return res.status(400).json({ message: (error as Error).message || 'Error' });
   }
 };
 
@@ -310,14 +312,14 @@ const rejectFollowRequest = async (req: AuthRequest, res: Response) => {
     Logging.info(`[200] [follow] Reject Request | userId=${userId} followerId=${followerId}`);
 
     return res.status(200).json(result);
-  } catch (error: any) {
-    if (error.message === 'Forbidden') {
+  } catch (error: unknown) {
+    if ((error as Error).message === 'Forbidden') {
       Logging.warning(`[403] [follow] Forbidden Reject Request | userId=${userId}`);
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: (error as Error).message });
     }
 
     Logging.error(`[400] [follow] Reject Request Failed | userId=${userId}`);
-    return res.status(400).json({ message: error.message || 'Error' });
+    return res.status(400).json({ message: (error as Error).message || 'Error' });
   }
 };
 
@@ -379,14 +381,14 @@ const removeFollower = async (req: AuthRequest, res: Response) => {
     Logging.info(`[200] [follow] Remove Follower | userId=${userId} followerId=${followerId}`);
 
     return res.status(200).json(result);
-  } catch (error: any) {
-    if (error.message === 'Forbidden') {
+  } catch (error: unknown) {
+    if ((error as Error).message === 'Forbidden') {
       Logging.warning(`[403] [follow] Forbidden Remove Follower`);
       return res.status(403).json({ message: 'Forbidden' });
     }
 
     Logging.error(`[400] [follow] Remove Follower Failed`);
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({ message: (error as Error).message });
   }
 };
 
@@ -407,14 +409,14 @@ const unfollowUser = async (req: AuthRequest, res: Response) => {
     Logging.info(`[200] [follow] Unfollow User | userId=${userId} targetId=${targetId}`);
 
     return res.status(200).json(result);
-  } catch (error: any) {
-    if (error.message === 'Forbidden') {
+  } catch (error: unknown) {
+    if ((error as Error).message === 'Forbidden') {
       Logging.warning(`[403] [follow] Forbidden Unfollow`);
       return res.status(403).json({ message: 'Forbidden' });
     }
 
     Logging.error(`[400] [follow] Unfollow Failed`);
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({ message: (error as Error).message });
   }
 };
 

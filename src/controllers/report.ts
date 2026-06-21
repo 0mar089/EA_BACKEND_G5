@@ -30,15 +30,15 @@ const createReport = async (req: AuthRequest, res: Response) => {
     );
 
     return res.status(201).json(savedReport);
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      Logging.warning(`[422] [report] Validation Error: ${error.message}`);
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
+      Logging.warning(`[422] [report] Validation Error: ${(error as Error).message}`);
       return res.status(422).json({
-        message: error.message,
+        message: (error as Error).message,
       });
     }
 
-    if (error.code === 11000) {
+    if ((error as { code?: number }).code === 11000) {
       Logging.warning(`[409] [report] Duplicate Report`);
       return res.status(409).json({
         message: 'Reporte duplicado',
@@ -157,7 +157,7 @@ const updateStatus = async (req: AuthRequest, res: Response) => {
       // Log Auditoría
       if (adminId) {
         await AuditService.recordLog({
-          admin: new mongoose.Types.ObjectId(adminId) as any,
+          admin: new mongoose.Types.ObjectId(adminId),
           accion: AuditService.AdminAction.UPDATE_REPORT_STATUS,
           tipoObjetivo: 'report',
           objetivoId: reportId,
@@ -173,11 +173,11 @@ const updateStatus = async (req: AuthRequest, res: Response) => {
     return res.status(404).json({
       message: 'Reporte no encontrado',
     });
-  } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      Logging.warning(`[422] [report] Validation Error: ${error.message}`);
+  } catch (error: unknown) {
+    if ((error as Error).name === 'ValidationError') {
+      Logging.warning(`[422] [report] Validation Error: ${(error as Error).message}`);
       return res.status(422).json({
-        message: error.message,
+        message: (error as Error).message,
       });
     }
 
@@ -208,7 +208,7 @@ const deleteReport = async (req: AuthRequest, res: Response) => {
       // Log Auditoría
       if (adminId) {
         await AuditService.recordLog({
-          admin: new mongoose.Types.ObjectId(adminId) as any,
+          admin: new mongoose.Types.ObjectId(adminId),
           accion: AuditService.AdminAction.DELETE_REPORT,
           tipoObjetivo: 'report',
           objetivoId: reportId,
