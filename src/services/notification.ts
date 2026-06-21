@@ -62,7 +62,7 @@ const createNotification = async (data: {
             const recipientUser = await Usuario.findById(data.recipient).select('fcmToken');
             if (recipientUser && recipientUser.fcmToken) {
                 const { sendPushNotification } = require('./firebase.service');
-                const senderName = (populatedNotification?.sender as any)?.nombre || 'Alguien';
+                const senderName = (populatedNotification?.sender as unknown as { nombre?: string } | null)?.nombre || 'Alguien';
                 
                 let title = 'Nueva notificación';
                 let body = 'Tienes una nueva interacción';
@@ -94,7 +94,7 @@ const createNotification = async (data: {
                         senderId: String(data.sender),
                         postId: data.post ? String(data.post) : ''
                     }
-                ).catch((err: any) => Logging.error(`[NotificationService] Failed to send push: ${err}`));
+                ).catch((err: unknown) => Logging.error(`[NotificationService] Failed to send push: ${err}`));
             }
         } catch (fcmErr) {
             Logging.error(`[NotificationService] FCM error: ${fcmErr}`);

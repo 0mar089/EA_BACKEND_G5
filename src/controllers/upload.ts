@@ -13,7 +13,7 @@ const uploadImage = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        const result: any =
+        const result =
             await UploadService.uploadImage(req.file.buffer);
 
         Logging.info(`[200] [upload] Image Uploaded | userId=${req.user?.id} public_id=${result.public_id}`);
@@ -23,17 +23,17 @@ const uploadImage = async (req: AuthRequest, res: Response) => {
             public_id: result.public_id
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
         // Cloud / multer / file validation errors
-        if (error?.http_code === 413 || error?.message?.includes('too large')) {
+        if ((error as { http_code?: number })?.http_code === 413 || (error as Error)?.message?.includes('too large')) {
             Logging.warning(`[413] [upload] File Too Large | userId=${req.user?.id}`);
             return res.status(413).json({
                 message: 'Archivo demasiado grande'
             });
         }
 
-        if (error?.message?.includes('invalid') || error?.message?.includes('format')) {
+        if ((error as Error)?.message?.includes('invalid') || (error as Error)?.message?.includes('format')) {
             Logging.warning(`[422] [upload] Invalid Image Format | userId=${req.user?.id}`);
             return res.status(422).json({
                 message: 'Formato de imagen no válido'

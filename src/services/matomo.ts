@@ -87,16 +87,16 @@ class MatomoService {
                 }
             })
             .catch((err) => {
-                Logging.error(`Error sending data to Matomo: ${err.message}`);
+                Logging.error(`Error sending data to Matomo: ${(err as Error).message}`);
             });
-        } catch (error: any) {
-            Logging.error(`Failed to build Matomo request: ${error.message}`);
+        } catch (error: unknown) {
+            Logging.error(`Failed to build Matomo request: ${(error as Error).message}`);
         }
     }
 
     
     // Funcion para obtener todos los datos de una peticion del cliente
-    private getClientDetails(req: any) {
+    private getClientDetails(req: Request & { user?: { id?: string; _id?: string } }) {
         const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
                    req.socket.remoteAddress ||
                    req.ip ||

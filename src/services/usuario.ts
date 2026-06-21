@@ -12,7 +12,7 @@ import Logging from '../library/Logging';
 
 const createUsuario = async (data: Partial<IUsuario>): Promise<IUsuarioModel> => {
     // Normalizamos "" a null para evitar errores de validación de ObjectId
-    if (!data.universidad || data.universidad === ('' as any)) data.universidad = undefined;
+    if (!data.universidad || String(data.universidad) === '') data.universidad = undefined;
 
     if (data.email) {
         const emailLower = data.email.toLowerCase();
@@ -67,8 +67,8 @@ const getAllUsuarios = async (
     page: number = 1, 
     limit: number = 10,
     soloActivos: boolean = true
-): Promise<any> => {
-    const filter: any = {};
+): Promise<unknown> => {
+    const filter: mongoose.FilterQuery<IUsuario> = {};
     if (soloActivos) filter.activo = true;
 
     if (search) {
@@ -81,7 +81,7 @@ const getAllUsuarios = async (
     if (universidades) {
         const uniArray = Array.isArray(universidades) ? universidades : universidades.split(",");
         filter.universidad = {
-            $in: uniArray.map(id => new mongoose.Types.ObjectId(id))
+            $in: uniArray.map((id: string) => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -89,7 +89,7 @@ const getAllUsuarios = async (
     if (grados) {
         const gradoArray = Array.isArray(grados) ? grados : grados.split(",");
         filter.grado = {
-            $in: gradoArray.map(id => new mongoose.Types.ObjectId(id))
+            $in: gradoArray.map((id: string) => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -97,7 +97,7 @@ const getAllUsuarios = async (
     if (asignaturas) {
         const asigArray = Array.isArray(asignaturas) ? asignaturas : asignaturas.split(",");
         filter.asignaturas = {
-            $in: asigArray.map(id => new mongoose.Types.ObjectId(id))
+            $in: asigArray.map((id: string) => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -123,8 +123,8 @@ const getAllUsuariosAdmin= async (
     asignaturas?: string,  
     page: number = 1, 
     limit: number = 10
-): Promise<any> => {
-    const filter: any = {}; // Eliminado el filtro activo: true para admins
+): Promise<unknown> => {
+    const filter: mongoose.FilterQuery<IUsuario> = {}; // Eliminado el filtro activo: true para admins
 
     if (search) {
         filter.$or = [
@@ -136,7 +136,7 @@ const getAllUsuariosAdmin= async (
     if (universidades) {
         const uniArray = Array.isArray(universidades) ? universidades : universidades.split(",");
         filter.universidad = {
-            $in: uniArray.map(id => new mongoose.Types.ObjectId(id))
+            $in: uniArray.map((id: string) => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -144,7 +144,7 @@ const getAllUsuariosAdmin= async (
     if (grados) {
         const gradoArray = Array.isArray(grados) ? grados : grados.split(",");
         filter.grado = {
-            $in: gradoArray.map(id => new mongoose.Types.ObjectId(id))
+            $in: gradoArray.map((id: string) => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -152,7 +152,7 @@ const getAllUsuariosAdmin= async (
     if (asignaturas) {
         const asigArray = Array.isArray(asignaturas) ? asignaturas : asignaturas.split(",");
         filter.asignaturas = {
-            $in: asigArray.map(id => new mongoose.Types.ObjectId(id))
+            $in: asigArray.map((id: string) => new mongoose.Types.ObjectId(id))
         };
     }
 
@@ -179,7 +179,7 @@ const updateUsuario = async (usuarioId: string, data: Partial<IUsuario>): Promis
     if ('universidad' in data) {
         const oldUniId = usuario.universidad;
         // Normalizamos "" a null para evitar errores de validación
-        if ((data as any).universidad === '') (data as any).universidad = null;
+        if (String(data.universidad) === '') data.universidad = undefined;
         const newUniId = data.universidad;
 
         // Si cambió la universidad asociada
@@ -300,7 +300,7 @@ const hardDeleteUsuario = async (usuarioId: string): Promise<IUsuarioModel | nul
     return deletedUser;
 };
 
-const toggleFollow = async (userId: string, targetId: string): Promise<any> => {
+const toggleFollow = async (userId: string, targetId: string): Promise<unknown> => {
     if (userId === targetId) throw new Error('No puedes seguirte a ti mismo');
 
     const user = await Usuario.findById(userId);
@@ -438,7 +438,7 @@ const rejectFollowRequest = async (userId: string, followerId: string) => {
 
 const getFollowers = async (userId: string, isAdmin: boolean = false): Promise<IUsuarioModel | null> => {
     const filter = isAdmin ? { _id: userId } : { _id: userId, activo: true };
-    const populateOptions: any = { path: 'seguidores', select: 'nombre email avatarUrl' };
+    const populateOptions: mongoose.PopulateOptions = { path: 'seguidores', select: 'nombre email avatarUrl' };
     
     if (!isAdmin) {
         populateOptions.match = { activo: true };
@@ -449,7 +449,7 @@ const getFollowers = async (userId: string, isAdmin: boolean = false): Promise<I
 
 const getFollowing = async (userId: string, isAdmin: boolean = false): Promise<IUsuarioModel | null> => {
     const filter = isAdmin ? { _id: userId } : { _id: userId, activo: true };
-    const populateOptions: any = { path: 'seguidos', select: 'nombre email avatarUrl' };
+    const populateOptions: mongoose.PopulateOptions = { path: 'seguidos', select: 'nombre email avatarUrl' };
     
     if (!isAdmin) {
         populateOptions.match = { activo: true };

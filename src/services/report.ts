@@ -24,7 +24,7 @@ const getAllReports = async (
     endDate: string = '',
     estado: string = 'all'
 ): Promise<any> => {
-    const query: any = {};
+    const query: Record<string, any> = {};
 
     if (search) {
         query.$or = [

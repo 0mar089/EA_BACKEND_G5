@@ -47,12 +47,12 @@ const createPost = async (req: AuthRequest, res: Response, next: NextFunction) =
 
         return res.status(201).json(savedPost);
 
-    } catch (error: any) {
-
-        if (error.name === 'ValidationError') {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? (error as Error).message : String(error);
+        if (error instanceof Error && (error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [post] Validation Error`);
             return res.status(422).json({
-                message: error.message
+                message: message
             });
         }
 
@@ -95,11 +95,11 @@ const getPost = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
         return res.status(200).json(post);
 
-    } catch (error: any) {
-
-        if (error.message === 'Esta cuenta es privada') {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? (error as Error).message : String(error);
+        if (message === 'Esta cuenta es privada') {
             Logging.warning(`[403] [post] Private Access Blocked | postId=${postId}`);
-            return res.status(403).json({ message: error.message });
+            return res.status(403).json({ message });
         }
 
         Logging.error(`[500] [post] Get Failed | postId=${postId}`);
@@ -192,18 +192,18 @@ const updatePost = async (req: AuthRequest, res: Response, next: NextFunction) =
 
         return res.status(200).json(post);
 
-    } catch (error: any) {
-
-        if (error.message === 'Forbidden') {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? (error as Error).message : String(error);
+        if (message === 'Forbidden') {
             Logging.warning(`[403] [post] Forbidden Update | postId=${postId}`);
             return res.status(403).json({
                 message: 'No tienes permiso para editar este post'
             });
         }
 
-        if (error.name === 'ValidationError') {
+        if (error instanceof Error && (error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [post] Validation Error | postId=${postId}`);
-            return res.status(422).json({ message: error.message });
+            return res.status(422).json({ message });
         }
 
         Logging.error(`[500] [post] Update Failed | postId=${postId}`);
@@ -246,7 +246,7 @@ const deletePost = async (req: AuthRequest, res: Response) => {
         // Log Auditoría si es admin borrando contenido
         if (user.rol === 'admin') {
             await AuditService.recordLog({
-                admin: new mongoose.Types.ObjectId(user.id) as any,
+                admin: new mongoose.Types.ObjectId(user.id),
                 accion: AuditService.AdminAction.DELETE_POST,
                 tipoObjetivo: 'post',
                 objetivoId: postId,
@@ -257,9 +257,9 @@ const deletePost = async (req: AuthRequest, res: Response) => {
 
         return res.status(200).json(post);
 
-    } catch (error: any) {
-
-        if (error.message === 'Forbidden') {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? (error as Error).message : String(error);
+        if (message === 'Forbidden') {
             Logging.warning(`[403] [post] Forbidden Delete | postId=${postId}`);
             return res.status(403).json({ message: 'Forbidden' });
         }
@@ -316,7 +316,7 @@ const getAllPostsFromUser = async (req: AuthRequest, res: Response, next: NextFu
 
             const isFollowing =
                 targetUser.seguidores?.some(
-                    (id: any) => id.toString() === requesterId
+                    (id: mongoose.Types.ObjectId | string) => id.toString() === requesterId
                 );
 
             if (!isFollowing) {
@@ -537,10 +537,10 @@ const toggleSavePost = async (req: AuthRequest, res: Response) => {
 
         return res.status(200).json(result);
 
-    } catch (error: any) {
-
-        if (error.message === 'ID de post inválido') {
-            return res.status(400).json({ message: error.message });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? (error as Error).message : String(error);
+        if (message === 'ID de post inválido') {
+            return res.status(400).json({ message });
         }
 
         Logging.error(`[500] [post] Toggle Save Failed`);

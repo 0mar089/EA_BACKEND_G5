@@ -10,8 +10,8 @@ const recordLog = async (data: IAdminLog): Promise<void> => {
     }
 };
 
-const getLogs = async (page: number = 1, limit: number = 20, filters: any = {}) => {
-    const query: any = {};
+const getLogs = async (page: number = 1, limit: number = 20, filters: Record<string, any> = {}) => {
+    const query: Record<string, any> = {};
 
     if (filters.adminId) query.admin = filters.adminId;
     if (filters.accion) query.accion = filters.accion;

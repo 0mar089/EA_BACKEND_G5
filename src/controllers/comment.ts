@@ -47,7 +47,7 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
                 try {
                     const postObj = await Post.findById(savedComment.post).populate('usuario');
                     if (postObj && postObj.usuario) {
-                        const recipient = postObj.usuario as any;
+                        const recipient = postObj.usuario as { _id?: unknown; fcmToken?: string };
                         if (recipient.fcmToken) {
                             await sendPushNotification(
                                 recipient.fcmToken,
@@ -72,12 +72,12 @@ const createComment = async (req: AuthRequest, res: Response, next: NextFunction
 
         return res.status(201).json(savedComment);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [comment] Validation Error`);
             return res.status(422).json({
-                message: error.message
+                message: (error as Error).message
             });
         }
 
@@ -205,18 +205,18 @@ const updateComment = async (req: AuthRequest, res: Response, next: NextFunction
 
         return res.status(200).json(comment);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.message === 'Forbidden') {
+        if ((error as Error).message === 'Forbidden') {
             Logging.warning(`[403] [comment] Forbidden Update | commentId=${commentId}`);
             return res.status(403).json({
                 message: 'No tienes permiso para editar este comentario'
             });
         }
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [comment] Validation Error | commentId=${commentId}`);
-            return res.status(422).json({ message: error.message });
+            return res.status(422).json({ message: (error as Error).message });
         }
 
         Logging.error(`[500] [comment] Update Failed | commentId=${commentId}`);
@@ -260,7 +260,7 @@ const deleteComment = async (req: AuthRequest, res: Response) => {
             // Log Auditoría si es admin borrando contenido
             if (user.rol === 'admin') {
                 await AuditService.recordLog({
-                    admin: new mongoose.Types.ObjectId(user.id) as any,
+                    admin: new mongoose.Types.ObjectId(user.id),
                     accion: AuditService.AdminAction.DELETE_COMMENT,
                     tipoObjetivo: 'comment',
                     objetivoId: commentId,
@@ -272,9 +272,9 @@ const deleteComment = async (req: AuthRequest, res: Response) => {
             return res.status(200).json(comment);
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.message === 'Forbidden') {
+        if ((error as Error).message === 'Forbidden') {
             Logging.warning(`[403] [comment] Forbidden Delete | commentId=${commentId}`);
             return res.status(403).json({ message: 'Forbidden' });
         }

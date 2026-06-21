@@ -46,14 +46,14 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
             }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
-            Logging.warning(`[422] [auth] Register Validation Error | message=${error.message}`);
-            return res.status(422).json({ message: error.message });
+        if ((error as Error).name === 'ValidationError') {
+            Logging.warning(`[422] [auth] Register Validation Error | message=${(error as Error).message}`);
+            return res.status(422).json({ message: (error as Error).message });
         }
 
-        if (error.code === 11000) {
+        if ((error as { code?: number }).code === 11000) {
             Logging.warning(`[409] [auth] Email Already Exists | email=${req.body.email}`);
             return res.status(409).json({ message: 'El email ya está registrado' });
         }
@@ -257,12 +257,12 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
 
         return res.status(200).json(updatedUsuario);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [auth] UpdateMe Validation Error | userId=${req.user?.id}`);
             return res.status(422).json({
-                message: error.message
+                message: (error as Error).message
             });
         }
 

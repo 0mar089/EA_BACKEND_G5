@@ -34,7 +34,7 @@ const getPostPopulate = (isAdmin: boolean = false) => [
     }
 ];
 
-const createPost = async (data: Partial<IPost>): Promise<IPostModel | any> => {
+const createPost = async (data: Partial<IPost>): Promise<IPostModel> => {
     const post = new Post({
         _id: new mongoose.Types.ObjectId(),
         ...data
@@ -49,15 +49,15 @@ const createPost = async (data: Partial<IPost>): Promise<IPostModel | any> => {
         );
     }
 
-    return await Post.findById(savedPost._id)
-        .populate(getPostPopulate(false));
+    return (await Post.findById(savedPost._id)
+        .populate(getPostPopulate(false)))!;
 };
 
 const getPost = async (
     postId: string,
     requesterId?: string,
     isAdmin: boolean = false
-): Promise<any> => {
+): Promise<unknown> => {
 
     const filter = isAdmin
         ? { _id: postId }
@@ -71,12 +71,12 @@ const getPost = async (
     // Verificar privacidad si no es admin y no es el dueño
     if (!isAdmin && post.usuario._id.toString() !== requesterId) {
 
-        const author = post.usuario as any;
+        const author = post.usuario as { privado?: boolean; seguidores?: mongoose.Types.ObjectId[] };
 
         if (author.privado) {
 
             const isFollowing = author.seguidores?.some(
-                (id: any) => id.toString() === requesterId
+                (id: mongoose.Types.ObjectId | string) => id.toString() === requesterId
             );
 
             if (!isFollowing) {
@@ -94,9 +94,9 @@ const getAllPosts = async (
     search?: string,
     requesterId?: string,
     isAdmin: boolean = false
-): Promise<any> => {
+): Promise<unknown> => {
 
-    let filter: any = isAdmin
+    let filter: mongoose.FilterQuery<IPostModel> = isAdmin
         ? {}
         : { activo: true };
 
@@ -213,9 +213,9 @@ const getAllPostsFromUser = async (
     page: number = 1,
     limit: number = 10,
     isAdmin: boolean = false
-): Promise<any> => {
+): Promise<unknown> => {
 
-    const filter: any = isAdmin
+    const filter: mongoose.FilterQuery<IPostModel> = isAdmin
         ? { usuario: userId }
         : { usuario: userId, activo: true };
 
@@ -340,7 +340,7 @@ const getFollowingPosts = async (
     userId: string,
     page: number = 1,
     limit: number = 10
-): Promise<any> => {
+): Promise<unknown> => {
 
     const usuario = await Usuario.findById(userId);
 
@@ -351,7 +351,7 @@ const getFollowingPosts = async (
     const seguidos = usuario.seguidos || [];
 
     const savedSet = new Set(
-      (usuario.postsGuardados || []).map((id: any) => id.toString())
+      (usuario.postsGuardados || []).map((id: mongoose.Types.ObjectId | string) => id.toString())
     );
 
     // Incluir al propio usuario en su feed
@@ -372,19 +372,22 @@ const getFollowingPosts = async (
 
     const result = await Post.paginate(filter, options);
 
-    result.docs = result.docs.map((post: any) => ({
+    const docs = (result.docs as unknown as Array<Record<string, unknown>>).map((post) => ({
         ...post,
-        isSaved: savedSet.has(post._id.toString())
+        isSaved: savedSet.has(String(post._id))
     }));
 
-    return result;
+    return {
+        ...result,
+        docs
+    };
 };
 
 const getDiscoveryPosts = async (
     userId: string,
     page: number = 1,
     limit: number = 10
-): Promise<any> => {
+): Promise<unknown> => {
 
     const usuario = await Usuario.findById(userId);
 
@@ -393,7 +396,7 @@ const getDiscoveryPosts = async (
     }
 
     const savedSet = new Set(
-      (usuario.postsGuardados || []).map((id: any) => id.toString())
+      (usuario.postsGuardados || []).map((id: mongoose.Types.ObjectId | string) => id.toString())
     );
 
     const seguidos = usuario.seguidos || [];
@@ -432,12 +435,15 @@ const getDiscoveryPosts = async (
 
     const result = await Post.paginate(filter, options);
 
-    result.docs = result.docs.map((post: any) => ({
+    const docs = (result.docs as unknown as Array<Record<string, unknown>>).map((post) => ({
         ...post,
-        isSaved: savedSet.has(post._id.toString())
+        isSaved: savedSet.has(String(post._id))
     }));
 
-    return result;
+    return {
+        ...result,
+        docs
+    };
 };
 
 const toggleSavePost = async (userId: string, postId: string) => {
@@ -512,12 +518,15 @@ const getSavedPosts = async (userId: string, page = 1, limit = 10) => {
         }
     );
 
-    result.docs = result.docs.map((post: any) => ({
+    const docs = (result.docs as unknown as Array<Record<string, unknown>>).map((post) => ({
         ...post,
-        isSaved: savedSet.has(post._id.toString())
+        isSaved: savedSet.has(String(post._id))
     }));
 
-    return result;
+    return {
+        ...result,
+        docs
+    };
 };
 
 export default {

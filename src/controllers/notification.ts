@@ -154,16 +154,16 @@ const deleteNotification = async (req: AuthRequest, res: Response, next: NextFun
             message: 'Notificación eliminada'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.message === 'Notification not found') {
+        if ((error as Error).message === 'Notification not found') {
             Logging.warning(`[404] [notification] Not Found | id=${req.params.id}`);
             return res.status(404).json({
                 message: 'Notificación no encontrada'
             });
         }
 
-        if (error.message === 'Forbidden') {
+        if ((error as Error).message === 'Forbidden') {
             Logging.warning(`[403] [notification] Forbidden Delete | id=${req.params.id}`);
             return res.status(403).json({
                 message: 'No tienes permiso para eliminar esta notificación'

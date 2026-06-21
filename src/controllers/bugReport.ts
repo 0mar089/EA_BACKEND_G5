@@ -31,11 +31,11 @@ const createBugReport = async (req: AuthRequest, res: Response) => {
 
         return res.status(201).json(savedBug);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
-            Logging.warning(`[422] [bug] Validation Error | message=${error.message}`);
-            return res.status(422).json({ message: error.message });
+        if ((error as Error).name === 'ValidationError') {
+            Logging.warning(`[422] [bug] Validation Error | message=${(error as Error).message}`);
+            return res.status(422).json({ message: (error as Error).message });
         }
 
         Logging.error(`[500] [bug] Create Failed | error=${error}`);
@@ -153,11 +153,11 @@ const updateStatus = async (req: Request, res: Response) => {
 
         return res.status(200).json(updated);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [bug] Update Validation Error | bugId=${bugId}`);
-            return res.status(422).json({ message: error.message });
+            return res.status(422).json({ message: (error as Error).message });
         }
 
         Logging.error(`[500] [bug] Update Failed | bugId=${bugId}`);

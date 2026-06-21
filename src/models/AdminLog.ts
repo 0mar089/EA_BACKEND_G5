@@ -27,7 +27,7 @@ export interface IAdminLog {
     tipoObjetivo: 'report' | 'post' | 'comment' | 'user' | 'system';
     objetivoId?: string; // ID del recurso afectado
     detalles: string;    // Descripción legible
-    metadata?: any;      // Datos técnicos extra (ej: valores antes/después)
+    metadata?: Record<string, unknown>;      // Datos técnicos extra (ej: valores antes/después)
     ip?: string;
 }
 

@@ -1,7 +1,7 @@
 import cloudinary from '../config/cloudinary';
 
-const uploadImage = async (fileBuffer: Buffer) => {
-    return new Promise((resolve, reject) => {
+const uploadImage = async (fileBuffer: Buffer): Promise<{ public_id: string; secure_url: string; [key: string]: unknown }> => {
+    return new Promise<{ public_id: string; secure_url: string; [key: string]: unknown }>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 folder: 'univy_uploads',
@@ -14,7 +14,7 @@ const uploadImage = async (fileBuffer: Buffer) => {
             },
             (error, result) => {
                 if (error) reject(error);
-                else resolve(result);
+                else resolve(result as { public_id: string; secure_url: string; [key: string]: unknown });
             }
         );
         uploadStream.end(fileBuffer);

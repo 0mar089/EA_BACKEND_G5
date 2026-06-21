@@ -12,18 +12,18 @@ const createUniversidad = async (req: Request, res: Response, next: NextFunction
 
         return res.status(201).json(savedUniversidad);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
 
             Logging.warning(
-                `[422] [universidad] Validation Error | message=${error.message}`
+                `[422] [universidad] Validation Error | message=${(error as Error).message}`
             );
 
-            return res.status(422).json({ message: error.message });
+            return res.status(422).json({ message: (error as Error).message });
         }
 
-        if (error.code === 11000) {
+        if ((error as { code?: number }).code === 11000) {
 
             Logging.warning(
                 `[409] [universidad] Duplicate Universidad`
@@ -137,18 +137,18 @@ const updateUniversidad = async (req: Request, res: Response, next: NextFunction
 
         return res.status(200).json(universidad);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
 
             Logging.warning(
                 `[422] [universidad] Validation Error | universidadId=${universidadId}`
             );
 
-            return res.status(422).json({ message: error.message });
+            return res.status(422).json({ message: (error as Error).message });
         }
 
-        if (error.code === 11000) {
+        if ((error as { code?: number }).code === 11000) {
 
             Logging.warning(
                 `[409] [universidad] Duplicate Update | universidadId=${universidadId}`
@@ -235,7 +235,7 @@ const getOrCreateUniversityChat = async (req: Request, res: Response, next: Next
             universidad.chatGeneral = chat._id;
             await universidad.save();
         } else {
-            const isMember = chat.miembros.map((m: any) => m.toString()).includes(userId);
+            const isMember = chat.miembros.map((m: mongoose.Types.ObjectId) => m.toString()).includes(userId);
             if (!isMember) {
                 chat.miembros.push(new mongoose.Types.ObjectId(userId));
                 await chat.save();
@@ -286,7 +286,7 @@ const joinUniversityChat = async (req: Request, res: Response, next: NextFunctio
             universidad.chatGeneral = chat._id;
             await universidad.save();
         } else {
-            const isMember = chat.miembros.map((m: any) => m.toString()).includes(userId);
+            const isMember = chat.miembros.map((m: mongoose.Types.ObjectId) => m.toString()).includes(userId);
             if (!isMember) {
                 chat.miembros.push(new mongoose.Types.ObjectId(userId));
                 await chat.save();
@@ -319,7 +319,7 @@ const leaveUniversityChat = async (req: Request, res: Response, next: NextFuncti
         if (chatGeneralId) {
             const chat = await GroupChat.findById(chatGeneralId);
             if (chat) {
-                chat.miembros = chat.miembros.filter((m: any) => m.toString() !== userId);
+                chat.miembros = chat.miembros.filter((m: mongoose.Types.ObjectId) => m.toString() !== userId);
                 await chat.save();
             }
         }

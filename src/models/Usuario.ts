@@ -162,8 +162,8 @@ UsuarioSchema.pre<IUsuarioModel>('save', async function (next) {
         const salt = await bcrypt.genSalt(10);
         usuario.password = await bcrypt.hash(usuario.password, salt);
         next();
-    } catch (error: any) {
-        next(error);
+    } catch (error: unknown) {
+        next(error as Error);
     }
 });
 

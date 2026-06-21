@@ -8,7 +8,7 @@ const getAllLogs = async (req: AuthRequest, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 20;
         
         // Filtros extendidos
-        const filters: any = {
+        const filters: Record<string, any> = {
             adminId: req.query.adminId,
             accion: req.query.accion,
             tipoObjetivo: req.query.tipoObjetivo,
@@ -21,8 +21,8 @@ const getAllLogs = async (req: AuthRequest, res: Response) => {
         const logs = await AuditService.getLogs(page, limit, filters);
         
         return res.status(200).json(logs);
-    } catch (error: any) {
-        return res.status(500).json({ message: error.message });
+    } catch (error: unknown) {
+        return res.status(500).json({ message: (error as Error).message });
     }
 };
 

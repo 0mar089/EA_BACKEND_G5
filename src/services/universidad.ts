@@ -14,8 +14,8 @@ const getUniversidad = async (universidadId: string): Promise<IUniversidadModel 
     return await Universidad.findById(universidadId).populate('usuarios');
 };
 
-const getAllUniversidades = async (page: number = 1, limit: number = 10, search: string = ''): Promise<any> => {
-    const filter: any = {};
+const getAllUniversidades = async (page: number = 1, limit: number = 10, search: string = ''): Promise<unknown> => {
+    const filter: mongoose.FilterQuery<IUniversidad> = {};
     if (search) {
         filter.$or = [
             { nombre: { $regex: search, $options: 'i' } },
@@ -30,11 +30,16 @@ const getAllUniversidades = async (page: number = 1, limit: number = 10, search:
         populate: { path: 'chatGeneral', select: 'miembros' },
         lean: true
     };
-    const paginated: any = await Universidad.paginate(filter, options);
-    paginated.docs = paginated.docs.map((uni: any) => {
+    const paginated = await Universidad.paginate(filter, options);
+    const docs = (paginated.docs as unknown as Array<{
+        _id: mongoose.Types.ObjectId | string;
+        nombre: string;
+        ubicacion: string;
+        chatGeneral?: { _id: mongoose.Types.ObjectId | string; miembros?: unknown[] } | mongoose.Types.ObjectId | string | null;
+    }>).map((uni) => {
         const chatGeneralObj = uni.chatGeneral;
         const chatGeneralId = chatGeneralObj && typeof chatGeneralObj === 'object' ? chatGeneralObj._id : chatGeneralObj;
-        const membersCount = chatGeneralObj && chatGeneralObj.miembros ? chatGeneralObj.miembros.length : 0;
+        const membersCount = chatGeneralObj && typeof chatGeneralObj === 'object' && 'miembros' in chatGeneralObj && Array.isArray((chatGeneralObj as { miembros?: unknown[] }).miembros) ? ((chatGeneralObj as { miembros: unknown[] }).miembros).length : 0;
         return {
             _id: uni._id,
             nombre: uni.nombre,
@@ -43,7 +48,10 @@ const getAllUniversidades = async (page: number = 1, limit: number = 10, search:
             chatGeneral: chatGeneralId
         };
     });
-    return paginated;
+    return {
+        ...paginated,
+        docs
+    };
 };
 
 const updateUniversidad = async (universidadId: string, data: Partial<IUniversidad>): Promise<IUniversidadModel | null> => {

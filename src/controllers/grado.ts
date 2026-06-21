@@ -16,16 +16,16 @@ const createGrado = async (req: Request, res: Response, next: NextFunction) => {
 
         return res.status(201).json(savedGrado);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
-            Logging.warning(`[422] [grado] Validation Error | message=${error.message}`);
+        if ((error as Error).name === 'ValidationError') {
+            Logging.warning(`[422] [grado] Validation Error | message=${(error as Error).message}`);
             return res.status(422).json({
-                message: error.message
+                message: (error as Error).message
             });
         }
 
-        if (error.code === 11000) {
+        if ((error as { code?: number }).code === 11000) {
             Logging.warning(`[409] [grado] Duplicate | message=El grado ya existe`);
             return res.status(409).json({
                 message: 'El grado ya existe'
@@ -155,16 +155,16 @@ const updateGrado = async (req: Request, res: Response, next: NextFunction) => {
 
         return res.status(200).json(grado);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-        if (error.name === 'ValidationError') {
+        if ((error as Error).name === 'ValidationError') {
             Logging.warning(`[422] [grado] Validation Error | gradoId=${gradoId}`);
             return res.status(422).json({
-                message: error.message
+                message: (error as Error).message
             });
         }
 
-        if (error.code === 11000) {
+        if ((error as { code?: number }).code === 11000) {
             Logging.warning(`[409] [grado] Duplicate Update | gradoId=${gradoId}`);
             return res.status(409).json({
                 message: 'El grado ya existe'

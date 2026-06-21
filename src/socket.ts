@@ -21,7 +21,8 @@ export const initSocket = (httpServer: HttpServer) => {
         if (!token) return next(new Error('No autorizado'));
         try {
             const decoded = verifyAccessToken(token);
-            (socket as any).userId = decoded.id;
+            const socketWithUser = socket as import('socket.io').Socket & { userId?: string };
+            socketWithUser.userId = decoded.id;
             next();
         } catch {
             next(new Error('Token inválido'));
@@ -30,7 +31,8 @@ export const initSocket = (httpServer: HttpServer) => {
 
     // ── Conexión ────────────────────────────────────────────────────────────
     io.on('connection', (socket) => {
-        const userId: string = (socket as any).userId;
+        const socketWithUser = socket as import('socket.io').Socket & { userId?: string };
+        const userId: string = socketWithUser.userId || '';
         Logging.info(`[Socket] Conectado: ${userId}`);
 
         // Sala personal para recibir mensajes

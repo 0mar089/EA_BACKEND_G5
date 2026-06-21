@@ -12,15 +12,15 @@ const eventoPopulate = [
     }
 ];
 
-const createEvento = async (data: any, creadorId: string): Promise<IEventoModel | null> => {
+const createEvento = async (data: Record<string, unknown>, creadorId: string): Promise<IEventoModel | null> => {
     const { titulo, descripcion, fecha, ubicacionNombre, lat, lng, maxAsistentes, fechaLimite } = data;
 
     const nuevoEvento = new Evento({
         _id: new mongoose.Types.ObjectId(),
         titulo,
         descripcion,
-        fecha: new Date(fecha),
-        fechaLimite: fechaLimite ? new Date(fechaLimite) : null,
+        fecha: new Date(fecha as string),
+        fechaLimite: fechaLimite ? new Date(fechaLimite as string) : null,
         ubicacionNombre,
         location: {
             type: 'Point',
@@ -42,7 +42,7 @@ const getEvento = async (eventoId: string): Promise<IEventoModel | null> => {
 
 const getAllEventos = async (lat?: number, lng?: number, maxDistance?: number): Promise<IEventoModel[]> => {
     const now = new Date();
-    const query: any = {
+    const query: Record<string, unknown> = {
         activo: true,
         $or: [
             { fechaLimite: null, fecha: { $gte: now } },
@@ -51,7 +51,7 @@ const getAllEventos = async (lat?: number, lng?: number, maxDistance?: number): 
     };
 
     if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
-        const nearSphereQuery: any = {
+        const nearSphereQuery: Record<string, unknown> = {
             $geometry: {
                 type: 'Point',
                 coordinates: [lng, lat] // [longitud, latitud]

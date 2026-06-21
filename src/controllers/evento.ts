@@ -16,8 +16,8 @@ const createEvento = async (req: AuthRequest, res: Response, next: NextFunction)
         const savedEvento = await EventoService.createEvento(req.body, req.user.id);
         Logging.info(`[201] [evento] Created | eventoId=${savedEvento?._id} userId=${req.user.id}`);
         return res.status(201).json(savedEvento);
-    } catch (error: any) {
-        Logging.error(`[500] [evento] Create Failed: ${error.message}`);
+    } catch (error: unknown) {
+        Logging.error(`[500] [evento] Create Failed: ${(error as Error).message}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -39,8 +39,8 @@ const getEvento = async (req: AuthRequest, res: Response, next: NextFunction) =>
 
         Logging.info(`[200] [evento] Retrieved | eventoId=${eventoId}`);
         return res.status(200).json(evento);
-    } catch (error: any) {
-        Logging.error(`[500] [evento] Get Failed | eventoId=${eventoId}: ${error.message}`);
+    } catch (error: unknown) {
+        Logging.error(`[500] [evento] Get Failed | eventoId=${eventoId}: ${(error as Error).message}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -54,8 +54,8 @@ const getAllEventos = async (req: AuthRequest, res: Response, next: NextFunction
         const eventos = await EventoService.getAllEventos(lat, lng, distancia);
         Logging.info(`[200] [evento] List All | count=${eventos.length}`);
         return res.status(200).json(eventos);
-    } catch (error: any) {
-        Logging.error(`[500] [evento] List Failed: ${error.message}`);
+    } catch (error: unknown) {
+        Logging.error(`[500] [evento] List Failed: ${(error as Error).message}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -82,12 +82,12 @@ const asistirEvento = async (req: AuthRequest, res: Response, next: NextFunction
 
         Logging.info(`[200] [evento] Attend Toggled | eventoId=${eventoId} userId=${req.user.id}`);
         return res.status(200).json(eventoActualizado);
-    } catch (error: any) {
-        if (error.message === 'El evento ha alcanzado el límite máximo de asistentes') {
+    } catch (error: unknown) {
+        if ((error as Error).message === 'El evento ha alcanzado el límite máximo de asistentes') {
             Logging.warning(`[400] [evento] Attend Limit Reached | eventoId=${eventoId}`);
-            return res.status(400).json({ message: error.message });
+            return res.status(400).json({ message: (error as Error).message });
         }
-        Logging.error(`[500] [evento] Attend Failed | eventoId=${eventoId}: ${error.message}`);
+        Logging.error(`[500] [evento] Attend Failed | eventoId=${eventoId}: ${(error as Error).message}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -114,12 +114,12 @@ const deleteEvento = async (req: AuthRequest, res: Response, next: NextFunction)
 
         Logging.info(`[200] [evento] Deleted | eventoId=${eventoId}`);
         return res.status(200).json(eventoEliminado);
-    } catch (error: any) {
-        if (error.message === 'Forbidden') {
+    } catch (error: unknown) {
+        if ((error as Error).message === 'Forbidden') {
             Logging.warning(`[403] [evento] Forbidden Delete | eventoId=${eventoId} userId=${req.user.id}`);
             return res.status(403).json({ message: 'No tienes permiso para eliminar este evento' });
         }
-        Logging.error(`[500] [evento] Delete Failed | eventoId=${eventoId}: ${error.message}`);
+        Logging.error(`[500] [evento] Delete Failed | eventoId=${eventoId}: ${(error as Error).message}`);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

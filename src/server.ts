@@ -108,7 +108,7 @@ const StartServer = () => {
         Logging.error(error);
 
         res.status(404).json({
-            message: error.message
+            message: (error as Error).message
         });
     });
 
