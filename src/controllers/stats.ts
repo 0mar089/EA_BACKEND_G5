@@ -164,22 +164,22 @@ const readReportStats = async (req: Request, res: Response, next: NextFunction) 
 };
 
 const readActiveSockets = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let count = 0;
     try {
-        let count = 0;
-        try {
-            const io = getIO();
-            count = io.engine.clientsCount;
-        } catch (e) {
-            Logging.warning(`[stats] Socket.io not initialized yet: ${e}`);
-        }
-        return res.status(200).json({ count });
-    } catch (error) {
-        Logging.error(`[500] [stats] Failed to read active sockets`);
-        return res.status(500).json({
-            message: 'Internal server error',
-            count: 0
-        });
+      const io = getIO();
+      count = io.engine.clientsCount;
+    } catch (e) {
+      Logging.warning(`[stats] Socket.io not initialized yet: ${e}`);
     }
+    return res.status(200).json({ count });
+  } catch (error) {
+    Logging.error(`[500] [stats] Failed to read active sockets`);
+    return res.status(500).json({
+      message: 'Internal server error',
+      count: 0,
+    });
+  }
 };
 
 export default {

@@ -122,7 +122,10 @@ const deletePhoto = async (req: AuthRequest, res: Response) => {
     const { photoId } = req.params;
 
     // Si es admin, borramos sin userId (cualquier foto). Si no, pasamos su userId.
-    const photo = await UniMatchService.deletePhoto(photoId, requesterRole === 'admin' ? undefined : requesterId);
+    const photo = await UniMatchService.deletePhoto(
+      photoId,
+      requesterRole === 'admin' ? undefined : requesterId,
+    );
 
     // Si el que lo borra es admin, registrar en auditoría
     if (requesterRole === 'admin') {
@@ -134,9 +137,13 @@ const deletePhoto = async (req: AuthRequest, res: Response) => {
         detalles: `Eliminó foto de UniMatch (ID de Foto: ${photoId}) del usuario ${photo.userId}`,
         metadata: { photoId, targetUserId: photo.userId },
       });
-      Logging.info(`[200] [unimatch/photos] Admin deleted photo | adminId=${requesterId} photoId=${photoId} ownerId=${photo.userId}`);
+      Logging.info(
+        `[200] [unimatch/photos] Admin deleted photo | adminId=${requesterId} photoId=${photoId} ownerId=${photo.userId}`,
+      );
     } else {
-      Logging.info(`[200] [unimatch/photos] User deleted photo | userId=${requesterId} photoId=${photoId}`);
+      Logging.info(
+        `[200] [unimatch/photos] User deleted photo | userId=${requesterId} photoId=${photoId}`,
+      );
     }
 
     return res.status(200).json({ message: 'Foto eliminada' });
@@ -145,7 +152,9 @@ const deletePhoto = async (req: AuthRequest, res: Response) => {
     if (message === 'Foto no encontrada') {
       return res.status(404).json({ message });
     }
-    Logging.error(`[500] [unimatch/photos] Delete failed | userId=${req.user?.id} error=${message}`);
+    Logging.error(
+      `[500] [unimatch/photos] Delete failed | userId=${req.user?.id} error=${message}`,
+    );
     return res.status(500).json({ message: 'Error al eliminar la foto' });
   }
 };

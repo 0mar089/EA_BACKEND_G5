@@ -15,7 +15,7 @@ const testConnection = async () => {
 
     process.exit(0);
   } catch (error) {
-    Logging.error('Error al probar la conexión con Weaviate: '+ error);
+    Logging.error('Error al probar la conexión con Weaviate: ' + error);
     process.exit(1);
   }
 };
