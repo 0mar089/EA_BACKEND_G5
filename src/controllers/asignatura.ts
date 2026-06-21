@@ -178,6 +178,7 @@ const deleteAsignatura = async (req: AuthRequest, res: Response, next: NextFunct
   } catch (error) {
     Logging.error(`[500] [asignatura] Delete Failed | asignaturaId=${asignaturaId}`);
     return res.status(500).json({ message: 'Internal server error' });
+  }
 };
 
 export default {
