@@ -4,7 +4,7 @@ FROM node:20-alpine
 # 2. Creamos la carpeta donde vivirá el código en el contenedor
 WORKDIR /app
 
-# 3. Copiamos los archivos de dependencias y el código fuente a la vez
+# 3. Copiamos los archivos de dependencias y el código fuente a la vez!
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY . .
@@ -16,7 +16,7 @@ RUN npm install
 RUN npm run build
 
 # 6. Exponemos el puerto que configuraste en tu .env
-EXPOSE 1337
+EXPOSE 1338
 
 # 7. Arrancamos el servidor usando el código ya compilado
 CMD ["npm", "start"]

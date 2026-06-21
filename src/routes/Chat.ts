@@ -1,5 +1,12 @@
 import { Router } from 'express';
-import { getContacts, getHistory, getUnreadMessagesCount, getMessage, getConversationContext } from '../controllers/chat';
+import {
+  getContacts,
+  getHistory,
+  getUnreadMessagesCount,
+  getMessage,
+  getConversationContext,
+  createGroupChat,
+} from '../controllers/chat';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -20,5 +27,8 @@ router.get('/unread-count', getUnreadMessagesCount);
 
 /** GET /chat/conversation/:userId */
 router.get('/conversation/:userId', getHistory);
+
+/** POST /chat/groups */
+router.post('/groups', createGroupChat);
 
 export default router;

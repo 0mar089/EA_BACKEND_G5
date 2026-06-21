@@ -66,4 +66,13 @@ router.get('/comments', controller.readCommentCount);
  */
 router.get('/reports', controller.readReportStats);
 
+/**
+ * @openapi
+ * /stats/active-sockets:
+ *   get:
+ *     summary: Conteo de sockets activos (Solo Admin)
+ *     tags: [Stats]
+ */
+router.get('/active-sockets', controller.readActiveSockets);
+
 export default router;

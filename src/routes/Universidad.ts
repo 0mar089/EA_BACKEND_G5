@@ -69,7 +69,13 @@ const router = express.Router();
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.universidad.create), controller.createUniversidad);
+router.post(
+  '/',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.universidad.create),
+  controller.createUniversidad,
+);
 
 /**
  * @openapi
@@ -95,6 +101,9 @@ router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.un
  *         description: No encontrado
  */
 router.get('/:universidadId', authenticateToken, controller.readUniversidad);
+router.get('/:universidadId/chat', authenticateToken, controller.getOrCreateUniversityChat);
+router.post('/:universidadId/join', authenticateToken, controller.joinUniversityChat);
+router.post('/:universidadId/leave', authenticateToken, controller.leaveUniversityChat);
 
 /**
  * @openapi
@@ -145,7 +154,13 @@ router.get('/', authenticateToken, controller.readAll);
  *       422:
  *         description: Validación fallida (Joi)
  */
-router.patch('/:universidadId', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.universidad.update), controller.updateUniversidad);
+router.patch(
+  '/:universidadId',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.universidad.update),
+  controller.updateUniversidad,
+);
 
 /**
  * @openapi
@@ -172,6 +187,11 @@ router.patch('/:universidadId', authenticateToken, checkRole(['admin']), Validat
  *       404:
  *         description: No encontrado
  */
-router.delete('/:universidadId', authenticateToken, checkRole(['admin']), controller.deleteUniversidad);
+router.delete(
+  '/:universidadId',
+  authenticateToken,
+  checkRole(['admin']),
+  controller.deleteUniversidad,
+);
 
 export default router;

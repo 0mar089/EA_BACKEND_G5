@@ -48,7 +48,13 @@ const router = express.Router();
  *       201:
  *         description: Creado
  */
-router.post('/', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.grado.create), controller.createGrado);
+router.post(
+  '/',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.grado.create),
+  controller.createGrado,
+);
 
 /**
  * @openapi
@@ -122,7 +128,13 @@ router.get('/:gradoId', controller.readGrado);
  *       200:
  *         description: Actualizado
  */
-router.patch('/:gradoId', authenticateToken, checkRole(['admin']), ValidateJoi(Schemas.grado.update), controller.updateGrado);
+router.patch(
+  '/:gradoId',
+  authenticateToken,
+  checkRole(['admin']),
+  ValidateJoi(Schemas.grado.update),
+  controller.updateGrado,
+);
 
 /**
  * @openapi

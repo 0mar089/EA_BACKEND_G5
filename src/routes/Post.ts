@@ -79,12 +79,7 @@ const router = express.Router();
  *       422:
  *         description: Error de validación
  */
-router.post(
-    '/',
-    authenticateToken,
-    ValidateJoi(Schemas.post.create),
-    controller.createPost
-);
+router.post('/', authenticateToken, ValidateJoi(Schemas.post.create), controller.createPost);
 
 /**
  * @openapi
@@ -160,6 +155,36 @@ router.get('/discovery', authenticateToken, controller.getDiscoveryPosts);
 
 /**
  * @openapi
+ * /posts/saved:
+ *   get:
+ *     summary: Obtener posts guardados del usuario autenticado
+ *     description: Devuelve los posts que el usuario ha guardado con paginación
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Elementos por página
+ *     responses:
+ *       200:
+ *         description: Lista paginada de posts guardados
+ *       401:
+ *         description: No autorizado
+ */
+router.get('/saved', authenticateToken, controller.getSavedPosts);
+
+/**
+ * @openapi
  * /posts/user/{userId}:
  *   get:
  *     summary: Obtener todos los posts de un usuario
@@ -179,11 +204,45 @@ router.get('/discovery', authenticateToken, controller.getDiscoveryPosts);
  *       401:
  *         description: No autorizado
  */
-router.get(
-    '/user/:userId',
-    authenticateToken,
-    controller.getAllPostsFromUser
-);
+router.get('/user/:userId', authenticateToken, controller.getAllPostsFromUser);
+
+/**
+ * @openapi
+ * /posts/{postId}/save:
+ *   patch:
+ *     summary: Guardar o quitar un post (toggle)
+ *     description: Añade o elimina un post de la lista de guardados del usuario autenticado
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del post
+ *     responses:
+ *       200:
+ *         description: Estado actualizado del guardado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 saved:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         description: ID de post inválido
+ *       401:
+ *         description: No autenticado
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.patch('/:postId/save', authenticateToken, controller.toggleSavePost);
 
 /**
  * @openapi
@@ -237,10 +296,10 @@ router.get('/:postId', authenticateToken, controller.getPost);
  *         description: Error de validación
  */
 router.patch(
-    '/:postId',
-    authenticateToken,
-    ValidateJoi(Schemas.post.update),
-    controller.updatePost
+  '/:postId',
+  authenticateToken,
+  ValidateJoi(Schemas.post.update),
+  controller.updatePost,
 );
 
 /**
@@ -265,11 +324,7 @@ router.patch(
  *       403:
  *         description: Prohibido
  */
-router.delete(
-    '/:postId',
-    authenticateToken,
-    controller.deletePost
-);
+router.delete('/:postId', authenticateToken, controller.deletePost);
 /**
  * @openapi
  * /posts/{postId}/like:
@@ -293,10 +348,6 @@ router.delete(
  *       404:
  *         description: Post no encontrado
  */
-router.patch(
-    '/:postId/like',
-    authenticateToken,
-    controller.darleLike
-);
+router.patch('/:postId/like', authenticateToken, controller.darleLike);
 
 export default router;

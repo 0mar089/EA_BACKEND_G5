@@ -1,4 +1,7 @@
 # Proyecto Univy - Plataforma de Gestión Universitaria
+# Backend EA - Grupo 5 EA
+
+## Integrantes
 
 ## 📋 Descripción General
 
@@ -323,3 +326,5 @@ Proyecto educativo - EETAC / UPC
 ---
 
 **Última actualización**: Mayo 2026
+Se ha implemen
+Por rehacer

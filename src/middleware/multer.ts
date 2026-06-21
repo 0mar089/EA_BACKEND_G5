@@ -5,17 +5,17 @@ import multer from 'multer';
 const storage = multer.memoryStorage();
 
 const upload = multer({
-    storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // Limite de 5MB
-    },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Solo se permiten imágenes') as any, false);
-        }
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // Limite de 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten imágenes') as unknown as null, false);
     }
+  },
 });
 
 export default upload;
