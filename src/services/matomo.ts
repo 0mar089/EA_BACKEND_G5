@@ -70,15 +70,18 @@ class MatomoService {
       }
 
       const trackingEndpoint = `${this.matomoUrl}/matomo.php`;
-      const fullTrackUrl = `${trackingEndpoint}?${queryParams.toString()}`;
-      Logging.info(`[Matomo] FULL URL: ${fullTrackUrl}`);
+      Logging.info(`[Matomo] Sending tracking request to: ${trackingEndpoint} with params: ${queryParams.toString()}`);
       Logging.info(
         `[Matomo] Sending tracking request... (action: ${params.action_name || params.e_a || 'Pageview'})`,
       );
 
-      fetch(fullTrackUrl, {
-        method: 'GET',
-        headers: { Connection: 'keep-alive' },
+      fetch(trackingEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Connection: 'keep-alive'
+        },
+        body: queryParams.toString()
       })
         .then(async (response) => {
           if (!response.ok) {
