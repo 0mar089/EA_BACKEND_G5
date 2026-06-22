@@ -1,4 +1,5 @@
 # Proyecto Univy - Plataforma de Gestión Universitaria
+
 # Backend EA - Grupo 5 EA
 
 ## Integrantes
@@ -25,26 +26,26 @@ El proyecto está organizado en una arquitectura de servicios containerizada con
 graph TB
     Client["👥 Cliente Web"]
     Admin["👤 Administrador"]
-    
+
     subgraph Frontend
         Web["🌐 Web App<br/>(React + Vite)<br/>Puerto 80"]
         Backoffice["⚙️ Backoffice<br/>(Angular)<br/>Puerto 9000"]
     end
-    
+
     subgraph BackendGroup
         BackendAPI["🔧 Backend API<br/>(Node.js + Express)<br/>Puerto 1337"]
     end
-    
+
     subgraph Data
         MongoDB["🗄️ MongoDB<br/>Base de Datos<br/>Red Interna (Oculto)"]
     end
-    
+
     Client -->|HTTP/REST| Web
     Admin -->|HTTP/REST| Backoffice
     Web -->|API REST| BackendAPI
     Backoffice -->|API REST| BackendAPI
     BackendAPI -->|Query/Update| MongoDB
-    
+
     style Web fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
     style Backoffice fill:#dd0031,stroke:#333,stroke-width:2px,color:#fff
     style BackendAPI fill:#68a063,stroke:#333,stroke-width:2px,color:#fff
@@ -58,6 +59,7 @@ graph TB
 ## 📦 Servicios
 
 ### 1. **MongoDB** 🗄️
+
 - **Contenedor**: `univy_db`
 - **Puerto**: `Oculto (Accesible solo en red interna)`
 - **Descripción**: Base de datos NoSQL que almacena toda la información del sistema
@@ -65,6 +67,7 @@ graph TB
 - **Imagen**: `mongo:latest`
 
 ### 2. **Backend API** 🔧
+
 - **Contenedor**: `univy_backend`
 - **Puerto**: `1337`
 - **Descripción**: API REST desarrollada con Node.js + Express + TypeScript
@@ -74,6 +77,7 @@ graph TB
 - **Dependencias**: MongoDB
 
 **Módulos principales:**
+
 - `controllers/` - Lógica de controladores
 - `routes/` - Definición de rutas API
 - `services/` - Lógica de negocio
@@ -82,6 +86,7 @@ graph TB
 - `utils/` - Utilidades (JWT, etc.)
 
 **Funcionalidades:**
+
 - Autenticación y autorización con JWT
 - Gestión de universidades, grados y cursos
 - Gestión de usuarios
@@ -90,6 +95,7 @@ graph TB
 - Estadísticas
 
 ### 3. **Web App** 🌐
+
 - **Contenedor**: `univy_web`
 - **Puerto**: `80`
 - **Descripción**: Aplicación web para estudiantes
@@ -99,12 +105,14 @@ graph TB
 - **Dependencias**: Backend API
 
 **Características:**
+
 - Interface responsiva para estudiantes
 - Consumo de API REST del backend
 - Gestión de autenticación
 - Visualización de posts y comentarios
 
 ### 4. **Backoffice** ⚙️
+
 - **Contenedor**: `univy_backoffice`
 - **Puerto**: `9000`
 - **Descripción**: Panel de administración
@@ -114,6 +122,7 @@ graph TB
 - **Dependencias**: Backend API
 
 **Funcionalidades:**
+
 - Panel administrativo
 - Gestión de usuarios y permisos
 - Reportes y estadísticas
@@ -124,6 +133,7 @@ graph TB
 ## 🚀 Quick Start con Docker
 
 ### Requisitos Previos
+
 - Docker
 - Docker Compose
 - (Opcional) Node.js 18+ para desarrollo local
@@ -131,28 +141,33 @@ graph TB
 ### Instalación y Ejecución
 
 1. **Clonar el repositorio**
+
 ```bash
 git clone <repository-url>
 cd "SEMINARIO DevOps y Docker"
 ```
 
 2. **Configurar variables de entorno**
+
 ```bash
 # Copiar archivo .env en EA_BACKEND_G5
 cp EA_BACKEND_G5/.env.example EA_BACKEND_G5/.env
 ```
 
 3. **Iniciar todos los servicios**
+
 ```bash
 docker-compose up
 ```
 
 4. **Verificar que los servicios estén corriendo**
+
 ```bash
 docker-compose ps
 ```
 
 5. **Acceder a las aplicaciones**
+
 - 🌐 Web App: http://localhost
 - ⚙️ Backoffice: http://localhost:9000
 - 🔧 Backend API: http://localhost:1337
@@ -233,29 +248,35 @@ npm run build
 ## 📚 Endpoints API Principales
 
 ### Autenticación
+
 - `POST /api/auth/register` - Registro de usuario
 - `POST /api/auth/login` - Inicio de sesión
 
 ### Universidades
+
 - `GET /api/universidad` - Listar universidades
 - `POST /api/universidad` - Crear universidad (Admin)
 
 ### Usuarios
+
 - `GET /api/usuario` - Listar usuarios
 - `GET /api/usuario/:id` - Obtener usuario
 - `PUT /api/usuario/:id` - Actualizar usuario
 
 ### Posts y Comentarios
+
 - `GET /api/post` - Listar posts
 - `POST /api/post` - Crear post
 - `GET /api/comment` - Listar comentarios
 - `POST /api/comment` - Crear comentario
 
 ### Reportes
+
 - `GET /api/report` - Listar reportes
 - `POST /api/report` - Crear reporte
 
 ### Estadísticas
+
 - `GET /api/stats` - Obtener estadísticas
 
 Para documentación completa de la API, consulta el Swagger en `/api/docs` una vez que el backend esté corriendo.
@@ -273,9 +294,11 @@ docker-compose.yml
 ```
 
 ### Volumes
+
 - `mongo_data` - Persistencia de datos de MongoDB
 
 ### Network
+
 - Todas los servicios se comunican a través de la red Docker predefinida
 
 ---
@@ -283,6 +306,7 @@ docker-compose.yml
 ## 📋 Variables de Entorno
 
 ### Backend (`EA_BACKEND_G5/.env`)
+
 ```
 NODE_ENV=production
 PORT=1337

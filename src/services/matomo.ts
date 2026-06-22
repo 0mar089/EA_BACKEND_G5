@@ -70,7 +70,9 @@ class MatomoService {
       }
 
       const trackingEndpoint = `${this.matomoUrl}/matomo.php`;
-      Logging.info(`[Matomo] Sending tracking request to: ${trackingEndpoint} with params: ${queryParams.toString()}`);
+      Logging.info(
+        `[Matomo] Sending tracking request to: ${trackingEndpoint} with params: ${queryParams.toString()}`,
+      );
       Logging.info(
         `[Matomo] Sending tracking request... (action: ${params.action_name || params.e_a || 'Pageview'})`,
       );
@@ -79,9 +81,9 @@ class MatomoService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          Connection: 'keep-alive'
+          Connection: 'keep-alive',
         },
-        body: queryParams.toString()
+        body: queryParams.toString(),
       })
         .then(async (response) => {
           if (!response.ok) {
